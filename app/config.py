@@ -40,8 +40,12 @@ Network = os.getenv('ERGONODE_NETWORK', default='mainnet')
 Config = {
     'testnet': dotdict({
         'node'              : os.getenv('ERGONODE_HOST'),
+        'connectionString'  : f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
+        'DEBUG'             : True,
     }),
     'mainnet': dotdict({
         'node'              : os.getenv('ERGONODE_HOST'),
+        'connectionString'  : f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
+        'DEBUG'             : True,
     })
 }
