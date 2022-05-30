@@ -1,10 +1,9 @@
-# pip-compile --output-file=app/requirements.txt requirements.in
 fastapi
 uvicorn
 pydantic
 requests
 pandas
-psycopg2
+psycopg2-binary
 asyncpg
 sqlmodel
 databases[postgresql]
@@ -27,5 +26,4 @@ pyblake2
 base58
 utcnow
 colorlog
-fastapi-users[sqlalchemy2]
 git+https://github.com/ergo-pad/ergo-python-appkit.git@v0.0.4
