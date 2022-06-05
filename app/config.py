@@ -1,11 +1,13 @@
 import os
 import time
 
+
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
 
 class Stopwatch(object):
     def __init__(self):
@@ -33,19 +35,31 @@ class Stopwatch(object):
     def __exit__(self):
         self.stop()
 
-POSTGRES_PORT = os.getenv('POSTGRES_PORT')
-POSTGRES_USER = os.getenv('POSTGRES_USER')
 
 Network = os.getenv('ERGONODE_NETWORK', default='mainnet')
 Config = {
     'testnet': dotdict({
-        'node'              : os.getenv('ERGONODE_HOST'),
-        'connectionString'  : f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
-        'DEBUG'             : True,
+        'DEBUG': True,
+        'node': os.getenv('ERGONODE_HOST'),
+        'connectionString': f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
+        'redisHost': os.getenv('REDIS_HOST'),
+        'redisPort': os.getenv('REDIS_PORT'),
+        'awsAccessKeyId': os.getenv("AWS_ACCESS_KEY_ID"),
+        'awsSecretAccessKey': os.getenv("AWS_SECRET_ACCESS_KEY"),
+        'awsRegion': os.getenv("AWS_REGION"),
+        's3Bucket': os.getenv("S3_BUCKET"),
+        's3Key': os.getenv("S3_KEY"),
     }),
     'mainnet': dotdict({
-        'node'              : os.getenv('ERGONODE_HOST'),
-        'connectionString'  : f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
-        'DEBUG'             : True,
+        'DEBUG': False,
+        'node': os.getenv('ERGONODE_HOST'),
+        'connectionString': f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
+        'redisHost': os.getenv('REDIS_HOST'),
+        'redisPort': os.getenv('REDIS_PORT'),
+        'awsAccessKeyId': os.getenv("AWS_ACCESS_KEY_ID"),
+        'awsSecretAccessKey': os.getenv("AWS_SECRET_ACCESS_KEY"),
+        'awsRegion': os.getenv("AWS_REGION"),
+        's3Bucket': os.getenv("S3_BUCKET"),
+        's3Key': os.getenv("S3_KEY"),
     })
 }
