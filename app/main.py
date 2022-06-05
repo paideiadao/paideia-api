@@ -1,14 +1,14 @@
 import uvicorn
 import databases
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
-from sqlalchemy.orm import sessionmaker
 
-# from config import Config, Network
+from api.users import users_router
+from api.auth import auth_router
+
+from core.auth import get_current_active_user
 from config import Config, Network
 CFG = Config[Network]
 DATABASE_URL = CFG.connectionString
@@ -17,8 +17,6 @@ DATABASE_URL = CFG.connectionString
 database = databases.Database(DATABASE_URL)
 Base: DeclarativeMeta = declarative_base()
 
-engine = create_async_engine(DATABASE_URL, connect_args={
-                             "check_same_thread": False})
 
 app = FastAPI(
     title="paideia-api",
@@ -60,6 +58,9 @@ app.add_middleware(
 async def ping():
     return {"hello": "world"}
 
+app.include_router(users_router, prefix="/api/users",
+                   tags=["users"], dependencies=[Depends(get_current_active_user)])
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", reload=True, port=8000)

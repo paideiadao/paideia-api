@@ -49,6 +49,7 @@ Config = {
         'awsRegion': os.getenv("AWS_REGION"),
         's3Bucket': os.getenv("S3_BUCKET"),
         's3Key': os.getenv("S3_KEY"),
+        'jwtSecret': os.getenv("JWT_SECRET_KEY"),
     }),
     'mainnet': dotdict({
         'DEBUG': False,
@@ -61,5 +62,6 @@ Config = {
         'awsRegion': os.getenv("AWS_REGION"),
         's3Bucket': os.getenv("S3_BUCKET"),
         's3Key': os.getenv("S3_KEY"),
+        'jwtSecret': os.getenv("JWT_SECRET_KEY"),
     })
 }
