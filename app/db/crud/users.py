@@ -19,8 +19,8 @@ def get_user(db: Session, user_id: int):
     return user
 
 
-def get_user_by_email(db: Session, email: str) -> schemas.UserBase:
-    return db.query(models.User).filter(models.User.email == email).first()
+def get_user_by_alias(db: Session, alias: str) -> schemas.UserBase:
+    return db.query(models.User).filter(models.User.alias == alias).first()
 
 
 def get_users(
@@ -32,9 +32,9 @@ def get_users(
 def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = get_password_hash(user.password)
     db_user = models.User(
-        first_name=user.first_name,
-        last_name=user.last_name,
-        email=user.email,
+        alias=user.alias,
+        primary_wallet_address_id=user.primary_wallet_address_id,
+        profile_img_url=user.profile_img_url,
         is_active=user.is_active,
         is_superuser=user.is_superuser,
         hashed_password=hashed_password,

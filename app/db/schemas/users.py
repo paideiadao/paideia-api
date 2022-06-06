@@ -6,11 +6,11 @@ import typing as t
 
 
 class UserBase(BaseModel):
-    email: str
+    alias: str
+    primary_wallet_address_id: t.Optional[int]
+    profile_img_url: t.Optional[str]
     is_active: bool = True
     is_superuser: bool = False
-    first_name: t.Optional[str] = None
-    last_name: t.Optional[str] = None
 
 
 class UserOut(UserBase):

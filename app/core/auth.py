@@ -6,7 +6,7 @@ from db.session import get_db
 from db.models import users as models
 from db.schemas import users as schemas
 from db.schemas.token import TokenData
-from db.crud.users import get_blacklisted_token, get_user_by_email, create_user
+from db.crud.users import get_blacklisted_token, get_user_by_alias, create_user
 from core import security
 
 
@@ -22,17 +22,17 @@ async def get_current_user(
         payload = jwt.decode(
             token, security.SECRET_KEY, algorithms=[security.ALGORITHM]
         )
-        email: str = payload.get("sub")
-        if email is None:
+        alias: str = payload.get("sub")
+        if alias is None:
             raise credentials_exception
         permissions: str = payload.get("permissions")
-        token_data = TokenData(email=email, permissions=permissions)
+        token_data = TokenData(alias=alias, permissions=permissions)
     except PyJWTError:
         raise credentials_exception
     blacklisted = get_blacklisted_token(db, token)
     if blacklisted:
         raise credentials_exception
-    user = get_user_by_email(db, token_data.email)
+    user = get_user_by_alias(db, token_data.alias)
     if user is None:
         raise credentials_exception
     return user
@@ -56,8 +56,8 @@ async def get_current_active_superuser(
     return current_user
 
 
-def authenticate_user(db, email: str, password: str):
-    user = get_user_by_email(db, email)
+def authenticate_user(db, alias: str, password: str):
+    user = get_user_by_alias(db, alias)
     if not user:
         return False
     if not security.verify_password(password, user.hashed_password):
@@ -65,14 +65,14 @@ def authenticate_user(db, email: str, password: str):
     return user
 
 
-def sign_up_new_user(db, email: str, password: str):
-    user = get_user_by_email(db, email)
+def sign_up_new_user(db, alias: str, password: str):
+    user = get_user_by_alias(db, alias)
     if user:
         return False  # User already exists
     new_user = create_user(
         db,
         schemas.UserCreate(
-            email=email,
+            alias=alias,
             password=password,
             is_active=True,
             is_superuser=False,

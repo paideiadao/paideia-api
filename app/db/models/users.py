@@ -10,16 +10,16 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    first_name = Column(String)
-    last_name = Column(String)
+    alias = Column(String, unique=True, index=True, nullable=False)
+    primary_wallet_address_id = Column(Integer)
+    profile_img_url = Column(String)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
 
 
 class JWTBlackList(Base):
-    __tablename__ = "jwtBlacklist"
+    __tablename__ = "jwt_blacklist"
 
     id = Column(Integer, primary_key=True, index=True)
     token = Column(String, index=True, nullable=False)

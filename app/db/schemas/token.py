@@ -9,5 +9,5 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    email: str = None
+    alias: str = None
     permissions: str = "user"
