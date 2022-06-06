@@ -18,6 +18,15 @@ class User(Base):
     is_superuser = Column(Boolean, default=False)
 
 
+class ErgoAddress(Base):
+    __tablename__ = "ergo_addresses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer)
+    address = Column(String)
+    is_smart_contract = Column(Boolean)
+
+
 class JWTBlackList(Base):
     __tablename__ = "jwt_blacklist"
 
