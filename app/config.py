@@ -41,7 +41,7 @@ Config = {
     'testnet': dotdict({
         'DEBUG': True,
         'node': os.getenv('ERGONODE_HOST'),
-        'connectionString': f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
+        'connectionString': f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
         'redisHost': os.getenv('REDIS_HOST'),
         'redisPort': os.getenv('REDIS_PORT'),
         'awsAccessKeyId': os.getenv("AWS_ACCESS_KEY_ID"),
@@ -54,7 +54,7 @@ Config = {
     'mainnet': dotdict({
         'DEBUG': False,
         'node': os.getenv('ERGONODE_HOST'),
-        'connectionString': f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
+        'connectionString': f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
         'redisHost': os.getenv('REDIS_HOST'),
         'redisPort': os.getenv('REDIS_PORT'),
         'awsAccessKeyId': os.getenv("AWS_ACCESS_KEY_ID"),
