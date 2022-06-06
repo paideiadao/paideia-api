@@ -36,3 +36,16 @@ class User(UserBase):
 
     class Config:
         orm_mode = True
+
+
+class CreateErgoAddress(BaseModel):
+    user_id: int
+    address: str
+    is_smart_contract: bool
+
+
+class ErgoAddress(CreateErgoAddress):
+    id: int
+
+    class Config:
+        orm_mode = True

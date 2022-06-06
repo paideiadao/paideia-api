@@ -24,7 +24,7 @@ users_router = r = APIRouter()
 async def users_list(
     response: Response,
     db=Depends(get_db),
-    current_user=Depends(get_current_active_superuser),
+    current_user=Depends(get_current_active_user),
 ):
     """
     Get all users
@@ -103,7 +103,7 @@ async def user_edit(
 
 
 @r.put(
-    "/{user_id}/password", response_model=User, response_model_exclude_none=True, name="users:change-password"
+    "/{user_id}/update", response_model=User, response_model_exclude_none=True, name="users:update-details"
 )
 async def user_edit(
     request: Request,
@@ -113,7 +113,7 @@ async def user_edit(
     current_user=Depends(get_current_active_user),
 ):
     """
-    Update user password
+    Update user self
     """
     try:
         if (user_id == current_user.id and user.is_active == current_user.is_active and user.is_superuser == current_user.is_superuser):
