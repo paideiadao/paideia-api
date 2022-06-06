@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 
 from api.users import users_router
 from api.auth import auth_router
+from api.dao import dao_router
 from api.util import util_router
 
 from core.auth import get_current_active_user
@@ -62,6 +63,7 @@ async def ping():
 app.include_router(users_router, prefix="/api/users",
                    tags=["users"], dependencies=[Depends(get_current_active_user)])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+app.include_router(dao_router, prefix="/api/dao", tags=["dao"])
 app.include_router(util_router, prefix="/api/util", tags=["util"])
 
 if __name__ == "__main__":

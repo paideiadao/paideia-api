@@ -2,6 +2,23 @@ from pydantic import BaseModel
 import typing as t
 
 
+class DaoBasic(BaseModel):
+    id: int
+    dao_name: t.Optional[str]
+    dao_short_description: t.Optional[str]
+    dao_url: str
+    governance_id: t.Optional[int]
+    tokenomics_id: t.Optional[int]
+    design_id: t.Optional[int]
+    is_draft: t.Optional[bool]
+    is_published: t.Optional[bool]
+    nav_stage: t.Optional[int]
+    is_review: t.Optional[bool]
+
+    class Config:
+        orm_mode = True
+
+
 class CreateOrUpdateFooterSocialLinks(BaseModel):
     social_network: t.Optional[str]
     link_url: t.Optional[str]
@@ -35,7 +52,7 @@ class DaoDesign(CreateOrUpdateDaoDesign):
 class CreateOrUpdateGovernance(BaseModel):
     is_optimistic: t.Optional[bool]
     is_quadratic_voting: t.Optional[bool]
-    time_to_challange__sec: t.Optional[int]
+    time_to_challenge__sec: t.Optional[int]
     quorum: t.Optional[int]
     vote_duration__sec: t.Optional[int]
     amount: t.Optional[float]
@@ -112,9 +129,9 @@ class CreateOrUpdateDao(BaseModel):
 
 class Dao(CreateOrUpdateDao):
     id: int
-    governance: Governance
-    tokenomics: Tokenomics
-    design: DaoDesign
+    governance: t.Optional[Governance]
+    tokenomics: t.Optional[Tokenomics]
+    design: t.Optional[DaoDesign]
 
     class Config:
         orm_mode = True

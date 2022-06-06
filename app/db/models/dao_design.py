@@ -13,7 +13,7 @@ class DaoDesign(Base):
     theme_id = Column(Integer)
     logo_url = Column(String)
     show_banner = Column(Boolean)
-    banner_url = Column(Boolean)
+    banner_url = Column(String)
     show_footer = Column(Boolean)
     footer_text = Column(String)
 
