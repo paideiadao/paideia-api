@@ -1,9 +1,7 @@
 import inspect
-import logging
 
 from pydantic import BaseModel
 
-from colorlog import ColoredFormatter
 
 class LogConfig(BaseModel):
     """Logging configuration to be set for the server"""
@@ -35,4 +33,5 @@ class LogConfig(BaseModel):
         "paideia": {"handlers": ["default"], "level": LOG_LEVEL},
     }
 
-myself = lambda: inspect.stack()[1][3]
+
+def myself(): return inspect.stack()[1][3]

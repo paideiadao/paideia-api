@@ -1,19 +1,14 @@
-# pip-compile --output-file=app/requirements.txt requirements.in
 fastapi
+python-multipart
+python-dotenv
 uvicorn
 pydantic
 requests
-pandas
-psycopg2
+psycopg2-binary
 asyncpg
-sqlmodel
 databases[postgresql]
 SQLAlchemy
-alembic
 sqlalchemy-utils
-aiofiles
-aiocsv
-aiohttp
 boto3
 redis
 pyjwt
@@ -21,11 +16,4 @@ passlib[bcrypt]
 pytest
 pytest-asyncio
 pytest-mock
-asgi-lifespan
-ecdsa
-pyblake2
-base58
-utcnow
 colorlog
-fastapi-users[sqlalchemy2]
-git+https://github.com/ergo-pad/ergo-python-appkit.git@v0.0.4
