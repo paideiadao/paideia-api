@@ -3,7 +3,7 @@ import typing as t
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
 from core.auth import get_current_active_user
-from db.crud.dao import create_dao, get_all_daos, get_dao, delete_dao
+from db.crud.dao import create_dao, edit_dao, get_all_daos, get_dao, delete_dao
 from db.session import get_db
 
 from db.schemas.dao import CreateOrUpdateDao, Dao, DaoBasic
@@ -63,6 +63,27 @@ async def dao_create(
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
 
+@r.put(
+    "/{id}",
+    response_model=Dao,
+    response_model_exclude_none=True,
+    name="dao:edit-dao"
+)
+async def dao_edit(
+    id: int,
+    dao: CreateOrUpdateDao,
+    db=Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    edit existing dao
+    """
+    try:
+        return edit_dao(db, id, dao)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
 @r.delete(
     "/{id}",
     response_model=Dao,
@@ -72,6 +93,7 @@ async def dao_create(
 async def dao_delete(
     id: int,
     db=Depends(get_db),
+    current_user=Depends(get_current_active_user),
 ):
     """
     delete dao
