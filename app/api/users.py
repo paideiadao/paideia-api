@@ -102,28 +102,6 @@ async def user_edit(
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
 
-@r.put(
-    "/{user_id}/update", response_model=User, response_model_exclude_none=True, name="users:update-details"
-)
-async def user_edit(
-    request: Request,
-    user_id: int,
-    user: UserEdit,
-    db=Depends(get_db),
-    current_user=Depends(get_current_active_user),
-):
-    """
-    Update user self
-    """
-    try:
-        if (user_id == current_user.id and user.is_active == current_user.is_active and user.is_superuser == current_user.is_superuser):
-            return edit_user(db, user_id, user)
-        else:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content=f'Not authorized to change other user data fields')
-    except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
-
-
 @r.delete(
     "/{user_id}", response_model=User, response_model_exclude_none=True, name="users:delete"
 )

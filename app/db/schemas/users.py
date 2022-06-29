@@ -18,7 +18,7 @@ class UserOut(UserBase):
 
 
 class UserCreate(UserBase):
-    password: str
+    password: str = "__ergoauth_default"
 
     class Config:
         orm_mode = True

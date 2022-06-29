@@ -12,8 +12,8 @@ from core.auth import authenticate_user, get_current_active_user, sign_up_new_us
 auth_router = r = APIRouter()
 
 
-@r.post("/token")
-async def login(
+@r.post("/token/admin")
+async def login_admin(
     db=Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
     try:
@@ -31,7 +31,11 @@ async def login(
         if user.is_superuser:
             permissions = "admin"
         else:
-            permissions = "user"
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Admin only endpoint",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         access_token = security.create_access_token(
             data={"sub": user.alias, "permissions": permissions},
             expires_delta=access_token_expires,
@@ -43,8 +47,8 @@ async def login(
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
-@r.post("/signup")
-async def signup(
+@r.post("/signup/admin")
+async def signup_admin(
     db=Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
     try:
@@ -62,7 +66,11 @@ async def signup(
         if user.is_superuser:
             permissions = "admin"
         else:
-            permissions = "user"
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Admin only endpoint",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         access_token = security.create_access_token(
             data={"sub": user.alias, "permissions": permissions},
             expires_delta=access_token_expires,
