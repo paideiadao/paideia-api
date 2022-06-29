@@ -24,6 +24,12 @@ class UserCreate(UserBase):
         orm_mode = True
 
 
+class UserSignUp(BaseModel):
+    alias: str
+    primary_wallet_address: str
+    profile_img_url: t.Optional[str]
+
+
 class UserEdit(UserBase):
     password: t.Optional[str] = None
 

@@ -1,5 +1,6 @@
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlalchemy.orm import Session
+from starlette.responses import JSONResponse
 import typing as t
 
 from db.models import users as models
@@ -15,7 +16,7 @@ from core.security import get_password_hash
 def get_user(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
     return user
 
 
@@ -48,7 +49,7 @@ def create_user(db: Session, user: schemas.UserCreate):
 def delete_user(db: Session, user_id: int):
     user = get_user(db, user_id)
     if not user:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
     db.delete(user)
     db.commit()
     return user
@@ -59,7 +60,7 @@ def edit_user(
 ) -> schemas.User:
     db_user = get_user(db, user_id)
     if not db_user:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
     update_data = user.dict(exclude_unset=True)
 
     if "password" in update_data:
@@ -73,6 +74,27 @@ def edit_user(
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+def get_ergo_addresses_by_user_id(db: Session, user_id: int):
+    return db.query(models.ErgoAddress).filter(models.ErgoAddress.user_id == user_id).all()
+
+
+def set_ergo_addresses_by_user_id(db: Session, user_id: int, addresses: t.List[str]):
+    # delete older entries if they exist
+    db.query(models.ErgoAddress).filter(
+        models.ErgoAddress.user_id == user_id).delete()
+    db.commit()
+    # add new addresses
+    for address in addresses:
+        db_ergo_address = models.ErgoAddress(
+            user_id=user_id,
+            address=address,
+            is_smart_contract=False,
+        )
+        db.add(db_ergo_address)
+    db.commit()
+    return get_ergo_addresses_by_user_id(db, user_id)
 
 
 def blacklist_token(db: Session, token: str):

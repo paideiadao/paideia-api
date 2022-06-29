@@ -47,7 +47,7 @@ class InvalidateCacheRequest(BaseModel):
     key: str
 
 
-@r.post("/force_invalidate_cache", name="cache:invalidate")
+@r.post("/force_invalidate_cache", name="util:cache-invalidate")
 def forceInvalidateCache(req: InvalidateCacheRequest, current_user=Depends(get_current_active_superuser)):
     try:
         return {'status': 'success', 'detail': cache.invalidate(req.key)}
