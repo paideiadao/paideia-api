@@ -1,26 +1,146 @@
+from datetime import timedelta
+
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, HTTPException, status
-from datetime import timedelta
 from starlette.responses import JSONResponse
+from ergo_python_appkit.appkit import ErgoAppKit
 
-from db.crud.users import blacklist_token
+from db.crud.users import blacklist_token, get_user_by_primary_wallet_address
 from db.schemas.users import UserSignUp, User
+from db.schemas.ergoauth import LoginRequestWebResponse, LoginRequest, LoginRequestMobileResponse, ErgoAuthRequest, ErgoAuthResponse
 from db.session import get_db
 
 from core import security
+from core.security import generate_signing_message, generate_verification_id
 from core.auth import authenticate_user, get_current_active_user, sign_up_new_user
+
+from cache.cache import cache
+
+from config import Config, Network
+
+CFG = Config[Network]
 
 auth_router = r = APIRouter()
 
 # TODO:
-# 1. POST /login
-#    - generate siging_request, return signing_request url
-# 2. POST /signing_request/{request_id}
-#    - return a ergoauth signing_request from redis
-# 3. POST /token used for ergoauth login for nautilus
-#    - verify address, signed_message and proof directly and return a jwt_token 
-# 4. WebSocket /ws/{request_id}
+# 1. WebSocket /ws/{request_id}
 #    - Frontend listens to this websocket for approval on mobile app
+
+##################################
+##           ERGOAUTH           ##
+##################################
+
+
+BASE_ERGOAUTH = "ergoauth://192.168.0.6:8000"
+BASE_URL = "http://192.168.0.6:8000"
+
+
+@r.post("/login", response_model=LoginRequestWebResponse, name="ergoauth:login-web")
+async def ergoauth_login_web(
+    address: LoginRequest
+):
+    try:
+        verificationId = generate_verification_id()
+        # update url on deployment
+        tokenUrl = f"{BASE_URL}/api/auth/token/{verificationId}"
+        ret = LoginRequestWebResponse(
+            address=address.address,
+            signingMessage=generate_signing_message(),
+            tokenUrl=tokenUrl
+        )
+        cache.set(f"ergoauth_signing_request_{verificationId}", ret.dict())
+        return ret
+    except Exception as e:
+        return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
+
+
+@r.post("/token/{request_id}", name="ergoauth:login")
+async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Depends(get_db)):
+    try:
+        signingRequest = cache.get(f"ergoauth_signing_request_{request_id}")
+        verified = ErgoAppKit.verifyErgoAuthSignedMessage(
+            signingRequest["address"],
+            signingRequest["signingMessage"],
+            authResponse.signedMessage,
+            authResponse.proof
+        )
+        user = get_user_by_primary_wallet_address(db, signingRequest["address"])
+        if verified and user:
+            access_token_expires = timedelta(
+                minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
+            )
+            permissions = "user"
+            access_token = security.create_access_token(
+                data={"sub": user[0].alias, "permissions": permissions},
+                expires_delta=access_token_expires,
+            )
+            return {"access_token": access_token, "token_type": "bearer", "permissions": permissions}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Cannot Authenticate",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
+
+
+@r.post("/login/mobile", response_model=LoginRequestMobileResponse, name="ergoauth:login-web")
+async def ergoauth_login_mobile(
+    address: LoginRequest
+):
+    try:
+        verificationId = generate_verification_id()
+        # update url on deployment
+        signingRequestUrl = f"{BASE_ERGOAUTH}/api/auth/signing_request/{verificationId}"
+        replyTo = f"{BASE_URL}/api/auth/verify/{verificationId}"
+        sigmaBoolean = ErgoAppKit.getSigmaBooleanFromAddress(address.address)
+        ergoAuthRequest = ErgoAuthRequest(
+            address=address.address,
+            signingMessage=generate_signing_message(),
+            sigmaBoolean=sigmaBoolean,
+            replyTo=replyTo
+        )
+        cache.set(f"ergoauth_signing_request_{verificationId}", ergoAuthRequest.dict())
+        return LoginRequestMobileResponse(address=address.address, signingRequestUrl=signingRequestUrl)
+    except Exception as e:
+        return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
+
+
+@r.get("/signing_request/{request_id}", response_model=ErgoAuthRequest, name="ergoauth:signing-request")
+async def ergoauth_login_mobile(request_id: str):
+    try:
+        ret = cache.get(f"ergoauth_signing_request_{request_id}")
+        if not ret:
+            return JSONResponse(status_code=400, content=f"ERR::login::invalid request id")
+        return ret
+    except Exception as e:
+        return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
+
+
+@r.post("/verify/{request_id}", name="ergoauth:verify")
+async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=Depends(get_db)):
+    try:
+        signingRequest = cache.get(f"ergoauth_signing_request_{request_id}")
+        verified = ErgoAppKit.verifyErgoAuthSignedMessage(
+            signingRequest["address"],
+            signingRequest["signingMessage"],
+            authResponse.signedMessage,
+            authResponse.proof
+        )
+        user = get_user_by_primary_wallet_address(db, signingRequest["address"])
+        if verified and user:
+            cache.invalidate(f"ergoauth_signing_request_{request_id}")
+            return { "status": "ok" }
+        else:
+            return { "status": "failed" }
+    except Exception as e:
+        return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
+
+
+##################################
 
 
 @r.post("/token/admin", name="auth:admin-login")
