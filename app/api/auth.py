@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 from starlette.responses import JSONResponse
 from ergo_python_appkit.appkit import ErgoAppKit
 
@@ -15,6 +15,7 @@ from core.security import generate_signing_message, generate_verification_id
 from core.auth import authenticate_user, get_current_active_user, sign_up_new_user
 
 from cache.cache import cache
+from websocket.connection_manager import connection_manager
 
 from config import Config, Network
 
@@ -22,9 +23,6 @@ CFG = Config[Network]
 
 auth_router = r = APIRouter()
 
-# TODO:
-# 1. WebSocket /ws/{request_id}
-#    - Frontend listens to this websocket for approval on mobile app
 
 ##################################
 ##           ERGOAUTH           ##
@@ -87,7 +85,7 @@ async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Dep
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
-@r.post("/login/mobile", response_model=LoginRequestMobileResponse, name="ergoauth:login-web")
+@r.post("/login/mobile", response_model=LoginRequestMobileResponse, name="ergoauth:login-mobile")
 async def ergoauth_login_mobile(
     address: LoginRequest
 ):
@@ -104,7 +102,11 @@ async def ergoauth_login_mobile(
             replyTo=replyTo
         )
         cache.set(f"ergoauth_signing_request_{verificationId}", ergoAuthRequest.dict())
-        return LoginRequestMobileResponse(address=address.address, signingRequestUrl=signingRequestUrl)
+        return LoginRequestMobileResponse(
+            address=address.address, 
+            verificationId=verificationId,
+            signingRequestUrl=signingRequestUrl
+        )
     except Exception as e:
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
@@ -132,6 +134,19 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
         )
         user = get_user_by_primary_wallet_address(db, signingRequest["address"])
         if verified and user:
+            # generate the access token
+            access_token_expires = timedelta(
+                minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
+            )
+            permissions = "user"
+            access_token = security.create_access_token(
+                data={"sub": user[0].alias, "permissions": permissions},
+                expires_delta=access_token_expires,
+            )
+            token = {"access_token": access_token, "token_type": "bearer", "permissions": permissions}
+            # use websockets to notify the frontend
+            await connection_manager.send_personal_message(request_id, token)
+            # invalidate the the request_id
             cache.invalidate(f"ergoauth_signing_request_{request_id}")
             return { "status": "ok" }
         else:
@@ -140,11 +155,36 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
+@r.websocket("/ws/{request_id}")
+async def websocket_endpoint(websocket: WebSocket, request_id: str):
+    await connection_manager.connect(request_id, websocket)
+    try:
+        while True:
+            # pause loop
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        connection_manager.disconnect(request_id)
+
+
+@r.post("/signup", response_model=User, response_model_exclude_none=True, name="ergoauth:signup")
+async def signup(
+    user: UserSignUp,
+    db=Depends(get_db)
+):
+    try:
+        user = sign_up_new_user(db, user.alias, "__ergoauth_default", user.profile_img_url, user.primary_wallet_address)
+        if not user:
+            return JSONResponse(status_code=status.HTTP_409_CONFLICT, content="Account already exists")
+        return user
+    except Exception as e:
+        return JSONResponse(status_code=400, content=f"ERR::signup::{str(e)}")
+
+
 ##################################
 
 
-@r.post("/token/admin", name="auth:admin-login")
-async def login_admin(
+@r.post("/admin/token", name="auth:admin-login")
+async def admin_login(
     db=Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
     try:
@@ -178,22 +218,8 @@ async def login_admin(
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
-@r.post("/signup", response_model=User, response_model_exclude_none=True, name="auth:signup")
-async def signup(
-    user: UserSignUp,
-    db=Depends(get_db)
-):
-    try:
-        user = sign_up_new_user(db, user.alias, "__ergoauth_default", user.profile_img_url, user.primary_wallet_address)
-        if not user:
-            return JSONResponse(status_code=status.HTTP_409_CONFLICT, content="User already exists")
-        return user
-    except Exception as e:
-        return JSONResponse(status_code=400, content=f"ERR::signup::{str(e)}")
-
-
-@r.post("/signup/admin", name="auth:admin-signup")
-async def signup_admin(
+@r.post("/admin/signup", name="auth:admin-signup")
+async def admin_signup(
     db=Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
     try:

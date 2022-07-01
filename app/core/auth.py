@@ -6,7 +6,7 @@ from db.session import get_db
 from db.models import users as models
 from db.schemas import users as schemas
 from db.schemas.token import TokenData
-from db.crud.users import get_blacklisted_token, get_user_by_alias, create_user, edit_user, set_ergo_addresses_by_user_id
+from db.crud.users import get_blacklisted_token, get_user_by_alias, create_user, edit_user, set_ergo_addresses_by_user_id, get_user_by_primary_wallet_address
 from core import security
 
 
@@ -68,7 +68,11 @@ def authenticate_user(db, alias: str, password: str):
 def sign_up_new_user(db, alias: str, password: str, profile_img_url = None, primary_wallet_address = None):
     user = get_user_by_alias(db, alias)
     if user:
-        return False  # User already exists
+        return False    # User already exists
+    if primary_wallet_address:
+        user = get_user_by_primary_wallet_address(primary_wallet_address)
+        if user:
+            return False    # Address is taken?
     new_user = create_user(
         db,
         schemas.UserCreate(

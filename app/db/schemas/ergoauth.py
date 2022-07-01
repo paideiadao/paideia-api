@@ -12,6 +12,7 @@ class LoginRequestWebResponse(BaseModel):
 
 class LoginRequestMobileResponse(BaseModel):
     address: str
+    verificationId: str
     signingRequestUrl: str
 
 

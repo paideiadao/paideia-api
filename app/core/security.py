@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from config import Config, Network
 CFG = Config[Network]
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token/admin")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/admin/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = CFG.jwtSecret
