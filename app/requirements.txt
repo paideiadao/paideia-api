@@ -1,11 +1,11 @@
+uvicorn
 fastapi
+websockets
 python-multipart
 python-dotenv
-uvicorn
 pydantic
 requests
-psycopg2-binary
-asyncpg
+psycopg2==2.9.3
 databases[postgresql]
 SQLAlchemy
 sqlalchemy-utils
@@ -17,3 +17,4 @@ pytest
 pytest-asyncio
 pytest-mock
 colorlog
+git+https://github.com/ergo-pad/ergo-python-appkit@main

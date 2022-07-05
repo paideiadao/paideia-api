@@ -50,6 +50,7 @@ Config = {
         's3Bucket': os.getenv("S3_BUCKET"),
         's3Key': os.getenv("S3_KEY"),
         'jwtSecret': os.getenv("JWT_SECRET_KEY"),
+        'ergoAuthSeed': os.getenv("ERGOAUTH_SEED"),
     }),
     'mainnet': dotdict({
         'DEBUG': False,
@@ -63,5 +64,6 @@ Config = {
         's3Bucket': os.getenv("S3_BUCKET"),
         's3Key': os.getenv("S3_KEY"),
         'jwtSecret': os.getenv("JWT_SECRET_KEY"),
+        'ergoAuthSeed': os.getenv("ERGOAUTH_SEED"),
     })
 }

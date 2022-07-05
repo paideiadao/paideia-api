@@ -1,3 +1,5 @@
+import time
+import secrets
 import hashlib
 import jwt
 
@@ -8,7 +10,7 @@ from datetime import datetime, timedelta
 from config import Config, Network
 CFG = Config[Network]
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/admin/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = CFG.jwtSecret
@@ -37,3 +39,21 @@ def create_access_token(*, data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+
+# ergoauth stuff
+
+
+def generate_verification_id() -> str:
+    # a UUID for the request and
+    # save the used sigmaBoolean and signing message. The UUID should be
+    # path variable for the reply to address and used to fetch the SigmaBoolean
+    # and signingMessage data
+    return secrets.token_urlsafe()
+
+
+def generate_signing_message() -> str:
+    # we need a message to sign. This message should be unique for our dApp,
+    # never occur twice and should not be predictable, so we use a timestring, a unique name
+    # and a random component
+    return str(secrets.token_urlsafe() + CFG.ergoAuthSeed + str(int(time.time())))

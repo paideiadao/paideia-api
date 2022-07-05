@@ -18,10 +18,16 @@ class UserOut(UserBase):
 
 
 class UserCreate(UserBase):
-    password: str
+    password: str = "__ergoauth_default"
 
     class Config:
         orm_mode = True
+
+
+class UserSignUp(BaseModel):
+    alias: str
+    primary_wallet_address: str
+    profile_img_url: t.Optional[str]
 
 
 class UserEdit(UserBase):

@@ -7,7 +7,7 @@ from fastapi.param_functions import File
 from pydantic import BaseModel
 from starlette.responses import JSONResponse
 from config import Config, Network  # api specific config
-from core.auth import get_current_active_user
+from core.auth import get_current_active_user, get_current_active_superuser
 from cache.cache import cache
 from aws.s3 import S3
 
@@ -47,8 +47,8 @@ class InvalidateCacheRequest(BaseModel):
     key: str
 
 
-@r.post("/force_invalidate_cache", name="cache:invalidate")
-def forceInvalidateCache(req: InvalidateCacheRequest, current_user=Depends(get_current_active_user)):
+@r.post("/force_invalidate_cache", name="util:cache-invalidate")
+def forceInvalidateCache(req: InvalidateCacheRequest, current_user=Depends(get_current_active_superuser)):
     try:
         return {'status': 'success', 'detail': cache.invalidate(req.key)}
     except Exception as e:
