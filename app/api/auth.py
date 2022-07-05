@@ -150,6 +150,9 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
             cache.invalidate(f"ergoauth_signing_request_{request_id}")
             return { "status": "ok" }
         else:
+            # notify frontend on failure
+            permissions = "login_error"
+            await connection_manager.send_personal_message(request_id, {"permissions": permissions})
             return { "status": "failed" }
     except Exception as e:
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
