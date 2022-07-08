@@ -70,7 +70,7 @@ def sign_up_new_user(db, alias: str, password: str, profile_img_url = None, prim
     if user:
         return False    # User already exists
     if primary_wallet_address:
-        user = get_user_by_primary_wallet_address(primary_wallet_address)
+        user = get_user_by_primary_wallet_address(db, primary_wallet_address)
         if user:
             return False    # Address is taken?
     new_user = create_user(

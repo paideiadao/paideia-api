@@ -25,7 +25,10 @@ def get_user_by_alias(db: Session, alias: str) -> schemas.UserBase:
 
 
 def get_user_by_primary_wallet_address(db: Session, primary_wallet_address):
-    return db.query(models.User, models.ErgoAddress).filter(models.User.primary_wallet_address_id == models.ErgoAddress.id).filter(models.ErgoAddress.address == primary_wallet_address).first()
+    user = db.query(models.User, models.ErgoAddress).filter(models.User.primary_wallet_address_id == models.ErgoAddress.id).filter(models.ErgoAddress.address == primary_wallet_address).first()
+    if not user:
+        return user
+    return user[0]
 
 
 def get_users(
