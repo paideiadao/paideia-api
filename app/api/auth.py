@@ -3,6 +3,7 @@ from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 from starlette.responses import JSONResponse
+from sqlalchemy.orm import Session
 from ergo_python_appkit.appkit import ErgoAppKit
 
 from db.crud.users import blacklist_token, get_user_by_primary_wallet_address
@@ -29,8 +30,8 @@ auth_router = r = APIRouter()
 ##################################
 
 
-BASE_ERGOAUTH = "ergoauth://192.168.0.6:8000"
-BASE_URL = "http://192.168.0.6:8000"
+BASE_ERGOAUTH = "ergoauth://192.168.0.15:8000"
+BASE_URL = "http://192.168.0.15:8000"
 
 
 @r.post("/login", response_model=LoginRequestWebResponse, name="ergoauth:login-web")
@@ -62,14 +63,14 @@ async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Dep
             authResponse.signedMessage,
             authResponse.proof
         )
-        user = get_user_by_primary_wallet_address(db, signingRequest["address"])
+        user = create_and_get_user_by_primary_wallet_address(db, signingRequest["address"])
         if verified and user:
             access_token_expires = timedelta(
                 minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
             )
             permissions = "user"
             access_token = security.create_access_token(
-                data={"sub": user[0].alias, "permissions": permissions},
+                data={"sub": user.alias, "permissions": permissions},
                 expires_delta=access_token_expires,
             )
             return {"access_token": access_token, "token_type": "bearer", "permissions": permissions}
@@ -132,7 +133,7 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
             authResponse.signedMessage,
             authResponse.proof
         )
-        user = get_user_by_primary_wallet_address(db, signingRequest["address"])
+        user = create_and_get_user_by_primary_wallet_address(db, signingRequest["address"])
         if verified and user:
             # generate the access token
             access_token_expires = timedelta(
@@ -140,7 +141,7 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
             )
             permissions = "user"
             access_token = security.create_access_token(
-                data={"sub": user[0].alias, "permissions": permissions},
+                data={"sub": user.alias, "permissions": permissions},
                 expires_delta=access_token_expires,
             )
             token = {"access_token": access_token, "token_type": "bearer", "permissions": permissions}
@@ -155,6 +156,7 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
             await connection_manager.send_personal_message(request_id, {"permissions": permissions})
             return { "status": "failed" }
     except Exception as e:
+        print(e)
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
@@ -169,18 +171,28 @@ async def websocket_endpoint(websocket: WebSocket, request_id: str):
         connection_manager.disconnect(request_id)
 
 
-@r.post("/signup", response_model=User, response_model_exclude_none=True, name="ergoauth:signup")
-async def signup(
-    user: UserSignUp,
-    db=Depends(get_db)
-):
-    try:
-        user = sign_up_new_user(db, user.alias, "__ergoauth_default", user.profile_img_url, user.primary_wallet_address)
-        if not user:
-            return JSONResponse(status_code=status.HTTP_409_CONFLICT, content="Account already exists")
+# [DEPRECATED]
+# @r.post("/signup", response_model=User, response_model_exclude_none=True, name="ergoauth:signup")
+# async def signup(
+#     user: UserSignUp,
+#     db=Depends(get_db)
+# ):
+#     try:
+#         user = sign_up_new_user(db, user.alias, "__ergoauth_default", user.profile_img_url, user.primary_wallet_address)
+#         if not user:
+#             return JSONResponse(status_code=status.HTTP_409_CONFLICT, content="Account already exists")
+#         return user
+#     except Exception as e:
+#         return JSONResponse(status_code=400, content=f"ERR::signup::{str(e)}")
+
+
+def create_and_get_user_by_primary_wallet_address(db: Session, primary_wallet_address: str):
+    print(primary_wallet_address)
+    user = get_user_by_primary_wallet_address(db, primary_wallet_address)
+    if user:
         return user
-    except Exception as e:
-        return JSONResponse(status_code=400, content=f"ERR::signup::{str(e)}")
+    user = sign_up_new_user(db, primary_wallet_address, "__ergoauth_default", None, primary_wallet_address)
+    return user
 
 
 ##################################
@@ -242,7 +254,7 @@ async def admin_signup(
         else:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Admin only endpoint",
+                detail="Admin only endpoint - Your account is under review, contact the dev team for details",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         access_token = security.create_access_token(
