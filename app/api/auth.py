@@ -156,7 +156,6 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
             await connection_manager.send_personal_message(request_id, {"permissions": permissions})
             return { "status": "failed" }
     except Exception as e:
-        print(e)
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
@@ -187,7 +186,6 @@ async def websocket_endpoint(websocket: WebSocket, request_id: str):
 
 
 def create_and_get_user_by_primary_wallet_address(db: Session, primary_wallet_address: str):
-    print(primary_wallet_address)
     user = get_user_by_primary_wallet_address(db, primary_wallet_address)
     if user:
         return user
