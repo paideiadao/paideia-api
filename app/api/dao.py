@@ -17,7 +17,7 @@ dao_router = r = APIRouter()
     response_model_exclude_none=True,
     name="dao:all-dao"
 )
-async def dao_list(
+def dao_list(
     db=Depends(get_db),
 ):
     """
@@ -35,7 +35,7 @@ async def dao_list(
     response_model_exclude_none=True,
     name="dao:get-dao"
 )
-async def dao_get(
+def dao_get(
     id: int,
     db=Depends(get_db),
 ):
@@ -49,7 +49,7 @@ async def dao_get(
 
 
 @r.post("/", response_model=Dao, response_model_exclude_none=True, name="dao:create")
-async def dao_create(
+def dao_create(
     dao: CreateOrUpdateDao,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
@@ -69,7 +69,7 @@ async def dao_create(
     response_model_exclude_none=True,
     name="dao:edit-dao"
 )
-async def dao_edit(
+def dao_edit(
     id: int,
     dao: CreateOrUpdateDao,
     db=Depends(get_db),
@@ -90,7 +90,7 @@ async def dao_edit(
     response_model_exclude_none=True,
     name="dao:delete-dao"
 )
-async def dao_delete(
+def dao_delete(
     id: int,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),

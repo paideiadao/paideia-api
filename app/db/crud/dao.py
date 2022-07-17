@@ -8,6 +8,11 @@ from db.models.governance import Governance, GovernanceWhitelist
 from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrUpdateDistribution, CreateOrUpdateFooterSocialLinks, CreateOrUpdateGovernance, CreateOrUpdateTokenHolder, CreateOrUpdateTokenomics, DaoDesign as DaoDesignSchema, Governance as GovernanceSchema, Dao as DaoSchema, Tokenomics as TokenomicsSchema, TokenHolder as TokenHolderSchema, Distribution as DistributionSchema
 
 
+################################
+### CRUD OPERATIONS FOR DAOS ###
+################################
+
+
 def get_dao_governance_whitelist(db: Session, dao_governance_id: int):
     return list(map(lambda x: x.user_id, db.query(GovernanceWhitelist).filter(GovernanceWhitelist.governance_id == dao_governance_id).all()))
 
