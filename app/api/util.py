@@ -17,7 +17,7 @@ util_router = r = APIRouter()
 
 
 @r.post("/upload_file", name="util:upload-file-to-S3")
-async def upload(fileobject: UploadFile = File(...), current_user=Depends(get_current_active_user)):
+def upload(fileobject: UploadFile = File(...), current_user=Depends(get_current_active_user)):
     """
     Upload files to s3 bucket
     """

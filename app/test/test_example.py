@@ -7,7 +7,6 @@ def test_always_passes():
     return True
 
 
-@pytest.mark.asyncio
-async def test_ping():
-    res = await ping()
+def test_ping():
+    res = ping()
     assert res["hello"] == "world"

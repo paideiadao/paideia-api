@@ -9,6 +9,7 @@ from api.users import users_router
 from api.auth import auth_router
 from api.dao import dao_router
 from api.util import util_router
+from api.activities import activity_router
 
 from core.auth import get_current_active_user
 from config import Config, Network
@@ -57,14 +58,16 @@ app.add_middleware(
 
 
 @app.get("/api/ping")
-async def ping():
+def ping():
     return {"hello": "world"}
 
 app.include_router(users_router, prefix="/api/users",
                    tags=["users"], dependencies=[Depends(get_current_active_user)])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(dao_router, prefix="/api/dao", tags=["dao"])
+app.include_router(activity_router, prefix="/api/activities", tags=["activities"])
 app.include_router(util_router, prefix="/api/util", tags=["util"])
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", reload=True, port=8000)
