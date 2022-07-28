@@ -187,7 +187,6 @@ async def websocket_endpoint(websocket: WebSocket, request_id: str):
 
 
 def create_and_get_user_by_primary_wallet_address(db: Session, primary_wallet_address: str):
-    print(primary_wallet_address)
     user = get_user_by_primary_wallet_address(db, primary_wallet_address)
     if user:
         return user
