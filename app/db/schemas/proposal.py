@@ -14,24 +14,27 @@ class CreateOrUpdateAddendum(BaseModel):
     content: t.Optional[str]
 
 
-class CreateOrUpdateProposal(BaseModel):
+class CreateProposal(BaseModel):
     dao_id: int
     user_id: int
     name: str
-    image: t.Optional[str]
+    image_url: t.Optional[str]
     category: t.Optional[str]
     content: t.Optional[str]
     voting_system: t.Optional[str]
     references: t.List[int]  # list of proposal ids
     actions: t.List[dict]
+    tags: t.List[str]
+    attachments: t.List[str]
+    is_proposal: bool
+
+
+class CreateOrUpdateProposal(CreateProposal):
     comments: t.List[CreateOrUpdateComment]
     likes: t.List[int]  # list of user_ids who like
     dislikes: t.List[int]  # list of user_ids who dislike
     followers: t.List[int]  # list of user_ids who follow
-    tags: t.List[str]
-    attachments: t.List[str]
     addendums: t.List[CreateOrUpdateAddendum]
-    is_proposal: bool
 
 
 class Comment(CreateOrUpdateComment):
