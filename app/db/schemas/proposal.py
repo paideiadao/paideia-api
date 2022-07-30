@@ -29,6 +29,10 @@ class CreateProposal(BaseModel):
     is_proposal: bool
 
 
+class UpdateProposalBasic(CreateProposal):
+    pass
+
+
 class CreateOrUpdateProposal(CreateProposal):
     comments: t.List[CreateOrUpdateComment]
     likes: t.List[int]  # list of user_ids who like
@@ -61,3 +65,17 @@ class Proposal(CreateOrUpdateProposal):
 
     class Config:
         orm_mode = True
+
+
+class LikeProposalRequest(BaseModel):
+    user_id: int
+    type: str
+
+
+class FollowProposalRequest(BaseModel):
+    user_id: int
+    type: str
+
+
+class AddReferenceRequest(BaseModel):
+    referred_proposal_id: int

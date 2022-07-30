@@ -1,13 +1,18 @@
+from importlib.resources import contents
 import typing as t
 
 from sqlalchemy.orm import Session
 
 from db.models.proposals import Proposal, ProposalReference, ProposalLike, ProposalFollower, Comment, Addendum
-from db.schemas.proposal import Proposal as ProposalSchema, CreateProposal as CreateProposalSchema, CreateOrUpdateProposal as CreateOrUpdateProposalSchema
+from db.schemas.proposal import Proposal as ProposalSchema, CreateProposal as CreateProposalSchema, UpdateProposalBasic as UpdateProposalBasicSchema, CreateOrUpdateAddendum, CreateOrUpdateComment
 
 #####################################
 ### CRUD OPERATIONS FOR PROPOSALS ###
 #####################################
+
+
+def get_basic_proposal_by_id(db: Session, id: int):
+    return db.query(Proposal).filter(Proposal.id == id).first()
 
 
 def get_likes_by_proposal_id(db: Session, proposal_id: int):
@@ -75,13 +80,27 @@ def set_followers_by_proposal_id(db: Session, proposal_id: int, user_id: int, ty
 
 def get_references_by_proposal_id(db: Session, proposal_id: int):
     db_references = db.query(ProposalReference).filter(
-        ProposalReference.referred_proposal_id == proposal_id
+        ProposalReference.referring_proposal_id == proposal_id
     ).all()
-    references = list(map(lambda x: x.referring_proposal_id, db_references))
+    references = list(map(lambda x: x.referred_proposal_id, db_references))
     return {
         "proposal_id": proposal_id,
         "references": references
     }
+
+
+def add_reference_by_proposal_id(db: Session, user_id: int, proposal_id: int, referred_proposal_id: int):
+    db_proposal = get_basic_proposal_by_id(db, proposal_id)
+    if not db_proposal or db_proposal.user_id != user_id:
+        return None
+    db_reference = ProposalReference(
+        referred_proposal_id=referred_proposal_id,
+        referring_proposal_id=proposal_id
+    )
+    db.add(db_reference)
+    db.commit()
+    db.refresh(db_reference)
+    return db_reference
 
 
 def get_comments_by_proposal_id(db: Session, proposal_id: int):
@@ -90,10 +109,38 @@ def get_comments_by_proposal_id(db: Session, proposal_id: int):
     return db_comments
 
 
+def add_commment_by_proposal_id(db: Session, proposal_id: int, comment: CreateOrUpdateComment):
+    db_comment = Comment(
+        proposal_id=proposal_id,
+        user_id=comment.user_id,
+        parent=comment.parent,
+        comment=comment.comment
+    )
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment
+
+
 def get_addendums_by_proposal_id(db: Session, proposal_id: int):
     db_addendums = db.query(Addendum).filter(
         Addendum.proposal_id == proposal_id).all()
     return db_addendums
+
+
+def add_addendum_by_proposal_id(db: Session, user_id: int, proposal_id: int, addendum: CreateOrUpdateAddendum):
+    db_proposal = get_basic_proposal_by_id(db, proposal_id)
+    if not db_proposal or db_proposal.user_id != user_id:
+        return None
+    db_addendum = Addendum(
+        proposal_id=proposal_id,
+        name=addendum.name,
+        content=addendum.content
+    )
+    db.add(db_addendum)
+    db.commit()
+    db.refresh(db_addendum)
+    return db_addendum
 
 
 def get_proposal_by_id(db: Session, id: int):
@@ -104,6 +151,7 @@ def get_proposal_by_id(db: Session, id: int):
     followers = get_followers_by_proposal_id(db, id)
     references = get_references_by_proposal_id(db, id)
     comments = get_comments_by_proposal_id(db, id)
+    addendums = get_addendums_by_proposal_id(db, id)
     tags = db_proposal.tags["tags_list"] if "tags_list" in db_proposal.tags else []
     attachments = db_proposal.attachments["attachments_list"] if "attachments_list" in db_proposal.attachments else []
     actions = db_proposal.actions["actions_list"] if "actions_list" in db_proposal.actions else []
@@ -124,7 +172,7 @@ def get_proposal_by_id(db: Session, id: int):
         followers=followers["followers"],
         tags=tags,
         attachments=attachments,
-        addendums=[],
+        addendums=addendums,
         date=db_proposal.date,
         is_proposal=db_proposal.is_proposal
     )
@@ -157,13 +205,44 @@ def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     return get_proposal_by_id(db, db_proposal.id)
 
 
+def edit_proposal_basic_by_id(db: Session, user_id: int, id: int, proposal: UpdateProposalBasicSchema):
+    db_proposal = db.query(Proposal).filter(Proposal.id == id).first()
+    if not db_proposal:
+        return None
+
+    # safety check
+    if db_proposal.user_id != user_id or proposal.user_id != user_id:
+        return None
+
+    update_data = proposal.dict(exclude_unset=True)
+
+    if "actions" in update_data:
+        update_data["actions"] = {"actions_list": proposal.actions}
+
+    if "tags" in update_data:
+        update_data["tags"] = {"tags_list": proposal.tags}
+
+    if "attachments" in update_data:
+        update_data["attachements"] = {
+            "attachments_list": proposal.attachments}
+
+    for key, value in update_data.items():
+        setattr(db_proposal, key, value)
+
+    db.add(db_proposal)
+    db.commit()
+    return get_proposal_by_id(db, id)
+
+
 def delete_proposal_by_id(db: Session, id: int):
     proposal = get_proposal_by_id(db, id)
     if not proposal:
         return None
     # delete stuff
-    db.query(ProposalReference).filter(ProposalReference.referred_proposal_id == id or ProposalReference.referring_proposal_id == id).delete()
-    db.query(ProposalFollower).filter(ProposalFollower.proposal_id == id).delete()
+    db.query(ProposalReference).filter(ProposalReference.referred_proposal_id ==
+                                       id or ProposalReference.referring_proposal_id == id).delete()
+    db.query(ProposalFollower).filter(
+        ProposalFollower.proposal_id == id).delete()
     db.query(ProposalLike).filter(ProposalLike.proposal_id == id).delete()
     db.query(Addendum).filter(Addendum.proposal_id == id).delete()
     db.query(Comment).filter(Comment.proposal_id == id).delete()
