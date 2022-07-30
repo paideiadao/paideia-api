@@ -5,9 +5,12 @@ from starlette.responses import JSONResponse
 from db.session import get_db
 from db.schemas.proposal import Proposal, CreateProposal
 from db.crud.proposals import (
-    get_proposal,
+    get_proposal_by_id,
     get_proposals_by_dao_id,
-    create_new_proposal
+    create_new_proposal,
+    delete_proposal_by_id,
+    set_likes_by_proposal_id,
+    set_followers_by_proposal_id
 )
 from core.auth import get_current_active_user, get_current_active_superuser
 
@@ -33,9 +36,9 @@ def get_proposals(dao_id: int, db=Depends(get_db)):
     response_model_exclude_none=True,
     name="proposals:proposal"
 )
-def get_proposal_by_id(proposal_id: int, db=Depends(get_db)):
+def get_proposal(proposal_id: int, db=Depends(get_db)):
     try:
-        proposal = get_proposal(db, proposal_id)
+        proposal = get_proposal_by_id(db, proposal_id)
         if not proposal:
             return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
         return proposal
@@ -56,3 +59,26 @@ def create_proposal(proposal: CreateProposal, db=Depends(get_db), user=Depends(g
         return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+
+
+@r.delete(
+    "/{proposal_id}",
+    response_model=Proposal,
+    response_model_exclude_none=True,
+    name="proposals:delete-proposal"
+)
+def delete_proposal(proposal_id: int, db=Depends(get_db), user=Depends(get_current_active_superuser)):
+    try:
+        proposal = delete_proposal_by_id(db, proposal_id)
+        if not proposal:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
+        return proposal
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+
+
+@r.put(
+    "/test"
+)
+def test(db=Depends(get_db)):
+    return set_followers_by_proposal_id(db, 1, 1, "follow")

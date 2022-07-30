@@ -1,4 +1,3 @@
-from ast import Add
 import typing as t
 
 from sqlalchemy.orm import Session
@@ -24,6 +23,30 @@ def get_likes_by_proposal_id(db: Session, proposal_id: int):
     }
 
 
+def set_likes_by_proposal_id(db: Session, proposal_id: int, user_id: int, type: str):
+    if type not in ("like", "dislike", "remove"):
+        return None
+    db.query(ProposalLike).filter(ProposalLike.proposal_id == proposal_id).filter(
+        ProposalLike.user_id == user_id).delete()
+    if type == "like":
+        db_like = ProposalLike(
+            proposal_id=proposal_id,
+            user_id=user_id,
+            liked=True
+        )
+        db.add(db_like)
+    if type == "dislike":
+        db_like = ProposalLike(
+            proposal_id=proposal_id,
+            user_id=user_id,
+            liked=False
+        )
+        db.add(db_like)
+
+    db.commit()
+    return get_likes_by_proposal_id(db, proposal_id)
+
+
 def get_followers_by_proposal_id(db: Session, proposal_id: int):
     db_followers = db.query(ProposalFollower).filter(
         ProposalFollower.proposal_id == proposal_id).all()
@@ -32,6 +55,22 @@ def get_followers_by_proposal_id(db: Session, proposal_id: int):
         "proposal_id": proposal_id,
         "followers": followers
     }
+
+
+def set_followers_by_proposal_id(db: Session, proposal_id: int, user_id: int, type: str):
+    if type not in ("follow", "unfollow"):
+        return None
+    db.query(ProposalFollower).filter(ProposalFollower.proposal_id == proposal_id).filter(
+        ProposalFollower.user_id == user_id).delete()
+    if type == "follow":
+        db_follow = ProposalFollower(
+            proposal_id=proposal_id,
+            user_id=user_id,
+        )
+        db.add(db_follow)
+
+    db.commit()
+    return get_followers_by_proposal_id(db, proposal_id)
 
 
 def get_references_by_proposal_id(db: Session, proposal_id: int):
@@ -57,7 +96,7 @@ def get_addendums_by_proposal_id(db: Session, proposal_id: int):
     return db_addendums
 
 
-def get_proposal(db: Session, id: int):
+def get_proposal_by_id(db: Session, id: int):
     db_proposal = db.query(Proposal).filter(Proposal.id == id).first()
     if not db_proposal:
         return None
@@ -94,7 +133,7 @@ def get_proposal(db: Session, id: int):
 
 def get_proposals_by_dao_id(db: Session, dao_id: int):
     db_proposals = db.query(Proposal).filter(Proposal.dao_id == dao_id).all()
-    proposals = list(map(lambda x: get_proposal(db, x.id), db_proposals))
+    proposals = list(map(lambda x: get_proposal_by_id(db, x.id), db_proposals))
     return proposals
 
 
@@ -115,4 +154,19 @@ def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     db.add(db_proposal)
     db.commit()
     db.refresh(db_proposal)
-    return get_proposal(db, db_proposal.id)
+    return get_proposal_by_id(db, db_proposal.id)
+
+
+def delete_proposal_by_id(db: Session, id: int):
+    proposal = get_proposal_by_id(db, id)
+    if not proposal:
+        return None
+    # delete stuff
+    db.query(ProposalReference).filter(ProposalReference.referred_proposal_id == id or ProposalReference.referring_proposal_id == id).delete()
+    db.query(ProposalFollower).filter(ProposalFollower.proposal_id == id).delete()
+    db.query(ProposalLike).filter(ProposalLike.proposal_id == id).delete()
+    db.query(Addendum).filter(Addendum.proposal_id == id).delete()
+    db.query(Comment).filter(Comment.proposal_id == id).delete()
+    db.query(Proposal).filter(Proposal.id == id).delete()
+    db.commit()
+    return proposal
