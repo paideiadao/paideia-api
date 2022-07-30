@@ -6,7 +6,7 @@ from db.session import get_db
 from db.models import users as models
 from db.schemas import users as schemas
 from db.schemas.token import TokenData
-from db.crud.users import get_blacklisted_token, get_user_by_alias, create_user, edit_user, set_ergo_addresses_by_user_id, get_user_by_primary_wallet_address
+from db.crud.users import get_blacklisted_token, get_user_by_alias, create_user, get_user_by_primary_wallet_address
 from core import security
 
 
@@ -65,36 +65,25 @@ def authenticate_user(db, alias: str, password: str):
     return user
 
 
-def sign_up_new_user(db, alias: str, password: str, profile_img_url = None, primary_wallet_address = None):
+def sign_up_new_user(db, alias: str, password: str, primary_wallet_address=None):
+    # these checks are redundant as db already enforces unique constraints
     user = get_user_by_alias(db, alias)
     if user:
-        return False    # User already exists
+        return False # User already exists
     if primary_wallet_address:
         user = get_user_by_primary_wallet_address(db, primary_wallet_address)
         if user:
-            return False    # Address is taken?
+            return False # Address is taken?
+
     new_user = create_user(
         db,
         schemas.UserCreate(
             alias=alias,
             password=password,
-            profile_img_url=profile_img_url,
+            primary_wallet_address=primary_wallet_address,
             is_active=True,
             is_superuser=False,
         ),
     )
-    if primary_wallet_address:
-        user_id = new_user.id
-        ergo_addresses = set_ergo_addresses_by_user_id(db, user_id, [primary_wallet_address])
-        primary_wallet_address_id = ergo_addresses[0].id
-        edited_user = edit_user(
-            db,
-            user_id,
-            schemas.UserEdit(
-                alias=alias,
-                primary_wallet_address_id=primary_wallet_address_id,
-            )
-        )
-        return edited_user
-        
+
     return new_user

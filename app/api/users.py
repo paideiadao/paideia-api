@@ -17,6 +17,7 @@ from db.crud.users import (
 from db.schemas.users import UserCreate, UserEdit, User, UserDetails, UserProfileSettings, UpdateUserDetails, UpdateUserProfileSettings, FollowUserRequest
 from core.auth import get_current_active_user, get_current_active_superuser
 
+
 users_router = r = APIRouter()
 
 

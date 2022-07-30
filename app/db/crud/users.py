@@ -25,9 +25,17 @@ def get_user_by_alias(db: Session, alias: str) -> schemas.UserBase:
     return db.query(models.User).filter(models.User.alias == alias).first()
 
 
-def get_user_by_primary_wallet_address(db: Session, primary_wallet_address):
+def get_user_by_primary_wallet_address(db: Session, primary_wallet_address: str):
     user = db.query(models.User, models.ErgoAddress).filter(models.User.primary_wallet_address_id ==
                                                             models.ErgoAddress.id).filter(models.ErgoAddress.address == primary_wallet_address).first()
+    if not user:
+        return user
+    return user[0]
+
+
+def get_user_by_wallet_addresses(db: Session, addresses: t.List[str]):
+    user = db.query(models.User, models.ErgoAddress).filter(
+        models.User.id == models.ErgoAddress.user_id).filter(models.ErgoAddress.address.in_(addresses)).first()
     if not user:
         return user
     return user[0]
@@ -40,10 +48,10 @@ def get_users(
 
 
 def create_user(db: Session, user: schemas.UserCreate):
+    # todo: insert primary wallet address
     hashed_password = get_password_hash(user.password)
     db_user = models.User(
         alias=user.alias,
-        primary_wallet_address_id=user.primary_wallet_address_id,
         is_active=user.is_active,
         is_superuser=user.is_superuser,
         hashed_password=hashed_password,
@@ -65,25 +73,11 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
-def delete_user(db: Session, user_id: int):
-    user = get_user(db, user_id)
-    if not user:
-        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
-    db.delete(user)
-    db.query(models.UserDetails).filter(
-        models.UserDetails.user_id == user_id).delete()
-    db.query(models.UserProfileSettings).filter(
-        models.UserProfileSettings.user_id == user_id).delete()
-    db.query(models.UserFollower).filter(or_(models.UserFollower.followee_id ==
-                                             user_id, models.UserFollower.follower_id == user_id)).delete()
-    db.commit()
-    return user
-
-
 def edit_user(
-    db: Session, user_id: int, user: schemas.UserEdit
+    db: Session, id: int, user: schemas.UserEdit
 ) -> schemas.User:
-    db_user = get_user(db, user_id)
+
+    db_user = get_user(db, id)
     if not db_user:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
     update_data = user.dict(exclude_unset=True)
@@ -99,6 +93,22 @@ def edit_user(
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+def delete_user(db: Session, user_id: int):
+    user = get_user(db, user_id)
+    if not user:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
+    db.delete(user)
+    db.query(models.UserDetails).filter(
+        models.UserDetails.user_id == user_id).delete()
+    db.query(models.UserProfileSettings).filter(
+        models.UserProfileSettings.user_id == user_id).delete()
+    db.query(models.UserFollower).filter(or_(models.UserFollower.followee_id ==
+                                             user_id, models.UserFollower.follower_id == user_id)).delete()
+    db.commit()
+    return user
+
 
 
 def get_followers_by_user_id(db: Session, user_id: int):
@@ -142,10 +152,11 @@ def get_user_profile_settings(db: Session, user_id: int):
 
 
 def edit_user_profile(db: Session, user_id: int, user_details: schemas.UpdateUserDetails):
-    db_profile = db.query(models.UserDetails).filter(models.UserDetails.user_id == user_id).first()
+    db_profile = db.query(models.UserDetails).filter(
+        models.UserDetails.user_id == user_id).first()
     if not db_profile:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
-    
+
     update_data = user_details.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_profile, key, value)

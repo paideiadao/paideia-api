@@ -40,7 +40,6 @@ async def ergoauth_login_web(
 ):
     try:
         verificationId = generate_verification_id()
-        # update url on deployment
         tokenUrl = f"{BASE_URL}/api/auth/token/{verificationId}"
         ret = LoginRequestWebResponse(
             address=address.address,
@@ -63,7 +62,8 @@ async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Dep
             authResponse.signedMessage,
             authResponse.proof
         )
-        user = create_and_get_user_by_primary_wallet_address(db, signingRequest["address"])
+        user = create_and_get_user_by_primary_wallet_address(
+            db, signingRequest["address"])
         if verified and user:
             access_token_expires = timedelta(
                 minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -102,9 +102,10 @@ async def ergoauth_login_mobile(
             sigmaBoolean=sigmaBoolean,
             replyTo=replyTo
         )
-        cache.set(f"ergoauth_signing_request_{verificationId}", ergoAuthRequest.dict())
+        cache.set(
+            f"ergoauth_signing_request_{verificationId}", ergoAuthRequest.dict())
         return LoginRequestMobileResponse(
-            address=address.address, 
+            address=address.address,
             verificationId=verificationId,
             signingRequestUrl=signingRequestUrl
         )
@@ -133,7 +134,8 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
             authResponse.signedMessage,
             authResponse.proof
         )
-        user = create_and_get_user_by_primary_wallet_address(db, signingRequest["address"])
+        user = create_and_get_user_by_primary_wallet_address(
+            db, signingRequest["address"])
         if verified and user:
             # generate the access token
             access_token_expires = timedelta(
@@ -144,17 +146,18 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
                 data={"sub": user.alias, "permissions": permissions},
                 expires_delta=access_token_expires,
             )
-            token = {"access_token": access_token, "token_type": "bearer", "permissions": permissions}
+            token = {"access_token": access_token,
+                     "token_type": "bearer", "permissions": permissions}
             # use websockets to notify the frontend
             await connection_manager.send_personal_message("ergoauth_" + request_id, token)
             # invalidate the the request_id
             cache.invalidate(f"ergoauth_signing_request_{request_id}")
-            return { "status": "ok" }
+            return {"status": "ok"}
         else:
             # notify frontend on failure
             permissions = "login_error"
             await connection_manager.send_personal_message("ergoauth_" + request_id, {"permissions": permissions})
-            return { "status": "failed" }
+            return {"status": "failed"}
     except Exception as e:
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
@@ -189,7 +192,8 @@ def create_and_get_user_by_primary_wallet_address(db: Session, primary_wallet_ad
     user = get_user_by_primary_wallet_address(db, primary_wallet_address)
     if user:
         return user
-    user = sign_up_new_user(db, primary_wallet_address, "__ergoauth_default", None, primary_wallet_address)
+    user = sign_up_new_user(db, primary_wallet_address,
+                            "__ergoauth_default", primary_wallet_address)
     return user
 
 

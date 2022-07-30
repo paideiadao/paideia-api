@@ -7,7 +7,7 @@ import typing as t
 
 class UserBase(BaseModel):
     alias: str
-    primary_wallet_address_id: t.Optional[int]
+    primary_wallet_address: t.Optional[str]
     is_active: bool = True
     is_superuser: bool = False
 
@@ -51,11 +51,6 @@ class UpdateUserDetails(BaseModel):
     social_links: dict
 
 
-class FollowUserRequest(BaseModel):
-    user_id: int
-    type: str
-
-
 class UserDetails(UpdateUserDetails):
     id: int
     user_id: int
@@ -76,6 +71,11 @@ class UserProfileSettings(UpdateUserProfileSettings):
 
     class Config:
         orm_mode = True
+
+
+class FollowUserRequest(BaseModel):
+    user_id: int
+    type: str
 
 
 class CreateErgoAddress(BaseModel):
