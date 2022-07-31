@@ -17,5 +17,12 @@ class ConnectionManager:
         if id in self.active_connections:
             await self.active_connections[id].send_json(message)
 
+    async def send_personal_message_by_substring_matcher(self, key: str, message):
+        # sends message to all matching web socket ids
+        for id in self.active_connections:
+            # if key is substring
+            if key in id:
+                await self.active_connections[id].send_json(message)
+
 
 connection_manager = ConnectionManager()

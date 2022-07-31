@@ -10,7 +10,7 @@ class Activity(Base):
     __tablename__ = "activity_log"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String)
+    user_id = Column(Integer)
     img_url = Column(String)
     action = Column(String)
     value = Column(String)

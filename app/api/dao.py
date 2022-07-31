@@ -43,7 +43,10 @@ def dao_get(
     Get dao
     """
     try:
-        return get_dao(db, id)
+        dao = get_dao(db, id)
+        if not dao:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="dao not found")
+        return dao
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
@@ -79,7 +82,10 @@ def dao_edit(
     edit existing dao
     """
     try:
-        return edit_dao(db, id, dao)
+        dao = edit_dao(db, id, dao)
+        if not dao:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="dao not found")
+        return dao
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
@@ -99,6 +105,9 @@ def dao_delete(
     delete dao
     """
     try:
-        return delete_dao(db, id)
+        dao = delete_dao(db, id)
+        if not dao:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="dao not found")
+        return dao
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
