@@ -1,5 +1,6 @@
 import typing as t
-from fastapi import APIRouter, Depends, status
+import random
+from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 from starlette.responses import JSONResponse
 
 from db.session import get_db
@@ -7,6 +8,7 @@ from db.schemas.proposal import Proposal, CreateProposal, LikeProposalRequest, F
 from db.crud.proposals import (
     get_proposal_by_id,
     get_proposals_by_dao_id,
+    get_comments_by_proposal_id,
     create_new_proposal,
     delete_proposal_by_id,
     set_likes_by_proposal_id,
@@ -17,6 +19,8 @@ from db.crud.proposals import (
     add_reference_by_proposal_id
 )
 from core.auth import get_current_active_user, get_current_active_superuser
+
+from websocket.connection_manager import connection_manager
 
 proposal_router = r = APIRouter()
 
@@ -112,10 +116,14 @@ def follow_proposal(proposal_id: int, req: FollowProposalRequest, db=Depends(get
     "/comment/{proposal_id}",
     name="proposals:comment-proposal"
 )
-def comment_proposal(proposal_id: int, comment: CreateOrUpdateComment, db=Depends(get_db), user=Depends(get_current_active_user)):
+async def comment_proposal(proposal_id: int, comment: CreateOrUpdateComment, db=Depends(get_db), user=Depends(get_current_active_user)):
     try:
         if comment.user_id == user.id:
-            return add_commment_by_proposal_id(db, proposal_id, comment)
+            ret = add_commment_by_proposal_id(db, proposal_id, comment)
+            # refresh active connections
+            await connection_manager.send_personal_message_by_substring_matcher(
+                "proposal_comments_" + str(proposal_id), {"comments": get_comments_by_proposal_id(db, proposal_id)})
+            return ret
         return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
@@ -125,7 +133,7 @@ def comment_proposal(proposal_id: int, comment: CreateOrUpdateComment, db=Depend
     "/addendum/{proposal_id}",
     name="proposals:addendum-proposal"
 )
-def comment_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum, db=Depends(get_db), user=Depends(get_current_active_user)):
+def create_addendum_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum, db=Depends(get_db), user=Depends(get_current_active_user)):
     try:
         addendum = add_addendum_by_proposal_id(
             db, user.id, proposal_id, addendum)
@@ -165,3 +173,16 @@ def delete_proposal(proposal_id: int, db=Depends(get_db), user=Depends(get_curre
         return proposal
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+
+
+@r.websocket("/ws/{proposal_id}")
+async def websocket_endpoint(websocket: WebSocket, proposal_id: str):
+    random_key = "proposal_comments_" + \
+        proposal_id + "_" + str(random.random())
+    await connection_manager.connect(random_key, websocket)
+    try:
+        while True:
+            # pause loop
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        connection_manager.disconnect(random_key)

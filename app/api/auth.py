@@ -146,14 +146,14 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
             )
             token = {"access_token": access_token, "token_type": "bearer", "permissions": permissions}
             # use websockets to notify the frontend
-            await connection_manager.send_personal_message(request_id, token)
+            await connection_manager.send_personal_message("ergoauth_" + request_id, token)
             # invalidate the the request_id
             cache.invalidate(f"ergoauth_signing_request_{request_id}")
             return { "status": "ok" }
         else:
             # notify frontend on failure
             permissions = "login_error"
-            await connection_manager.send_personal_message(request_id, {"permissions": permissions})
+            await connection_manager.send_personal_message("ergoauth_" + request_id, {"permissions": permissions})
             return { "status": "failed" }
     except Exception as e:
         print(e)
@@ -162,13 +162,13 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
 
 @r.websocket("/ws/{request_id}")
 async def websocket_endpoint(websocket: WebSocket, request_id: str):
-    await connection_manager.connect(request_id, websocket)
+    await connection_manager.connect("ergoauth_" + request_id, websocket)
     try:
         while True:
             # pause loop
             await websocket.receive_text()
     except WebSocketDisconnect:
-        connection_manager.disconnect(request_id)
+        connection_manager.disconnect("ergoauth_" + request_id)
 
 
 # [DEPRECATED]
