@@ -19,7 +19,6 @@ from db.crud.proposals import (
     add_reference_by_proposal_id
 )
 from core.auth import get_current_active_user, get_current_active_superuser
-
 from websocket.connection_manager import connection_manager
 
 proposal_router = r = APIRouter()
