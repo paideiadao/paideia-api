@@ -11,9 +11,12 @@ from api.dao import dao_router
 from api.util import util_router
 from api.activities import activity_router
 from api.proposals import proposal_router
+from api.notifications import notification_router
 
 from core.auth import get_current_active_user
 from config import Config, Network
+
+
 CFG = Config[Network]
 DATABASE_URL = CFG.connectionString
 
@@ -38,10 +41,12 @@ async def startup():
 async def shutdown():
     await database.disconnect()
 
+
 # origins = ["*"]
 origins = [
     "https://*.paideia.im",
 ]
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -51,6 +56,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # catch all route (useful?)
 # @app.api_route("/{path_name:path}", methods=["GET"])
@@ -62,12 +68,14 @@ app.add_middleware(
 def ping():
     return {"hello": "world"}
 
+
 app.include_router(users_router, prefix="/api/users",
                    tags=["users"], dependencies=[Depends(get_current_active_user)])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(dao_router, prefix="/api/dao", tags=["dao"])
 app.include_router(proposal_router, prefix="/api/proposals", tags=["proposals"])
 app.include_router(activity_router, prefix="/api/activities", tags=["activities"])
+app.include_router(notification_router, prefix="/api/notificatons", tags=["notifications"])
 app.include_router(util_router, prefix="/api/util", tags=["util"])
 
 
