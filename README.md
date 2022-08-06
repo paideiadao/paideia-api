@@ -4,7 +4,7 @@
 
 ![Build Test](https://github.com/ergo-pad/paideia-api/actions/workflows/build_test.yml/badge.svg?branch=dev)
 
-## rest-based backend for ergopad.io
+## rest-based backend for paideia.im
 - FastAPI Python
 
 
