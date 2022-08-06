@@ -8,7 +8,6 @@ import typing as t
 class UserBase(BaseModel):
     alias: str
     primary_wallet_address_id: t.Optional[int]
-    profile_img_url: t.Optional[str]
     is_active: bool = True
     is_superuser: bool = False
 
@@ -27,7 +26,6 @@ class UserCreate(UserBase):
 class UserSignUp(BaseModel):
     alias: str
     primary_wallet_address: str
-    profile_img_url: t.Optional[str]
 
 
 class UserEdit(UserBase):

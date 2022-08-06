@@ -42,7 +42,6 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(
         alias=user.alias,
         primary_wallet_address_id=user.primary_wallet_address_id,
-        profile_img_url=user.profile_img_url,
         is_active=user.is_active,
         is_superuser=user.is_superuser,
         hashed_password=hashed_password,
