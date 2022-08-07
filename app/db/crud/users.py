@@ -1,5 +1,6 @@
 from fastapi import status
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import or_
 from starlette.responses import JSONResponse
 import typing as t
 
@@ -25,7 +26,8 @@ def get_user_by_alias(db: Session, alias: str) -> schemas.UserBase:
 
 
 def get_user_by_primary_wallet_address(db: Session, primary_wallet_address):
-    user = db.query(models.User, models.ErgoAddress).filter(models.User.primary_wallet_address_id == models.ErgoAddress.id).filter(models.ErgoAddress.address == primary_wallet_address).first()
+    user = db.query(models.User, models.ErgoAddress).filter(models.User.primary_wallet_address_id ==
+                                                            models.ErgoAddress.id).filter(models.ErgoAddress.address == primary_wallet_address).first()
     if not user:
         return user
     return user[0]
@@ -49,6 +51,17 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    # create empty configs for new user
+    db_user_details = models.UserDetails(
+        user_id=db_user.id,
+        name=db_user.alias,
+    )
+    db_user_profile_settings = models.UserProfileSettings(
+        user_id=db_user.id,
+    )
+    db.add(db_user_details)
+    db.add(db_user_profile_settings)
+    db.commit()
     return db_user
 
 
@@ -57,6 +70,12 @@ def delete_user(db: Session, user_id: int):
     if not user:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
     db.delete(user)
+    db.query(models.UserDetails).filter(
+        models.UserDetails.user_id == user_id).delete()
+    db.query(models.UserProfileSettings).filter(
+        models.UserProfileSettings.user_id == user_id).delete()
+    db.query(models.UserFollower).filter(or_(models.UserFollower.followee_id ==
+                                             user_id, models.UserFollower.follower_id == user_id)).delete()
     db.commit()
     return user
 
@@ -80,6 +99,92 @@ def edit_user(
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+def get_followers_by_user_id(db: Session, user_id: int):
+    followers = list(map(lambda x: x.follower_id, db.query(
+        models.UserFollower).filter(models.UserFollower.followee_id == user_id).all()))
+    following = list(map(lambda x: x.followee_id, db.query(
+        models.UserFollower).filter(models.UserFollower.follower_id == user_id).all()))
+    return {
+        "followers": followers,
+        "following": following
+    }
+
+
+def get_user_profile(db: Session, user_id: int):
+    db_profile = db.query(models.UserDetails).filter(
+        models.UserDetails.user_id == user_id).first()
+    if not db_profile:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
+    follower_data = get_followers_by_user_id(db, user_id)
+    return schemas.UserDetails(
+        id=db_profile.id,
+        user_id=db_profile.user_id,
+        name=db_profile.name,
+        profile_img_url=db_profile.profile_img_url,
+        bio=db_profile.bio,
+        level=db_profile.level,
+        xp=db_profile.xp,
+        followers=follower_data["followers"],
+        following=follower_data["following"],
+        social_links=db_profile.social_links,
+    )
+
+
+def get_user_profile_settings(db: Session, user_id: int):
+    db_settings = db.query(models.UserProfileSettings).filter(
+        models.UserProfileSettings.user_id == user_id
+    ).first()
+    if not db_settings:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
+    return db_settings
+
+
+def edit_user_profile(db: Session, user_id: int, user_details: schemas.UpdateUserDetails):
+    db_profile = get_user_profile(db, user_id)
+    if not db_profile:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
+    update_data = user_details.dict(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_profile, key, value)
+
+    db.add(db_profile)
+    db.commit()
+    db.refresh(db_profile)
+    return db_profile
+
+
+def edit_user_profile_settings(db: Session, user_id: int, user_settings: schemas.UpdateUserProfileSettings):
+    db_settings = get_user_profile_settings(db, user_id)
+    if not db_settings:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
+    update_data = user_settings.dict(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_settings, key, value)
+
+    db.add(db_settings)
+    db.commit()
+    db.refresh(db_settings)
+    return db_settings
+
+
+def update_user_follower(db: Session, user_id: int, follow_request: schemas.FollowUserRequest):
+    if follow_request.type not in ("follow", "unfollow"):
+        return None
+    # delete older entry if exists
+    db.query(models.UserFollower).filter(models.UserFollower.followee_id ==
+                                         follow_request.user_id).filter(models.UserFollower.follower_id == user_id).delete()
+    if follow_request.type == "follow":
+        db_follow = models.UserFollower(
+            followee_id=follow_request.user_id,
+            follower_id=user_id,
+        )
+        db.add(db_follow)
+    db.commit()
+    return get_followers_by_user_id(db, user_id)
 
 
 def get_ergo_addresses_by_user_id(db: Session, user_id: int):

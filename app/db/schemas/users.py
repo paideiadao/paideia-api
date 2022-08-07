@@ -42,6 +42,42 @@ class User(UserBase):
         orm_mode = True
 
 
+class UpdateUserDetails(BaseModel):
+    name: t.Optional[str]
+    profile_img_url: t.Optional[str]
+    bio: t.Optional[str]
+    level: int = 0
+    xp: int = 0
+    social_links: dict
+
+
+class FollowUserRequest(BaseModel):
+    user_id: int
+    type: str
+
+
+class UserDetails(UpdateUserDetails):
+    id: int
+    user_id: int
+    followers: t.List[int]
+    following: t.List[int]
+
+    class Config:
+        orm_mode = True
+
+
+class UpdateUserProfileSettings(BaseModel):
+    settings: dict
+
+
+class UserProfileSettings(UpdateUserProfileSettings):
+    id: int
+    user_id: int
+
+    class Config:
+        orm_mode = True
+
+
 class CreateErgoAddress(BaseModel):
     user_id: int
     address: str

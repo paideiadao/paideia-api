@@ -1,6 +1,7 @@
 import typing as t
 
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import or_
 
 from db.models.proposals import Proposal, ProposalReference, ProposalLike, ProposalFollower, Comment, Addendum
 from db.schemas.proposal import Proposal as ProposalSchema, CreateProposal as CreateProposalSchema, UpdateProposalBasic as UpdateProposalBasicSchema, CreateOrUpdateAddendum, CreateOrUpdateComment
@@ -238,8 +239,8 @@ def delete_proposal_by_id(db: Session, id: int):
     if not proposal:
         return None
     # delete stuff
-    db.query(ProposalReference).filter(ProposalReference.referred_proposal_id ==
-                                       id or ProposalReference.referring_proposal_id == id).delete()
+    db.query(ProposalReference).filter(or_(ProposalReference.referred_proposal_id ==
+                                       id, ProposalReference.referring_proposal_id == id)).delete()
     db.query(ProposalFollower).filter(
         ProposalFollower.proposal_id == id).delete()
     db.query(ProposalLike).filter(ProposalLike.proposal_id == id).delete()
