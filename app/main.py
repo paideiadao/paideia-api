@@ -69,8 +69,7 @@ def ping():
     return {"hello": "world"}
 
 
-app.include_router(users_router, prefix="/api/users",
-                   tags=["users"], dependencies=[Depends(get_current_active_user)])
+app.include_router(users_router, prefix="/api/users", tags=["users"])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(dao_router, prefix="/api/dao", tags=["dao"])
 app.include_router(proposal_router, prefix="/api/proposals", tags=["proposals"])
