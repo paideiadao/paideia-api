@@ -21,7 +21,7 @@ def get_user(db: Session, user_id: int):
     return user
 
 
-def get_user_by_alias(db: Session, alias: str) -> schemas.UserBase:
+def get_user_by_alias(db: Session, alias: str) -> schemas.UserOut:
     return db.query(models.User).filter(models.User.alias == alias).first()
 
 
@@ -48,7 +48,6 @@ def get_users(
 
 
 def create_user(db: Session, user: schemas.UserCreate):
-    # todo: insert primary wallet address
     hashed_password = get_password_hash(user.password)
     db_user = models.User(
         alias=user.alias,
@@ -59,6 +58,12 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    # insert primary wallet address
+    if user.primary_wallet_address:
+        addresses = set_ergo_addresses_by_user_id(
+            db, db_user.id, [user.primary_wallet_address])
+        setattr(db_user, "primary_wallet_address_id", addresses[0].id)
+        db.add(db_user)
     # create empty configs for new user
     db_user_details = models.UserDetails(
         user_id=db_user.id,
@@ -100,6 +105,8 @@ def delete_user(db: Session, user_id: int):
     if not user:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
     db.delete(user)
+    db.query(models.ErgoAddress).filter(
+        models.ErgoAddress.user_id == user_id).delete()
     db.query(models.UserDetails).filter(
         models.UserDetails.user_id == user_id).delete()
     db.query(models.UserProfileSettings).filter(

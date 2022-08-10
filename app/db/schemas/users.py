@@ -3,20 +3,21 @@ import typing as t
 
 
 ### SCHEMAS FOR USERS ###
-
+# Note: alias by default is the primary wallet address
+# except for admin accounts
 
 class UserBase(BaseModel):
     alias: str
-    primary_wallet_address: t.Optional[str]
     is_active: bool = True
     is_superuser: bool = False
 
 
 class UserOut(UserBase):
-    pass
+    primary_wallet_address_id: t.Optional[int]
 
 
 class UserCreate(UserBase):
+    primary_wallet_address: t.Optional[str]
     password: str = "__ergoauth_default"
 
     class Config:
@@ -29,13 +30,13 @@ class UserSignUp(BaseModel):
 
 
 class UserEdit(UserBase):
-    password: t.Optional[str] = None
+    password: t.Optional[str]
 
     class Config:
         orm_mode = True
 
 
-class User(UserBase):
+class User(UserOut):
     id: int
 
     class Config:
