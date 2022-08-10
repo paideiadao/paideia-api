@@ -110,7 +110,6 @@ def delete_user(db: Session, user_id: int):
     return user
 
 
-
 def get_followers_by_user_id(db: Session, user_id: int):
     followers = list(map(lambda x: x.follower_id, db.query(
         models.UserFollower).filter(models.UserFollower.followee_id == user_id).all()))

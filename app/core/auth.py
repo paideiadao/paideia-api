@@ -69,11 +69,11 @@ def sign_up_new_user(db, alias: str, password: str, primary_wallet_address=None)
     # these checks are redundant as db already enforces unique constraints
     user = get_user_by_alias(db, alias)
     if user:
-        return False # User already exists
+        return False  # User already exists
     if primary_wallet_address:
         user = get_user_by_primary_wallet_address(db, primary_wallet_address)
         if user:
-            return False # Address is taken?
+            return False  # Address is taken?
 
     new_user = create_user(
         db,

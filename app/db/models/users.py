@@ -1,4 +1,3 @@
-from email.policy import default
 from sqlalchemy import JSON, Boolean, Column, Integer, String, DateTime
 from sqlalchemy.sql import func
 
