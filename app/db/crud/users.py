@@ -25,9 +25,9 @@ def get_user_by_alias(db: Session, alias: str) -> schemas.UserOut:
     return db.query(models.User).filter(models.User.alias == alias).first()
 
 
-def get_user_by_primary_wallet_address(db: Session, primary_wallet_address: str):
-    user = db.query(models.User, models.ErgoAddress).filter(models.User.primary_wallet_address_id ==
-                                                            models.ErgoAddress.id).filter(models.ErgoAddress.address == primary_wallet_address).first()
+def get_user_by_wallet_address(db: Session, wallet_address: str):
+    user = db.query(models.User, models.ErgoAddress).filter(
+        models.ErgoAddress.address == wallet_address).first()
     if not user:
         return user
     return user[0]
@@ -39,6 +39,13 @@ def get_user_by_wallet_addresses(db: Session, addresses: t.List[str]):
     if not user:
         return user
     return user[0]
+
+
+def get_primary_wallet_address_by_user_id(db: Session, user_id: int):
+    return db.query(models.User, models.ErgoAddress).filter(
+        models.User.id == user_id).filter(
+            models.User.id == models.ErgoAddress.user_id).filter(
+                models.User.primary_wallet_address_id == models.ErgoAddress.id).first()[1].address
 
 
 def get_users(
@@ -115,6 +122,19 @@ def delete_user(db: Session, user_id: int):
                                              user_id, models.UserFollower.follower_id == user_id)).delete()
     db.commit()
     return user
+
+
+def get_user_address_config(db: Session, user_id: int):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
+
+    addresses = get_ergo_addresses_by_user_id(db, user_id)
+    return schemas.UserAddressConfig(
+        id=user_id,
+        alias=user.alias,
+        registered_addresses=list(map(lambda x: x.address, addresses))
+    )
 
 
 def get_followers_by_user_id(db: Session, user_id: int):
@@ -209,20 +229,39 @@ def get_ergo_addresses_by_user_id(db: Session, user_id: int):
 
 
 def set_ergo_addresses_by_user_id(db: Session, user_id: int, addresses: t.List[str]):
-    # delete older entries if they exist
-    db.query(models.ErgoAddress).filter(
-        models.ErgoAddress.user_id == user_id).delete()
-    db.commit()
+    # get older entries if they exist
+    old_addresses = list(map(lambda x: x.address, get_ergo_addresses_by_user_id(db, user_id)))
     # add new addresses
     for address in addresses:
-        db_ergo_address = models.ErgoAddress(
-            user_id=user_id,
-            address=address,
-            is_smart_contract=False,
-        )
-        db.add(db_ergo_address)
+        if address not in old_addresses:
+            db_ergo_address = models.ErgoAddress(
+                user_id=user_id,
+                address=address,
+                is_smart_contract=False,
+            )
+            db.add(db_ergo_address)
     db.commit()
     return get_ergo_addresses_by_user_id(db, user_id)
+
+
+def update_primary_address_for_user(db: Session, user_id: int, new_address: str):
+    db_user = get_user(db, user_id)
+    db_addresses = get_ergo_addresses_by_user_id(db, user_id)
+    addresses = list(map(lambda x: x.address, db_addresses))
+    addresses.append(new_address)
+    addresses = list(set(addresses))
+    # update ergo_addresses table
+    addresses = set_ergo_addresses_by_user_id(db, user_id, addresses)
+    # get primary address id
+    for address in addresses:
+        if address.address == new_address:
+            setattr(db_user, "alias", new_address)
+            setattr(db_user, "primary_wallet_address_id", address.id)
+            break
+    db.add(db_user)
+    db.commit()
+    # uwu
+    return get_user_address_config(db, user_id)
 
 
 def blacklist_token(db: Session, token: str):

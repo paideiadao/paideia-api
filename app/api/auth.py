@@ -6,8 +6,7 @@ from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
 from ergo_python_appkit.appkit import ErgoAppKit
 
-from db.crud.users import blacklist_token, get_user_by_primary_wallet_address
-from db.schemas.users import UserSignUp, User
+from db.crud.users import blacklist_token, get_user_by_wallet_address, get_user_by_wallet_addresses, get_primary_wallet_address_by_user_id
 from db.schemas.ergoauth import LoginRequestWebResponse, LoginRequest, LoginRequestMobileResponse, ErgoAuthRequest, ErgoAuthResponse
 from db.session import get_db
 
@@ -30,19 +29,28 @@ auth_router = r = APIRouter()
 ##################################
 
 
-BASE_ERGOAUTH = "ergoauth://192.168.0.15:8000"
-BASE_URL = "http://192.168.0.15:8000"
+BASE_ERGOAUTH = "ergoauth://192.168.1.8:8000"
+BASE_URL = "http://192.168.1.8:8000"
 
 
 @r.post("/login", response_model=LoginRequestWebResponse, name="ergoauth:login-web")
 async def ergoauth_login_web(
-    address: LoginRequest
+    addresses: LoginRequest,
+    db=Depends(get_db)
 ):
     try:
+        # get primary address by default
+        default_address = addresses.addresses[0]
+        user = get_user_by_wallet_addresses(db, addresses.addresses)
+        if user:
+            default_address = get_primary_wallet_address_by_user_id(
+                db, user.id
+            )
+
         verificationId = generate_verification_id()
         tokenUrl = f"{BASE_URL}/api/auth/token/{verificationId}"
         ret = LoginRequestWebResponse(
-            address=address.address,
+            address=default_address,
             signingMessage=generate_signing_message(),
             tokenUrl=tokenUrl
         )
@@ -63,7 +71,8 @@ async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Dep
             authResponse.proof
         )
         user = create_and_get_user_by_primary_wallet_address(
-            db, signingRequest["address"])
+            db, signingRequest["address"]
+        )
         if verified and user:
             access_token_expires = timedelta(
                 minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -73,6 +82,7 @@ async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Dep
                 data={"sub": user.alias, "permissions": permissions},
                 expires_delta=access_token_expires,
             )
+            cache.invalidate(f"ergoauth_signing_request_{request_id}")
             return {"access_token": access_token, "token_type": "bearer", "permissions": permissions}
         else:
             raise HTTPException(
@@ -88,24 +98,27 @@ async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Dep
 
 @r.post("/login/mobile", response_model=LoginRequestMobileResponse, name="ergoauth:login-mobile")
 async def ergoauth_login_mobile(
-    address: LoginRequest
+    addresses: LoginRequest
 ):
     try:
         verificationId = generate_verification_id()
         # update url on deployment
         signingRequestUrl = f"{BASE_ERGOAUTH}/api/auth/signing_request/{verificationId}"
         replyTo = f"{BASE_URL}/api/auth/verify/{verificationId}"
-        sigmaBoolean = ErgoAppKit.getSigmaBooleanFromAddress(address.address)
+        sigmaBoolean = ErgoAppKit.getSigmaBooleanFromAddress(
+            addresses.addresses[0])
         ergoAuthRequest = ErgoAuthRequest(
-            address=address.address,
+            address=addresses.addresses[0],
             signingMessage=generate_signing_message(),
             sigmaBoolean=sigmaBoolean,
             replyTo=replyTo
         )
         cache.set(
-            f"ergoauth_signing_request_{verificationId}", ergoAuthRequest.dict())
+            f"ergoauth_signing_request_{verificationId}",
+            ergoAuthRequest.dict()
+        )
         return LoginRequestMobileResponse(
-            address=address.address,
+            address=addresses.addresses[0],
             verificationId=verificationId,
             signingRequestUrl=signingRequestUrl
         )
@@ -135,7 +148,8 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
             authResponse.proof
         )
         user = create_and_get_user_by_primary_wallet_address(
-            db, signingRequest["address"])
+            db, signingRequest["address"]
+        )
         if verified and user:
             # generate the access token
             access_token_expires = timedelta(
@@ -189,7 +203,7 @@ async def websocket_endpoint(websocket: WebSocket, request_id: str):
 
 
 def create_and_get_user_by_primary_wallet_address(db: Session, primary_wallet_address: str):
-    user = get_user_by_primary_wallet_address(db, primary_wallet_address)
+    user = get_user_by_wallet_address(db, primary_wallet_address)
     if user:
         return user
     user = sign_up_new_user(db, primary_wallet_address,

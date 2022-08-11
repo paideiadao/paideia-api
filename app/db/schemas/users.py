@@ -43,6 +43,12 @@ class User(UserOut):
         orm_mode = True
 
 
+class UserAddressConfig(BaseModel):
+    id: int
+    alias: str  # primary address for users
+    registered_addresses: t.List[str] = []
+
+
 class UpdateUserDetails(BaseModel):
     name: t.Optional[str]
     profile_img_url: t.Optional[str]
@@ -90,3 +96,7 @@ class ErgoAddress(CreateErgoAddress):
 
     class Config:
         orm_mode = True
+
+
+class PrimaryAddressChangeRequest(BaseModel):
+    address: str

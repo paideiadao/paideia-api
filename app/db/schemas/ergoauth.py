@@ -1,8 +1,8 @@
 from pydantic import BaseModel
-
+import typing as t
 
 class LoginRequest(BaseModel):
-    address: str
+    addresses: t.List[str]
 
 
 class LoginRequestWebResponse(BaseModel):
