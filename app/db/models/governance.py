@@ -25,4 +25,4 @@ class GovernanceWhitelist(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     governance_id = Column(Integer)
-    user_id = Column(Integer)
+    ergo_address_id = Column(Integer)

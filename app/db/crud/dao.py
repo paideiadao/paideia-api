@@ -14,7 +14,7 @@ from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrU
 
 
 def get_dao_governance_whitelist(db: Session, dao_governance_id: int):
-    return list(map(lambda x: x.user_id, db.query(GovernanceWhitelist).filter(GovernanceWhitelist.governance_id == dao_governance_id).all()))
+    return list(map(lambda x: x.ergo_address_id, db.query(GovernanceWhitelist).filter(GovernanceWhitelist.governance_id == dao_governance_id).all()))
 
 
 def set_dao_governance_whitelist(db: Session, dao_governance_id: int, whitelist: t.List[int]):
@@ -23,24 +23,26 @@ def set_dao_governance_whitelist(db: Session, dao_governance_id: int, whitelist:
         GovernanceWhitelist.governance_id == dao_governance_id).delete()
     db.commit()
     # add new users
-    for user_id in whitelist:
+    for ergo_address_id in whitelist:
         db_governance_whitelist = GovernanceWhitelist(
             governance_id=dao_governance_id,
-            user_id=user_id
+            ergo_address_id=ergo_address_id
         )
         db.add(db_governance_whitelist)
     db.commit()
-    return list(map(lambda x: x.user_id, db.query(GovernanceWhitelist).filter(GovernanceWhitelist.governance_id == dao_governance_id).all()))
+    return list(map(lambda x: x.ergo_address_id, db.query(GovernanceWhitelist).filter(GovernanceWhitelist.governance_id == dao_governance_id).all()))
 
 
 def get_dao_governance(db: Session, dao_id: int):
     db_dao_governance = db.query(Governance).filter(
-        Governance.dao_id == dao_id).first()
+        Governance.dao_id == dao_id
+    ).first()
     if not db_dao_governance:
         return None
 
     governance_whitelist = get_dao_governance_whitelist(
-        db, db_dao_governance.id)
+        db, db_dao_governance.id
+    )
     return GovernanceSchema(
         id=db_dao_governance.id,
         is_optimistic=db_dao_governance.is_optimistic,
@@ -72,7 +74,8 @@ def create_dao_governance(db: Session, dao_id: int, dao_governance: CreateOrUpda
     db.refresh(db_dao_governance)
 
     governance_whitelist = set_dao_governance_whitelist(
-        db, db_dao_governance.id, dao_governance.governance_whitelist)
+        db, db_dao_governance.id, dao_governance.governance_whitelist
+    )
 
     return GovernanceSchema(
         id=db_dao_governance.id,
@@ -90,7 +93,8 @@ def create_dao_governance(db: Session, dao_id: int, dao_governance: CreateOrUpda
 
 def edit_dao_governance(db: Session, dao_id: int, dao_governance: CreateOrUpdateGovernance):
     db_dao_governance = db.query(Governance).filter(
-        Governance.dao_id == dao_id).first()
+        Governance.dao_id == dao_id
+    ).first()
     if not db_dao_governance:
         return None
 
@@ -105,7 +109,8 @@ def edit_dao_governance(db: Session, dao_id: int, dao_governance: CreateOrUpdate
     db.refresh(db_dao_governance)
 
     governance_whitelist = set_dao_governance_whitelist(
-        db, db_dao_governance.id, dao_governance.governance_whitelist)
+        db, db_dao_governance.id, dao_governance.governance_whitelist
+    )
 
     return GovernanceSchema(
         id=db_dao_governance.id,
@@ -136,7 +141,7 @@ def delete_dao_governance(db: Session, dao_id: int):
 
 
 def get_dao_tokenomics_tokenholders(db: Session, dao_tokenomics_id: int):
-    return list(map(lambda x: TokenHolderSchema(id=x[0].id, user_id=x[0].user_id, percentage=x[0].percentage, balance=x[0].balance),
+    return list(map(lambda x: TokenHolderSchema(id=x[0].id, ergo_address_id=x[0].ergo_address_id, percentage=x[0].percentage, balance=x[0].balance),
                     db.query(TokenHolder, TokenomicsTokenHolder).
                     filter(TokenHolder.id == TokenomicsTokenHolder.token_holder_id).
                     filter(TokenomicsTokenHolder.tokenomics_id == dao_tokenomics_id).
@@ -156,7 +161,7 @@ def set_dao_tokenomics_tokenholders(db: Session, dao_tokenomics_id: int, tokenho
 
     for tokenholder in tokenholders:
         db_tokenholder = TokenHolder(
-            user_id=tokenholder.user_id,
+            ergo_address_id=tokenholder.ergo_address_id,
             percentage=tokenholder.percentage,
             balance=tokenholder.balance
         )
@@ -170,7 +175,7 @@ def set_dao_tokenomics_tokenholders(db: Session, dao_tokenomics_id: int, tokenho
         db.add(db_tokenomics_token_holder)
         db.commit()
 
-    return list(map(lambda x: TokenHolderSchema(id=x[0].id, user_id=x[0].user_id, percentage=x[0].percentage, balance=x[0].balance),
+    return list(map(lambda x: TokenHolderSchema(id=x[0].id, ergo_address_id=x[0].ergo_address_id, percentage=x[0].percentage, balance=x[0].balance),
                     db.query(TokenHolder, TokenomicsTokenHolder).
                     filter(TokenHolder.id == TokenomicsTokenHolder.token_holder_id).
                     filter(TokenomicsTokenHolder.tokenomics_id == dao_tokenomics_id).
