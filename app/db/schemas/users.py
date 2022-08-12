@@ -3,21 +3,21 @@ import typing as t
 
 
 ### SCHEMAS FOR USERS ###
-
+# Note: alias by default is the primary wallet address
+# except for admin accounts
 
 class UserBase(BaseModel):
     alias: str
-    primary_wallet_address_id: t.Optional[int]
-    profile_img_url: t.Optional[str]
     is_active: bool = True
     is_superuser: bool = False
 
 
 class UserOut(UserBase):
-    pass
+    primary_wallet_address_id: t.Optional[int]
 
 
 class UserCreate(UserBase):
+    primary_wallet_address: t.Optional[str]
     password: str = "__ergoauth_default"
 
     class Config:
@@ -27,21 +27,62 @@ class UserCreate(UserBase):
 class UserSignUp(BaseModel):
     alias: str
     primary_wallet_address: str
-    profile_img_url: t.Optional[str]
 
 
 class UserEdit(UserBase):
-    password: t.Optional[str] = None
+    password: t.Optional[str]
 
     class Config:
         orm_mode = True
 
 
-class User(UserBase):
+class User(UserOut):
     id: int
 
     class Config:
         orm_mode = True
+
+
+class UserAddressConfig(BaseModel):
+    id: int
+    alias: str  # primary address for users
+    registered_addresses: t.List[str] = []
+
+
+class UpdateUserDetails(BaseModel):
+    name: t.Optional[str]
+    profile_img_url: t.Optional[str]
+    bio: t.Optional[str]
+    level: int = 0
+    xp: int = 0
+    social_links: dict
+
+
+class UserDetails(UpdateUserDetails):
+    id: int
+    user_id: int
+    followers: t.List[int]
+    following: t.List[int]
+
+    class Config:
+        orm_mode = True
+
+
+class UpdateUserProfileSettings(BaseModel):
+    settings: dict
+
+
+class UserProfileSettings(UpdateUserProfileSettings):
+    id: int
+    user_id: int
+
+    class Config:
+        orm_mode = True
+
+
+class FollowUserRequest(BaseModel):
+    user_id: int
+    type: str
 
 
 class CreateErgoAddress(BaseModel):
@@ -55,3 +96,7 @@ class ErgoAddress(CreateErgoAddress):
 
     class Config:
         orm_mode = True
+
+
+class PrimaryAddressChangeRequest(BaseModel):
+    address: str

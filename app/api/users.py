@@ -1,6 +1,8 @@
 import typing as t
-from fastapi import APIRouter, Request, Depends, Response, status
+from fastapi import APIRouter, Depends, Response, status
 from starlette.responses import JSONResponse
+from ergo_python_appkit.appkit import ErgoAppKit
+
 from db.session import get_db
 from db.crud.users import (
     get_users,
@@ -8,11 +10,26 @@ from db.crud.users import (
     create_user,
     delete_user,
     edit_user,
+    get_user_address_config,
+    get_user_profile,
+    get_user_profile_settings,
+    edit_user_profile,
+    edit_user_profile_settings,
+    update_user_follower,
+    update_primary_address_for_user
 )
-from db.schemas.users import UserCreate, UserEdit, User
+from db.schemas.users import UserCreate, UserEdit, User, UserDetails, UserProfileSettings, UpdateUserDetails, UpdateUserProfileSettings, FollowUserRequest, UserAddressConfig, PrimaryAddressChangeRequest
+from db.schemas.ergoauth import LoginRequestWebResponse, ErgoAuthResponse
+
 from core.auth import get_current_active_user, get_current_active_superuser
+from core.security import generate_signing_message, generate_verification_id
+from cache.cache import cache
+
 
 users_router = r = APIRouter()
+
+
+BASE_URL = "http://192.168.1.8:8000"
 
 
 @r.get(
@@ -24,7 +41,7 @@ users_router = r = APIRouter()
 async def users_list(
     response: Response,
     db=Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(get_current_active_superuser),
 ):
     """
     Get all users
@@ -50,10 +67,9 @@ async def user_me(current_user=Depends(get_current_active_user)):
     "/{user_id}",
     response_model=User,
     response_model_exclude_none=True,
-    name="users:user-details"
+    name="users:user"
 )
 async def user_details(
-    request: Request,
     user_id: int,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -69,7 +85,6 @@ async def user_details(
 
 @r.post("/", response_model=User, response_model_exclude_none=True, name="users:create")
 async def user_create(
-    request: Request,
     user: UserCreate,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -87,7 +102,6 @@ async def user_create(
     "/{user_id}", response_model=User, response_model_exclude_none=True, name="users:edit"
 )
 async def user_edit(
-    request: Request,
     user_id: int,
     user: UserEdit,
     db=Depends(get_db),
@@ -106,7 +120,6 @@ async def user_edit(
     "/{user_id}", response_model=User, response_model_exclude_none=True, name="users:delete"
 )
 async def user_delete(
-    request: Request,
     user_id: int,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -116,5 +129,196 @@ async def user_delete(
     """
     try:
         return delete_user(db, user_id)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+####################
+## USER ADDRESSES ##
+####################
+
+
+@r.get(
+    "/address_config/{user_id}",
+    response_model=UserAddressConfig,
+    response_model_exclude_none=True,
+    name="user:user-address-config"
+)
+def user_address_config(
+    user_id: int,
+    db=Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Get address config for user
+    """
+    try:
+        if user_id == current_user.id:
+            return get_user_address_config(db, user_id)
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="not authorized to read")
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+@r.post(
+    "/change_primary_address",
+    response_model=LoginRequestWebResponse,
+    name="user:edit-user-address-config"
+)
+def edit_user_address_config(
+    req: PrimaryAddressChangeRequest,
+    db=Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Change primary address for user
+    """
+    try:
+        verificationId = generate_verification_id()
+        tokenUrl = f"{BASE_URL}/api/users/verify_address/{verificationId}"
+        ret = {
+            "user_id": current_user.id,
+            "address": req.address,
+            "signingMessage": generate_signing_message(),
+            "tokenUrl": tokenUrl
+        }
+        cache.set(
+            f"ergoauth_primary_address_change_request_{verificationId}", ret)
+        return ret
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+@r.post(
+    "/verify_address/{request_id}",
+    response_model=UserAddressConfig,
+    name="user:verify-user-address-change"
+)
+def verify_user_address_change(
+    request_id: str,
+    authResponse: ErgoAuthResponse,
+    db=Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Change primary address for user (verification)
+    """
+    try:
+        signingRequest = cache.get(
+            f"ergoauth_primary_address_change_request_{request_id}"
+        )
+        if signingRequest["user_id"] != current_user.id:
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+
+        verified = ErgoAppKit.verifyErgoAuthSignedMessage(
+            signingRequest["address"],
+            signingRequest["signingMessage"],
+            authResponse.signedMessage,
+            authResponse.proof
+        )
+        if verified:
+            cache.invalidate(f"ergoauth_primary_address_change_request_{request_id}")
+            return update_primary_address_for_user(db, current_user.id, signingRequest["address"])
+        else:
+            JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED,
+                         content="user not authorized")
+
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+##################
+## USER PROFILE ##
+##################
+
+
+@r.get(
+    "/details/{user_id}",
+    response_model=UserDetails,
+    response_model_exclude_none=True,
+    name="users:user-details"
+)
+def user_details_all(
+    user_id: int,
+    db=Depends(get_db),
+):
+    """
+    Get any user details
+    """
+    try:
+        return get_user_profile(db, user_id)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+@r.get(
+    "/profile/settings",
+    response_model=UserProfileSettings,
+    response_model_exclude_none=True,
+    name="users:user-profile-settings"
+)
+def user_profile_settings(
+    db=Depends(get_db),
+    user=Depends(get_current_active_user),
+):
+    """
+    Get any user profile preferences
+    """
+    try:
+        return get_user_profile_settings(db, user.id)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+@r.put(
+    "/details/{user_id}", response_model=UserDetails, response_model_exclude_none=True, name="users:edit-details"
+)
+def edit_user_details(
+    user_id: int,
+    user_details: UpdateUserDetails,
+    db=Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Update existing user details
+    """
+    try:
+        if user_id != current_user.id:
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="User not authorized")
+        return edit_user_profile(db, user_id, user_details)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+@r.put(
+    "/profile/settings", response_model=UserProfileSettings, response_model_exclude_none=True, name="users:edit-profile-settings"
+)
+def edit_user_settings(
+    user_settings: UpdateUserProfileSettings,
+    db=Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Update existing user preferences
+    """
+    try:
+        return edit_user_profile_settings(db, current_user.id, user_settings)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+@r.put(
+    "/profile/follow", response_model_exclude_none=True, name="users:edit-profile-follow"
+)
+def user_profile_follow(
+    req: FollowUserRequest,
+    db=Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Follow/Unfollow user
+    """
+    try:
+        return update_user_follower(db, current_user.id, req)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')

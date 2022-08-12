@@ -58,7 +58,7 @@ class CreateOrUpdateGovernance(BaseModel):
     amount: t.Optional[float]
     currency: t.Optional[str]
     support_needed: t.Optional[int]
-    governance_whitelist: t.List[int]  # user_id
+    governance_whitelist: t.List[int]   # ergo_address_id
 
 
 class Governance(CreateOrUpdateGovernance):
@@ -69,7 +69,7 @@ class Governance(CreateOrUpdateGovernance):
 
 
 class CreateOrUpdateTokenHolder(BaseModel):
-    user_id: int
+    ergo_address_id: int
     percentage: t.Optional[float]
     balance: t.Optional[float]
 

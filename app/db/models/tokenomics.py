@@ -23,7 +23,7 @@ class TokenHolder(Base):
     __tablename__ = "token_holders"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer)
+    ergo_address_id = Column(Integer)
     percentage = Column(Float)
     balance = Column(Float)
 

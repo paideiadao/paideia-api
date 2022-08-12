@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, String, DateTime
+from sqlalchemy import JSON, Boolean, Column, Integer, String, DateTime
 from sqlalchemy.sql import func
 
 from db.session import Base
@@ -12,10 +12,38 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     alias = Column(String, unique=True, index=True, nullable=False)
     primary_wallet_address_id = Column(Integer)
-    profile_img_url = Column(String)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
+
+
+class UserDetails(Base):
+    __tablename__ = "user_details"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, unique=True)
+    name = Column(String)
+    profile_img_url = Column(String)
+    bio = Column(String)
+    level = Column(Integer, default=0)
+    xp = Column(Integer, default=0)
+    social_links = Column(JSON)
+
+
+class UserFollower(Base):
+    __tablename__ = "user_followers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    follower_id = Column(Integer)
+    followee_id = Column(Integer)
+
+
+class UserProfileSettings(Base):
+    __tablename__ = "user_profile_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, unique=True)
+    settings = Column(JSON)
 
 
 class ErgoAddress(Base):
