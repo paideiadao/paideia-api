@@ -229,7 +229,10 @@ def verify_user_address_change(
                     data={"sub": signingRequest['address'], "permissions": permissions},
                     expires_delta=access_token_expires,
                 )
-            return update_primary_address_for_user(db, current_user.id, signingRequest["address"])
+            return {
+                **update_primary_address_for_user(db, current_user.id, signingRequest["address"]), 
+                "access_token": access_token
+            }
         else:
             JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED,
                          content="user not authorized")
