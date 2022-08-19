@@ -1,3 +1,4 @@
+from datetime import timedelta
 from fastapi import status
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
@@ -7,7 +8,7 @@ import typing as t
 from db.models import users as models
 from db.schemas import users as schemas
 from core.security import get_password_hash
-
+from core import security
 
 #################################
 ### CRUD OPERATIONS FOR USERS ###
@@ -130,11 +131,23 @@ def get_user_address_config(db: Session, user_id: int):
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
 
     addresses = get_ergo_addresses_by_user_id(db, user_id)
+    permissions = "user"
+
+    access_token_expires = timedelta(
+                minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
+            )
+    access_token = security.create_access_token(
+            data={"sub": user.alias, "permissions": permissions},
+            expires_delta=access_token_expires,
+        )
     return schemas.UserAddressConfig(
         id=user_id,
         alias=user.alias,
-        registered_addresses=list(map(lambda x: x.address, addresses))
+        registered_addresses=list(map(lambda x: x.address, addresses)),
+        access_token=access_token
     )
+
+
 
 
 def get_followers_by_user_id(db: Session, user_id: int):
