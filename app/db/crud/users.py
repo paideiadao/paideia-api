@@ -1,3 +1,4 @@
+from os import access
 from fastapi import status
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
@@ -124,7 +125,7 @@ def delete_user(db: Session, user_id: int):
     return user
 
 
-def get_user_address_config(db: Session, user_id: int):
+def get_user_address_config(db: Session, user_id: int, access_token: str):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
@@ -133,7 +134,8 @@ def get_user_address_config(db: Session, user_id: int):
     return schemas.UserAddressConfig(
         id=user_id,
         alias=user.alias,
-        registered_addresses=list(map(lambda x: x.address, addresses))
+        registered_addresses=list(map(lambda x: x.address, addresses)),
+        access_token=access_token
     )
 
 
@@ -244,7 +246,7 @@ def set_ergo_addresses_by_user_id(db: Session, user_id: int, addresses: t.List[s
     return get_ergo_addresses_by_user_id(db, user_id)
 
 
-def update_primary_address_for_user(db: Session, user_id: int, new_address: str):
+def update_primary_address_for_user(db: Session, user_id: int, new_address: str, access_token: str):
     db_user = get_user(db, user_id)
     db_addresses = get_ergo_addresses_by_user_id(db, user_id)
     addresses = list(map(lambda x: x.address, db_addresses))
@@ -261,7 +263,7 @@ def update_primary_address_for_user(db: Session, user_id: int, new_address: str)
     db.add(db_user)
     db.commit()
     # uwu
-    return get_user_address_config(db, user_id)
+    return get_user_address_config(db, user_id, access_token)
 
 
 def blacklist_token(db: Session, token: str):
