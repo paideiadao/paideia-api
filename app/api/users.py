@@ -1,3 +1,4 @@
+from datetime import timedelta
 import typing as t
 from fastapi import APIRouter, Depends, Response, status
 from starlette.responses import JSONResponse
@@ -24,6 +25,7 @@ from db.schemas.ergoauth import LoginRequestWebResponse, ErgoAuthResponse
 from core.auth import get_current_active_user, get_current_active_superuser
 from core.security import generate_signing_message, generate_verification_id
 from cache.cache import cache
+from core import security
 
 
 users_router = r = APIRouter()
@@ -218,7 +220,23 @@ def verify_user_address_change(
         )
         if verified:
             cache.invalidate(f"ergoauth_primary_address_change_request_{request_id}")
-            return update_primary_address_for_user(db, current_user.id, signingRequest["address"])
+            permissions = "user"
+
+            access_token_expires = timedelta(
+                        minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
+                    )
+            access_token = security.create_access_token(
+                    data={"sub": signingRequest['address'], "permissions": permissions},
+                    expires_delta=access_token_expires,
+                )
+            ret = update_primary_address_for_user(db, current_user.id, signingRequest["address"])
+            return UserAddressConfig(
+                id=ret.id,
+                alias=ret.alias,
+                addresses=ret.registered_addresses,
+                access_token=access_token
+            )
+            
         else:
             JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED,
                          content="user not authorized")

@@ -133,7 +133,7 @@ def get_user_address_config(db: Session, user_id: int):
     return schemas.UserAddressConfig(
         id=user_id,
         alias=user.alias,
-        registered_addresses=list(map(lambda x: x.address, addresses))
+        registered_addresses=list(map(lambda x: x.address, addresses)),
     )
 
 
