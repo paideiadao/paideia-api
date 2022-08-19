@@ -1,4 +1,3 @@
-from os import access
 from fastapi import status
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
