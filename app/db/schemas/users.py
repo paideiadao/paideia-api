@@ -47,7 +47,7 @@ class UserAddressConfig(BaseModel):
     id: int
     alias: str  # primary address for users
     registered_addresses: t.List[str] = []
-    access_token: str
+    access_token: t.Optional[str]
 
 
 class UpdateUserDetails(BaseModel):
