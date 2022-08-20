@@ -23,8 +23,8 @@ class CreateProposal(BaseModel):
     content: t.Optional[str]
     voting_system: t.Optional[str]
     references: t.List[int]  # list of proposal ids
-    actions: t.List[dict]
-    tags: t.List[str]
+    actions: t.Optional[t.List[dict]]
+    tags: t.Optional[t.List[str]]
     attachments: t.List[str]
     is_proposal: bool
 
