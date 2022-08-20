@@ -184,7 +184,6 @@ def get_proposals_by_dao_id(db: Session, dao_id: int):
     proposals = list(map(lambda x: get_proposal_by_id(db, x.id), db_proposals))
     return proposals
 
-
 def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     db_proposal = Proposal(
         dao_id=proposal.dao_id,
@@ -202,8 +201,21 @@ def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     db.add(db_proposal)
     db.commit()
     db.refresh(db_proposal)
+    create_proposal_references(db, db_proposal.id, proposal.references)
     return get_proposal_by_id(db, db_proposal.id)
 
+def create_proposal_references(db: Session, id: int, references: t.List[int]):
+    for reference in references:
+        temp_proposal = get_proposal_by_id(db, reference)
+        if temp_proposal is not None and id != reference:
+            proposal_reference = ProposalReference(
+                referred_proposal_id=reference,
+                referring_proposal_id=id
+            )
+            db.add(proposal_reference)
+    db.commit()
+    return True
+        
 
 def edit_proposal_basic_by_id(db: Session, user_id: int, id: int, proposal: UpdateProposalBasicSchema):
     db_proposal = db.query(Proposal).filter(Proposal.id == id).first()
