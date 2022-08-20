@@ -215,18 +215,6 @@ def create_proposal_references(db: Session, id: int, references: t.List[int]):
             db.add(proposal_reference)
     db.commit()
     return True
-
-def create_proposal_references(db: Session, id: int, references: t.List[int]):
-    for reference in references:
-        temp_proposal = get_proposal_by_id(db, reference)
-        if temp_proposal is not None and id != reference:
-            proposal_reference = ProposalReference(
-                referred_proposal_id=reference,
-                referring_proposal_id=id
-            )
-            db.add(proposal_reference)
-    db.commit()
-    return True
         
 
 def edit_proposal_basic_by_id(db: Session, user_id: int, id: int, proposal: UpdateProposalBasicSchema):
