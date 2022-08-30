@@ -2,9 +2,12 @@ import typing as t
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
+from sqlalchemy.sql.functions import array_agg
+from sqlalchemy import literal_column
+from db.models.users import User
 
 from db.models.proposals import Proposal, ProposalReference, ProposalLike, ProposalFollower, Comment, Addendum
-from db.schemas.proposal import Proposal as ProposalSchema, CreateProposal as CreateProposalSchema, UpdateProposalBasic as UpdateProposalBasicSchema, CreateOrUpdateAddendum, CreateOrUpdateComment
+from db.schemas.proposal import ProposalReference as ProposalReferenceSchema, Proposal as ProposalSchema, CreateProposal as CreateProposalSchema, Comment as CommentSchema, UpdateProposalBasic as UpdateProposalBasicSchema, CreateOrUpdateAddendum, CreateOrUpdateComment
 
 #####################################
 ### CRUD OPERATIONS FOR PROPOSALS ###
@@ -83,9 +86,24 @@ def get_references_by_proposal_id(db: Session, proposal_id: int):
         ProposalReference.referring_proposal_id == proposal_id
     ).all()
     references = list(map(lambda x: x.referred_proposal_id, db_references))
+    references_meta = []
+    for reference in references:
+        db_proposal: Proposal = db.query(Proposal).filter(Proposal.id == reference).first()
+        likes = get_likes_by_proposal_id(db, db_proposal.id)
+
+        references_meta.append(ProposalReferenceSchema(
+            id=db_proposal.id,
+            name=db_proposal.name,
+            img=db_proposal.image_url,
+            likes=likes['likes'],
+            dislikes=likes['dislikes'],
+            is_proposal=db_proposal.is_proposal
+        ))
+
     return {
         "proposal_id": proposal_id,
-        "references": references
+        "references": references,
+        "references_meta": references_meta
     }
 
 
@@ -104,8 +122,16 @@ def add_reference_by_proposal_id(db: Session, user_id: int, proposal_id: int, re
 
 
 def get_comments_by_proposal_id(db: Session, proposal_id: int):
-    db_comments = db.query(Comment).filter(
-        Comment.proposal_id == proposal_id).all()
+    db_comments = db.query(Comment, User.alias).filter(
+        Comment.proposal_id == proposal_id).join(User, Comment.user_id == User.id).all()
+    db_comments = [CommentSchema(
+        id=comment[0].id,
+        date=comment[0].date,
+        user_id=comment[0].user_id,
+        parent=comment[0].parent,
+        comment=comment[0].comment,
+        alias=comment[1]
+    ) for comment in db_comments]
     return db_comments
 
 
@@ -165,6 +191,7 @@ def get_proposal_by_id(db: Session, id: int):
         content=db_proposal.content,
         voting_system=db_proposal.voting_system,
         references=references["references"],
+        references_meta=references["references_meta"],
         actions=actions,
         comments=comments,
         likes=likes["likes"],

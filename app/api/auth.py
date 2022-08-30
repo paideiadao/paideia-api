@@ -60,6 +60,7 @@ async def ergoauth_login_web(
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
+# should we add a response type here
 @r.post("/token/{request_id}", name="ergoauth:login")
 async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Depends(get_db)):
     try:
@@ -83,7 +84,13 @@ async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Dep
                 expires_delta=access_token_expires,
             )
             cache.invalidate(f"ergoauth_signing_request_{request_id}")
-            return {"access_token": access_token, "token_type": "bearer", "permissions": permissions}
+            return {
+                "access_token": access_token, 
+                "token_type": "bearer", 
+                "permissions": permissions, 
+                'id': user.id,
+                'alias': user.alias
+            }
         else:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -160,8 +167,13 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
                 data={"sub": user.alias, "permissions": permissions},
                 expires_delta=access_token_expires,
             )
-            token = {"access_token": access_token,
-                     "token_type": "bearer", "permissions": permissions}
+            token = {
+                "access_token": access_token,
+                "token_type": "bearer", 
+                "permissions": permissions,
+                'id': user.id,
+                'alias': user.alias
+            }
             # use websockets to notify the frontend
             await connection_manager.send_personal_message("ergoauth_" + request_id, token)
             # invalidate the the request_id
