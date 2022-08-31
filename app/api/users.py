@@ -8,12 +8,14 @@ from db.session import get_db
 from db.crud.users import (
     get_users,
     get_user,
+    search_users,
     create_user,
     delete_user,
     edit_user,
     get_user_address_config,
     get_user_profile,
     get_user_profile_settings,
+    create_user_dao_profile,
     edit_user_profile,
     edit_user_profile_settings,
     update_user_follower,
@@ -219,24 +221,29 @@ def verify_user_address_change(
             authResponse.proof
         )
         if verified:
-            cache.invalidate(f"ergoauth_primary_address_change_request_{request_id}")
+            cache.invalidate(
+                f"ergoauth_primary_address_change_request_{request_id}"
+            )
             permissions = "user"
-
             access_token_expires = timedelta(
-                        minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
-                    )
+                minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
+            )
             access_token = security.create_access_token(
-                    data={"sub": signingRequest['address'], "permissions": permissions},
-                    expires_delta=access_token_expires,
-                )
-            ret = update_primary_address_for_user(db, current_user.id, signingRequest["address"])
+                data={
+                    "sub": signingRequest['address'],
+                    "permissions": permissions
+                },
+                expires_delta=access_token_expires,
+            )
+            ret = update_primary_address_for_user(
+                db, current_user.id, signingRequest["address"]
+            )
             return UserAddressConfig(
                 id=ret.id,
                 alias=ret.alias,
                 addresses=ret.registered_addresses,
                 access_token=access_token
             )
-            
         else:
             JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED,
                          content="user not authorized")
@@ -249,6 +256,22 @@ def verify_user_address_change(
 ## USER PROFILE ##
 ##################
 
+@r.get(
+    "/details/search",
+    name="users:user-search"
+)
+def user_search(
+    search_string: str,
+    db=Depends(get_db),
+):
+    """
+    Search for users
+    """
+    try:
+        return search_users(db, search_string)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
 
 @r.get(
     "/details/{user_id}",
@@ -258,13 +281,14 @@ def verify_user_address_change(
 )
 def user_details_all(
     user_id: int,
+    dao_id: int,
     db=Depends(get_db),
 ):
     """
     Get any user details
     """
     try:
-        return get_user_profile(db, user_id)
+        return get_user_profile(db, user_id, dao_id)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
@@ -276,6 +300,7 @@ def user_details_all(
     name="users:user-profile-settings"
 )
 def user_profile_settings(
+    dao_id: int,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
 ):
@@ -283,7 +308,24 @@ def user_profile_settings(
     Get any user profile preferences
     """
     try:
-        return get_user_profile_settings(db, user.id)
+        return get_user_profile_settings(db, user.id, dao_id)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+@r.post(
+    "/create_user_profile", response_model=UserDetails, response_model_exclude_none=True, name="users:create-details"
+)
+def create_user_profile(
+    dao_id: int,
+    db=Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """
+    Create new dao specific user profile
+    """
+    try:
+        return create_user_dao_profile(db, current_user.id, dao_id)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
@@ -293,6 +335,7 @@ def user_profile_settings(
 )
 def edit_user_details(
     user_id: int,
+    dao_id: int,
     user_details: UpdateUserDetails,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
@@ -303,7 +346,7 @@ def edit_user_details(
     try:
         if user_id != current_user.id:
             return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="User not authorized")
-        return edit_user_profile(db, user_id, user_details)
+        return edit_user_profile(db, user_id, dao_id, user_details)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
@@ -312,6 +355,7 @@ def edit_user_details(
     "/profile/settings", response_model=UserProfileSettings, response_model_exclude_none=True, name="users:edit-profile-settings"
 )
 def edit_user_settings(
+    dao_id: int,
     user_settings: UpdateUserProfileSettings,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
@@ -320,7 +364,7 @@ def edit_user_settings(
     Update existing user preferences
     """
     try:
-        return edit_user_profile_settings(db, current_user.id, user_settings)
+        return edit_user_profile_settings(db, current_user.id, dao_id, user_settings)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
