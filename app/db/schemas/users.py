@@ -62,6 +62,7 @@ class UpdateUserDetails(BaseModel):
 class UserDetails(UpdateUserDetails):
     id: int
     user_id: int
+    dao_id: int
     followers: t.List[int]
     following: t.List[int]
 
@@ -76,6 +77,7 @@ class UpdateUserProfileSettings(BaseModel):
 class UserProfileSettings(UpdateUserProfileSettings):
     id: int
     user_id: int
+    dao_id: int
 
     class Config:
         orm_mode = True

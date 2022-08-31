@@ -71,16 +71,6 @@ def create_user(db: Session, user: schemas.UserCreate):
             db, db_user.id, [user.primary_wallet_address])
         setattr(db_user, "primary_wallet_address_id", addresses[0].id)
         db.add(db_user)
-    # create empty configs for new user
-    db_user_details = models.UserDetails(
-        user_id=db_user.id,
-        name=db_user.alias,
-    )
-    db_user_profile_settings = models.UserProfileSettings(
-        user_id=db_user.id,
-    )
-    db.add(db_user_details)
-    db.add(db_user_profile_settings)
     db.commit()
     return db_user
 
@@ -148,15 +138,19 @@ def get_followers_by_user_id(db: Session, user_id: int):
     }
 
 
-def get_user_profile(db: Session, user_id: int):
+def get_user_profile(db: Session, user_id: int, dao_id: int):
     db_profile = db.query(models.UserDetails).filter(
-        models.UserDetails.user_id == user_id).first()
+        models.UserDetails.user_id == user_id
+    ).filter(
+        models.UserDetails.dao_id == dao_id
+    ).first()
     if not db_profile:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
     follower_data = get_followers_by_user_id(db, user_id)
     return schemas.UserDetails(
         id=db_profile.id,
         user_id=db_profile.user_id,
+        dao_id=db_profile.dao_id,
         name=db_profile.name,
         profile_img_url=db_profile.profile_img_url,
         bio=db_profile.bio,
@@ -168,18 +162,43 @@ def get_user_profile(db: Session, user_id: int):
     )
 
 
-def get_user_profile_settings(db: Session, user_id: int):
+def get_user_profile_settings(db: Session, user_id: int, dao_id: int):
     db_settings = db.query(models.UserProfileSettings).filter(
         models.UserProfileSettings.user_id == user_id
+    ).filter(
+        models.UserProfileSettings.dao_id == dao_id
     ).first()
     if not db_settings:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
     return db_settings
 
 
-def edit_user_profile(db: Session, user_id: int, user_details: schemas.UpdateUserDetails):
+def create_user_dao_profile(db: Session, user_id: int, dao_id: int):
+    db_user = get_user(db, user_id)
+    if not db_user:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
+    # create empty configs for new user
+    db_user_details = models.UserDetails(
+        user_id=db_user.id,
+        dao_id=dao_id,
+        name=db_user.alias,
+    )
+    db_user_profile_settings = models.UserProfileSettings(
+        user_id=db_user.id,
+        dao_id=dao_id,
+    )
+    db.add(db_user_details)
+    db.add(db_user_profile_settings)
+    db.commit()
+    return get_user_profile(db, user_id, dao_id)
+
+
+def edit_user_profile(db: Session, user_id: int, dao_id: int, user_details: schemas.UpdateUserDetails):
     db_profile = db.query(models.UserDetails).filter(
-        models.UserDetails.user_id == user_id).first()
+        models.UserDetails.user_id == user_id
+    ).filter(
+        models.UserDetails.dao_id == dao_id
+    ).first()
     if not db_profile:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
 
@@ -190,11 +209,11 @@ def edit_user_profile(db: Session, user_id: int, user_details: schemas.UpdateUse
     db.add(db_profile)
     db.commit()
     db.refresh(db_profile)
-    return get_user_profile(db, user_id)
+    return get_user_profile(db, user_id, dao_id)
 
 
-def edit_user_profile_settings(db: Session, user_id: int, user_settings: schemas.UpdateUserProfileSettings):
-    db_settings = get_user_profile_settings(db, user_id)
+def edit_user_profile_settings(db: Session, user_id: int, dao_id: int, user_settings: schemas.UpdateUserProfileSettings):
+    db_settings = get_user_profile_settings(db, user_id, dao_id)
     if not db_settings:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="User not found")
     update_data = user_settings.dict(exclude_unset=True)

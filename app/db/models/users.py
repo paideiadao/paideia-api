@@ -21,7 +21,8 @@ class UserDetails(Base):
     __tablename__ = "user_details"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, unique=True)
+    user_id = Column(Integer)
+    dao_id = Column(Integer)
     name = Column(String)
     profile_img_url = Column(String)
     bio = Column(String)
@@ -42,7 +43,8 @@ class UserProfileSettings(Base):
     __tablename__ = "user_profile_settings"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, unique=True)
+    user_id = Column(Integer)
+    dao_id = Column(Integer)
     settings = Column(JSON)
 
 
