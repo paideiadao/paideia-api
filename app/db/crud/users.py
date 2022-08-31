@@ -48,6 +48,31 @@ def get_primary_wallet_address_by_user_id(db: Session, user_id: int):
                 models.User.primary_wallet_address_id == models.ErgoAddress.id).first()[1].address
 
 
+def search_users(db: Session, search_string: str):
+    raw_data = db.query(models.User, models.ErgoAddress, models.UserDetails).filter(
+        models.User.id == models.ErgoAddress.user_id
+    ).filter(
+        models.User.id == models.UserDetails.user_id
+    ).filter(
+        or_(
+            models.User.alias.ilike(f"%{search_string}%"),
+            models.ErgoAddress.address.ilike(f"%{search_string}%"),
+            models.UserDetails.name.ilike(f"%{search_string}%")
+        )
+    ).all()
+    formatted_data = [
+        {
+            "id": row[0].id,
+            "dao_id": row[2].dao_id,
+            "alias": row[0].alias,
+            "address": row[1].address,
+            "name": row[2].name,
+        }
+        for row in raw_data
+    ]
+    return formatted_data
+
+
 def get_users(
     db: Session, skip: int = 0, limit: int = 100
 ) -> t.List[schemas.UserOut]:
@@ -249,7 +274,9 @@ def get_ergo_addresses_by_user_id(db: Session, user_id: int):
 
 def set_ergo_addresses_by_user_id(db: Session, user_id: int, addresses: t.List[str]):
     # get older entries if they exist
-    old_addresses = list(map(lambda x: x.address, get_ergo_addresses_by_user_id(db, user_id)))
+    old_addresses = list(
+        map(lambda x: x.address, get_ergo_addresses_by_user_id(db, user_id))
+    )
     # add new addresses
     for address in addresses:
         if address not in old_addresses:

@@ -8,6 +8,7 @@ from db.session import get_db
 from db.crud.users import (
     get_users,
     get_user,
+    search_users,
     create_user,
     delete_user,
     edit_user,
@@ -220,24 +221,29 @@ def verify_user_address_change(
             authResponse.proof
         )
         if verified:
-            cache.invalidate(f"ergoauth_primary_address_change_request_{request_id}")
+            cache.invalidate(
+                f"ergoauth_primary_address_change_request_{request_id}"
+            )
             permissions = "user"
-
             access_token_expires = timedelta(
-                        minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
-                    )
+                minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
+            )
             access_token = security.create_access_token(
-                    data={"sub": signingRequest['address'], "permissions": permissions},
-                    expires_delta=access_token_expires,
-                )
-            ret = update_primary_address_for_user(db, current_user.id, signingRequest["address"])
+                data={
+                    "sub": signingRequest['address'],
+                    "permissions": permissions
+                },
+                expires_delta=access_token_expires,
+            )
+            ret = update_primary_address_for_user(
+                db, current_user.id, signingRequest["address"]
+            )
             return UserAddressConfig(
                 id=ret.id,
                 alias=ret.alias,
                 addresses=ret.registered_addresses,
                 access_token=access_token
             )
-            
         else:
             JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED,
                          content="user not authorized")
@@ -249,6 +255,22 @@ def verify_user_address_change(
 ##################
 ## USER PROFILE ##
 ##################
+
+@r.get(
+    "/details/search",
+    name="users:user-search"
+)
+def user_search(
+    search_string: str,
+    db=Depends(get_db),
+):
+    """
+    Search for users
+    """
+    try:
+        return search_users(db, search_string)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
 
 @r.get(
