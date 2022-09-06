@@ -135,7 +135,8 @@ async def comment_proposal(proposal_id: int, comment: CreateOrUpdateComment, db=
 def create_addendum_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum, db=Depends(get_db), user=Depends(get_current_active_user)):
     try:
         addendum = add_addendum_by_proposal_id(
-            db, user.id, proposal_id, addendum)
+            db, user.id, proposal_id, addendum
+        )
         if not addendum:
             return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
         return addendum
@@ -150,7 +151,8 @@ def create_addendum_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum,
 def reference_proposal(proposal_id: int, req: AddReferenceRequest, db=Depends(get_db), user=Depends(get_current_active_user)):
     try:
         reference = add_reference_by_proposal_id(
-            db, user.id, proposal_id, req.referred_proposal_id)
+            db, user.id, proposal_id, req.referred_proposal_id
+        )
         if not reference:
             return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
         return reference

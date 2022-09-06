@@ -98,6 +98,7 @@ class Distribution(CreateOrUpdateDistribution):
 
 class CreateOrUpdateTokenomics(BaseModel):
     type: str
+    token_id: t.Optional[str]
     token_name: t.Optional[str]
     token_ticker: t.Optional[str]
     token_amount: t.Optional[float]

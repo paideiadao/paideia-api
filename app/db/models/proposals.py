@@ -21,6 +21,7 @@ class Proposal(Base):
     tags = Column(JSON)
     attachments = Column(JSON)
     date = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String)
     is_proposal = Column(Boolean)
 
 

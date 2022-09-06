@@ -218,6 +218,7 @@ def get_dao_tokenomics(db: Session, dao_id: int):
     return TokenomicsSchema(
         id=db_tokenomics.id,
         type=db_tokenomics.type,
+        token_id=db_tokenomics.token_id,
         token_name=db_tokenomics.token_name,
         token_ticker=db_tokenomics.token_ticker,
         token_amount=db_tokenomics.token_amount,
@@ -233,6 +234,7 @@ def create_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateTo
     db_dao_tokenomics = Tokenomics(
         dao_id=dao_id,
         type=tokenomics.type,
+        token_id=tokenomics.token_id,
         token_name=tokenomics.token_name,
         token_ticker=tokenomics.token_ticker,
         token_amount=tokenomics.token_amount,
@@ -253,6 +255,7 @@ def create_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateTo
     return TokenomicsSchema(
         id=db_dao_tokenomics.id,
         type=tokenomics.type,
+        token_id=tokenomics.token_id,
         token_name=tokenomics.token_name,
         token_ticker=tokenomics.token_ticker,
         token_amount=tokenomics.token_amount,
@@ -288,6 +291,7 @@ def edit_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateToke
     return TokenomicsSchema(
         id=db_tokenomics.id,
         type=db_tokenomics.type,
+        token_id=db_tokenomics.token_id,
         token_name=db_tokenomics.token_name,
         token_ticker=db_tokenomics.token_ticker,
         token_amount=db_tokenomics.token_amount,
@@ -455,6 +459,26 @@ def get_dao(db: Session, id: int):
         nav_stage=db_dao.nav_stage,
         is_review=db_dao.is_review
     )
+
+
+def get_dao_by_url(db: Session, name: str):
+    # preliminary filter
+    if name in ("dao",):
+        return None
+    # special case for paideia dao
+    if name == "paideia":
+        name = "dao"
+
+    dao_list = list(filter(
+        lambda x: (len(x.dao_url.split('/')) !=
+                   0) and (x.dao_url.split('/')[-1] == name),
+        get_all_daos(db)
+    ))
+    if len(dao_list) == 0:
+        return None
+
+    dao_id = dao_list[0].id
+    return get_dao(db, dao_id)
 
 
 def create_dao(db: Session, dao: CreateOrUpdateDao):

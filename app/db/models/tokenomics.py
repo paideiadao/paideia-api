@@ -11,6 +11,7 @@ class Tokenomics(Base):
     id = Column(Integer, primary_key=True, index=True)
     dao_id = Column(Integer)
     type = Column(String)
+    token_id = Column(String)
     token_name = Column(String)
     token_ticker = Column(String)
     token_amount = Column(Float)
