@@ -26,6 +26,7 @@ class CreateProposal(BaseModel):
     actions: t.Optional[t.List[dict]]
     tags: t.Optional[t.List[str]]
     attachments: t.List[str]
+    status: t.Optional[str]
     is_proposal: bool
 
 

@@ -97,6 +97,7 @@ def get_references_by_proposal_id(db: Session, proposal_id: int):
             img=db_proposal.image_url,
             likes=likes['likes'],
             dislikes=likes['dislikes'],
+            status=db_proposal.status,
             is_proposal=db_proposal.is_proposal
         ))
 
@@ -201,6 +202,7 @@ def get_proposal_by_id(db: Session, id: int):
         attachments=attachments,
         addendums=addendums,
         date=db_proposal.date,
+        status=db_proposal.status,
         is_proposal=db_proposal.is_proposal
     )
     return proposal
@@ -223,6 +225,7 @@ def create_new_proposal(db: Session, proposal: CreateProposalSchema):
         actions={"actions_list": proposal.actions},
         tags={"tags_list": proposal.tags},
         attachments={"attachments_list": proposal.attachments},
+        status=proposal.status,
         is_proposal=proposal.is_proposal
     )
     db.add(db_proposal)

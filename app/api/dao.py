@@ -3,7 +3,7 @@ import typing as t
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
 from core.auth import get_current_active_user
-from db.crud.dao import create_dao, edit_dao, get_all_daos, get_dao, delete_dao
+from db.crud.dao import create_dao, edit_dao, get_all_daos, get_dao, get_dao_by_url, delete_dao
 from db.session import get_db
 
 from db.schemas.dao import CreateOrUpdateDao, Dao, DaoBasic
@@ -30,20 +30,24 @@ def dao_list(
 
 
 @r.get(
-    "/{id}",
+    "/{query}",
     response_model=Dao,
     response_model_exclude_none=True,
     name="dao:get-dao"
 )
 def dao_get(
-    id: int,
+    query: str,
     db=Depends(get_db),
 ):
     """
     Get dao
     """
     try:
-        dao = get_dao(db, id)
+        dao = None
+        if query.isnumeric():
+            dao = get_dao(db, int(query))
+        else:
+            dao = get_dao_by_url(db, query)
         if not dao:
             return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="dao not found")
         return dao
