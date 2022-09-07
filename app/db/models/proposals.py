@@ -55,6 +55,15 @@ class ProposalLike(Base):
     liked = Column(Boolean)
 
 
+class ProposalCommentLike(Base):
+    __tablename__ = "proposal_comments_likes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    comment_id = Column(Integer)
+    user_id = Column(Integer)
+    liked = Column(Boolean)
+
+
 class ProposalFollower(Base):
     __tablename__ = "proposal_followers"
 

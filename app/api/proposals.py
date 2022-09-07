@@ -8,10 +8,11 @@ from db.schemas.proposal import Proposal, CreateProposal, LikeProposalRequest, F
 from db.crud.proposals import (
     get_proposal_by_id,
     get_proposals_by_dao_id,
-    get_comments_by_proposal_id,
+    get_comment_by_id,
     create_new_proposal,
     delete_proposal_by_id,
     set_likes_by_proposal_id,
+    set_likes_by_comment_id,
     set_followers_by_proposal_id,
     edit_proposal_basic_by_id,
     add_commment_by_proposal_id,
@@ -119,10 +120,29 @@ async def comment_proposal(proposal_id: int, comment: CreateOrUpdateComment, db=
     try:
         if comment.user_id == user.id:
             ret = add_commment_by_proposal_id(db, proposal_id, comment)
-            # refresh active connections
+            comment_dict = get_comment_by_id(db, ret.id).dict()
+            comment_dict["date"] = str(comment_dict["date"])
             await connection_manager.send_personal_message_by_substring_matcher(
-                "proposal_comments_" + str(proposal_id), {"comments": get_comments_by_proposal_id(db, proposal_id)})
+                "proposal_comments_" + str(proposal_id),
+                {
+                    "proposal_id": proposal_id,
+                    "comment": comment_dict,
+                }
+            )
             return ret
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+
+
+@r.put(
+    "/comment/like/{comment_id}",
+    name="proposals:like-proposal-comment"
+)
+def like_comment(comment_id: int, req: LikeProposalRequest, db=Depends(get_db), user=Depends(get_current_active_user)):
+    try:
+        if req.user_id == user.id:
+            return set_likes_by_comment_id(db, comment_id, req.user_id, req.type)
         return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))

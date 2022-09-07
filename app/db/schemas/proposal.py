@@ -46,6 +46,8 @@ class Comment(CreateOrUpdateComment):
     id: int
     date: datetime.datetime
     alias: str
+    likes: t.List[int]  # list of user_ids who like
+    dislikes: t.List[int]  # list of user_ids who dislike
 
     class Config:
         orm_mode = True
@@ -83,6 +85,7 @@ class FollowProposalRequest(BaseModel):
 class AddReferenceRequest(BaseModel):
     referred_proposal_id: int
 
+
 class ProposalReference(BaseModel):
     id: int
     name: str
@@ -90,4 +93,3 @@ class ProposalReference(BaseModel):
     dislikes: t.List[int]
     img: str
     is_proposal: bool
-
