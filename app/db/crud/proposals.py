@@ -2,11 +2,9 @@ import typing as t
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
-from sqlalchemy.sql.functions import array_agg
-from sqlalchemy import literal_column
 from db.models.users import User
 
-from db.models.proposals import Proposal, ProposalReference, ProposalLike, ProposalFollower, Comment, Addendum
+from db.models.proposals import Proposal, ProposalReference, ProposalLike, ProposalFollower, Comment, Addendum, ProposalCommentLike
 from db.schemas.proposal import ProposalReference as ProposalReferenceSchema, Proposal as ProposalSchema, CreateProposal as CreateProposalSchema, Comment as CommentSchema, UpdateProposalBasic as UpdateProposalBasicSchema, CreateOrUpdateAddendum, CreateOrUpdateComment
 
 #####################################
@@ -26,6 +24,20 @@ def get_likes_by_proposal_id(db: Session, proposal_id: int):
         lambda x: x.liked == False, db_likes)))
     return {
         "proposal_id": proposal_id,
+        "likes": likes,
+        "dislikes": dislikes
+    }
+
+
+def get_likes_by_comment_id(db: Session, comment_id: int):
+    db_likes = db.query(ProposalCommentLike).filter(
+        ProposalCommentLike.comment_id == comment_id
+    )
+    likes = list(map(lambda x: x.user_id, filter(lambda x: x.liked, db_likes)))
+    dislikes = list(map(lambda x: x.user_id, filter(
+        lambda x: x.liked == False, db_likes)))
+    return {
+        "comment_id": comment_id,
         "likes": likes,
         "dislikes": dislikes
     }
@@ -53,6 +65,33 @@ def set_likes_by_proposal_id(db: Session, proposal_id: int, user_id: int, type: 
 
     db.commit()
     return get_likes_by_proposal_id(db, proposal_id)
+
+
+def set_likes_by_comment_id(db: Session, comment_id: int, user_id: int, type: str):
+    if type not in ("like", "dislike", "remove"):
+        return None
+    db.query(ProposalCommentLike).filter(
+        ProposalCommentLike.comment_id == comment_id
+    ).filter(
+        ProposalCommentLike.user_id == user_id
+    ).delete()
+    if type == "like":
+        db_like = ProposalCommentLike(
+            comment_id=comment_id,
+            user_id=user_id,
+            liked=True
+        )
+        db.add(db_like)
+    if type == "dislike":
+        db_like = ProposalCommentLike(
+            comment_id=comment_id,
+            user_id=user_id,
+            liked=False
+        )
+        db.add(db_like)
+
+    db.commit()
+    return get_likes_by_comment_id(db, comment_id)
 
 
 def get_followers_by_proposal_id(db: Session, proposal_id: int):
@@ -88,9 +127,10 @@ def get_references_by_proposal_id(db: Session, proposal_id: int):
     references = list(map(lambda x: x.referred_proposal_id, db_references))
     references_meta = []
     for reference in references:
-        db_proposal: Proposal = db.query(Proposal).filter(Proposal.id == reference).first()
+        db_proposal: Proposal = db.query(Proposal).filter(
+            Proposal.id == reference
+        ).first()
         likes = get_likes_by_proposal_id(db, db_proposal.id)
-
         references_meta.append(ProposalReferenceSchema(
             id=db_proposal.id,
             name=db_proposal.name,
@@ -124,16 +164,45 @@ def add_reference_by_proposal_id(db: Session, user_id: int, proposal_id: int, re
 
 def get_comments_by_proposal_id(db: Session, proposal_id: int):
     db_comments = db.query(Comment, User.alias).filter(
-        Comment.proposal_id == proposal_id).join(User, Comment.user_id == User.id).all()
-    db_comments = [CommentSchema(
-        id=comment[0].id,
-        date=comment[0].date,
-        user_id=comment[0].user_id,
-        parent=comment[0].parent,
-        comment=comment[0].comment,
-        alias=comment[1]
-    ) for comment in db_comments]
-    return db_comments
+        Comment.proposal_id == proposal_id
+    ).join(User, Comment.user_id == User.id).all()
+    comments = []
+    for comment in db_comments:
+        likes = get_likes_by_comment_id(db, comment[0].id)
+        comments.append(
+            CommentSchema(
+                id=comment[0].id,
+                date=comment[0].date,
+                user_id=comment[0].user_id,
+                parent=comment[0].parent,
+                comment=comment[0].comment,
+                alias=comment[1],
+                likes=likes["likes"],
+                dislikes=likes["dislikes"]
+            )
+        )
+
+    return comments
+
+
+def get_comment_by_id(db: Session, id: int):
+    db_comment = db.query(Comment, User.alias).filter(
+        Comment.id == id
+    ).join(User, Comment.user_id == User.id).first()
+    if not db_comment:
+        return None
+    likes = get_likes_by_comment_id(comment[0].id)
+    comment = CommentSchema(
+        id=db_comment[0].id,
+        date=db_comment[0].date,
+        user_id=db_comment[0].user_id,
+        alias=db_comment[1],
+        parent=db_comment[0].parent,
+        comment=db_comment[0].comment,
+        likes=likes["likes"],
+        dislikes=likes["dislikes"]
+    )
+    return comment
 
 
 def add_commment_by_proposal_id(db: Session, proposal_id: int, comment: CreateOrUpdateComment):
@@ -213,6 +282,7 @@ def get_proposals_by_dao_id(db: Session, dao_id: int):
     proposals = list(map(lambda x: get_proposal_by_id(db, x.id), db_proposals))
     return proposals
 
+
 def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     db_proposal = Proposal(
         dao_id=proposal.dao_id,
@@ -234,6 +304,7 @@ def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     create_proposal_references(db, db_proposal.id, proposal.references)
     return get_proposal_by_id(db, db_proposal.id)
 
+
 def create_proposal_references(db: Session, id: int, references: t.List[int]):
     for reference in references:
         temp_proposal = get_proposal_by_id(db, reference)
@@ -245,7 +316,7 @@ def create_proposal_references(db: Session, id: int, references: t.List[int]):
             db.add(proposal_reference)
     db.commit()
     return True
-        
+
 
 def edit_proposal_basic_by_id(db: Session, user_id: int, id: int, proposal: UpdateProposalBasicSchema):
     db_proposal = db.query(Proposal).filter(Proposal.id == id).first()
