@@ -191,7 +191,7 @@ def get_comment_by_id(db: Session, id: int):
     ).join(User, Comment.user_id == User.id).first()
     if not db_comment:
         return None
-    likes = get_likes_by_comment_id(comment[0].id)
+    likes = get_likes_by_comment_id(db, db_comment[0].id)
     comment = CommentSchema(
         id=db_comment[0].id,
         date=db_comment[0].date,

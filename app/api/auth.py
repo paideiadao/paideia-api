@@ -29,8 +29,8 @@ auth_router = r = APIRouter()
 ##################################
 
 
-BASE_ERGOAUTH = "ergoauth://192.168.1.8:8000"
-BASE_URL = "http://192.168.1.8:8000"
+BASE_ERGOAUTH = "ergoauth://192.168.1.10:8000"
+BASE_URL = "http://192.168.1.10:8000"
 
 
 @r.post("/login", response_model=LoginRequestWebResponse, name="ergoauth:login-web")

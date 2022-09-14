@@ -15,7 +15,6 @@ CFG = Config[Network]
 
 util_router = r = APIRouter()
 
-
 @r.post("/upload_file", name="util:upload-file-to-S3")
 def upload(fileobject: UploadFile = File(...), current_user=Depends(get_current_active_user)):
     """
