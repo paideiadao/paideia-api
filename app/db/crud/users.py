@@ -226,7 +226,6 @@ def create_user_dao_profile(db: Session, user_id: int, dao_id: int):
         user_id=db_user.id,
         dao_id=dao_id,
         name=db_user.alias,
-        social_links=[]
     )
     db_user_profile_settings = models.UserProfileSettings(
         user_id=db_user.id,
