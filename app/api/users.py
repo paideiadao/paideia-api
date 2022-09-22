@@ -34,7 +34,7 @@ from core import security
 users_router = r = APIRouter()
 
 
-BASE_URL = "http://192.168.1.8:8000"
+BASE_URL = "https://api.paideia.im"
 
 
 @r.get(
@@ -180,7 +180,7 @@ def edit_user_address_config(
     """
     try:
         verificationId = generate_verification_id()
-        tokenUrl = f"{BASE_URL}/api/users/verify_address/{verificationId}"
+        tokenUrl = f"{BASE_URL}/users/verify_address/{verificationId}"
         ret = {
             "user_id": current_user.id,
             "address": req.address,

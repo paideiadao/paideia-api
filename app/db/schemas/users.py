@@ -56,7 +56,7 @@ class UpdateUserDetails(BaseModel):
     bio: t.Optional[str]
     level: int = 0
     xp: int = 0
-    social_links: t.Optional[t.List[dict]]
+    social_links: t.List[dict] = []
 
 
 class UserDetails(UpdateUserDetails):

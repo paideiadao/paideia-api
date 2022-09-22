@@ -29,8 +29,8 @@ auth_router = r = APIRouter()
 ##################################
 
 
-BASE_ERGOAUTH = "ergoauth://192.168.1.10:8000"
-BASE_URL = "http://192.168.1.10:8000"
+BASE_ERGOAUTH = "ergoauth://api.paideia.im"
+BASE_URL = "https://api.paieia.im"
 
 
 @r.post("/login", response_model=LoginRequestWebResponse, name="ergoauth:login-web")
@@ -48,7 +48,7 @@ async def ergoauth_login_web(
             )
 
         verificationId = generate_verification_id()
-        tokenUrl = f"{BASE_URL}/api/auth/token/{verificationId}"
+        tokenUrl = f"{BASE_URL}/auth/token/{verificationId}"
         ret = LoginRequestWebResponse(
             address=default_address,
             signingMessage=generate_signing_message(),
@@ -110,8 +110,8 @@ async def ergoauth_login_mobile(
     try:
         verificationId = generate_verification_id()
         # update url on deployment
-        signingRequestUrl = f"{BASE_ERGOAUTH}/api/auth/signing_request/{verificationId}"
-        replyTo = f"{BASE_URL}/api/auth/verify/{verificationId}"
+        signingRequestUrl = f"{BASE_ERGOAUTH}/auth/signing_request/{verificationId}"
+        replyTo = f"{BASE_URL}/auth/verify/{verificationId}"
         sigmaBoolean = ErgoAppKit.getSigmaBooleanFromAddress(
             addresses.addresses[0])
         ergoAuthRequest = ErgoAuthRequest(
