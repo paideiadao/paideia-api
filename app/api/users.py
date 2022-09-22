@@ -19,7 +19,8 @@ from db.crud.users import (
     edit_user_profile,
     edit_user_profile_settings,
     update_user_follower,
-    update_primary_address_for_user
+    update_primary_address_for_user,
+    get_dao_users
 )
 from db.schemas.users import UserCreate, UserEdit, User, UserDetails, UserProfileSettings, UpdateUserDetails, UpdateUserProfileSettings, FollowUserRequest, UserAddressConfig, PrimaryAddressChangeRequest
 from db.schemas.ergoauth import LoginRequestWebResponse, ErgoAuthResponse
@@ -309,6 +310,25 @@ def user_profile_settings(
     """
     try:
         return get_user_profile_settings(db, user.id, dao_id)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+@r.get(
+    "/by_dao_id/{dao_id}",
+    response_model=t.List[UserDetails],
+    response_model_exclude_none=True,
+    name="users:user-dao-details"
+)
+def user_dao_details(
+    dao_id: int,
+    db=Depends(get_db),
+):
+    """
+    Get users by dao
+    """
+    try:
+        return get_dao_users(db, dao_id)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 

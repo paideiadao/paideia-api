@@ -78,7 +78,26 @@ def get_users(
 ) -> t.List[schemas.UserOut]:
     return db.query(models.User).offset(skip).limit(limit).all()
 
-
+def get_dao_users(db: Session, dao_id: int) -> t.List[schemas.UserDetails]:
+    all_dao_users_raw = db.query(models.UserDetails).filter(models.UserDetails.dao_id==dao_id).all()
+    all_dao_users = []
+    for user in all_dao_users_raw:
+        follower_data = get_followers_by_user_id(db, user.user_id)
+        all_dao_users.append(schemas.UserDetails(
+            id=user.id,
+            user_id=user.user_id,
+            dao_id=user.dao_id,
+            name=user.name,
+            profile_img_url=user.profile_img_url,
+            bio=user.bio,
+            level=user.level,
+            xp=user.xp,
+            followers=follower_data["followers"],
+            following=follower_data["following"],
+            social_links=user.social_links,
+        ))
+    return all_dao_users
+    
 def create_user(db: Session, user: schemas.UserCreate):
     hashed_password = get_password_hash(user.password)
     db_user = models.User(
@@ -207,6 +226,7 @@ def create_user_dao_profile(db: Session, user_id: int, dao_id: int):
         user_id=db_user.id,
         dao_id=dao_id,
         name=db_user.alias,
+        social_links=[]
     )
     db_user_profile_settings = models.UserProfileSettings(
         user_id=db_user.id,
