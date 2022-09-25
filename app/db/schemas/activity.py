@@ -7,7 +7,7 @@ import datetime
 
 
 class CreateOrUpdateActivity(BaseModel):
-    user_id: int
+    user_details_id: int
     img_url: t.Optional[str]
     action: t.Optional[str]
     value: t.Optional[str]

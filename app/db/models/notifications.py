@@ -10,7 +10,7 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer)
+    user_details_id = Column(Integer)
     img = Column(String)
     action = Column(String)
 

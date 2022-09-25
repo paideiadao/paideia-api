@@ -2,7 +2,7 @@ import typing as t
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
-from db.models.users import User
+from db.models.users import UserDetails
 
 from db.models.proposals import Proposal, ProposalReference, ProposalLike, ProposalFollower, Comment, Addendum, ProposalCommentLike
 from db.schemas.proposal import ProposalReference as ProposalReferenceSchema, Proposal as ProposalSchema, CreateProposal as CreateProposalSchema, Comment as CommentSchema, UpdateProposalBasic as UpdateProposalBasicSchema, CreateOrUpdateAddendum, CreateOrUpdateComment
@@ -19,8 +19,8 @@ def get_basic_proposal_by_id(db: Session, id: int):
 def get_likes_by_proposal_id(db: Session, proposal_id: int):
     db_likes = db.query(ProposalLike).filter(
         ProposalLike.proposal_id == proposal_id).all()
-    likes = list(map(lambda x: x.user_id, filter(lambda x: x.liked, db_likes)))
-    dislikes = list(map(lambda x: x.user_id, filter(
+    likes = list(map(lambda x: x.user_details_id, filter(lambda x: x.liked, db_likes)))
+    dislikes = list(map(lambda x: x.user_details_id, filter(
         lambda x: x.liked == False, db_likes)))
     return {
         "proposal_id": proposal_id,
@@ -33,8 +33,8 @@ def get_likes_by_comment_id(db: Session, comment_id: int):
     db_likes = db.query(ProposalCommentLike).filter(
         ProposalCommentLike.comment_id == comment_id
     )
-    likes = list(map(lambda x: x.user_id, filter(lambda x: x.liked, db_likes)))
-    dislikes = list(map(lambda x: x.user_id, filter(
+    likes = list(map(lambda x: x.user_details_id, filter(lambda x: x.liked, db_likes)))
+    dislikes = list(map(lambda x: x.user_details_id, filter(
         lambda x: x.liked == False, db_likes)))
     return {
         "comment_id": comment_id,
@@ -43,22 +43,23 @@ def get_likes_by_comment_id(db: Session, comment_id: int):
     }
 
 
-def set_likes_by_proposal_id(db: Session, proposal_id: int, user_id: int, type: str):
+def set_likes_by_proposal_id(db: Session, proposal_id: int, user_details_id: int, type: str):
     if type not in ("like", "dislike", "remove"):
         return None
     db.query(ProposalLike).filter(ProposalLike.proposal_id == proposal_id).filter(
-        ProposalLike.user_id == user_id).delete()
+        ProposalLike.user_details_id == user_details_id
+    ).delete()
     if type == "like":
         db_like = ProposalLike(
             proposal_id=proposal_id,
-            user_id=user_id,
+            user_details_id=user_details_id,
             liked=True
         )
         db.add(db_like)
     if type == "dislike":
         db_like = ProposalLike(
             proposal_id=proposal_id,
-            user_id=user_id,
+            user_details_id=user_details_id,
             liked=False
         )
         db.add(db_like)
@@ -67,25 +68,25 @@ def set_likes_by_proposal_id(db: Session, proposal_id: int, user_id: int, type: 
     return get_likes_by_proposal_id(db, proposal_id)
 
 
-def set_likes_by_comment_id(db: Session, comment_id: int, user_id: int, type: str):
+def set_likes_by_comment_id(db: Session, comment_id: int, user_details_id: int, type: str):
     if type not in ("like", "dislike", "remove"):
         return None
     db.query(ProposalCommentLike).filter(
         ProposalCommentLike.comment_id == comment_id
     ).filter(
-        ProposalCommentLike.user_id == user_id
+        ProposalCommentLike.user_details_id == user_details_id
     ).delete()
     if type == "like":
         db_like = ProposalCommentLike(
             comment_id=comment_id,
-            user_id=user_id,
+            user_details_id=user_details_id,
             liked=True
         )
         db.add(db_like)
     if type == "dislike":
         db_like = ProposalCommentLike(
             comment_id=comment_id,
-            user_id=user_id,
+            user_details_id=user_details_id,
             liked=False
         )
         db.add(db_like)
@@ -97,22 +98,22 @@ def set_likes_by_comment_id(db: Session, comment_id: int, user_id: int, type: st
 def get_followers_by_proposal_id(db: Session, proposal_id: int):
     db_followers = db.query(ProposalFollower).filter(
         ProposalFollower.proposal_id == proposal_id).all()
-    followers = list(map(lambda x: x.user_id, db_followers))
+    followers = list(map(lambda x: x.user_details_id, db_followers))
     return {
         "proposal_id": proposal_id,
         "followers": followers
     }
 
 
-def set_followers_by_proposal_id(db: Session, proposal_id: int, user_id: int, type: str):
+def set_followers_by_proposal_id(db: Session, proposal_id: int, user_details_id: int, type: str):
     if type not in ("follow", "unfollow"):
         return None
     db.query(ProposalFollower).filter(ProposalFollower.proposal_id == proposal_id).filter(
-        ProposalFollower.user_id == user_id).delete()
+        ProposalFollower.user_details_id == user_details_id).delete()
     if type == "follow":
         db_follow = ProposalFollower(
             proposal_id=proposal_id,
-            user_id=user_id,
+            user_details_id=user_details_id,
         )
         db.add(db_follow)
 
@@ -148,9 +149,9 @@ def get_references_by_proposal_id(db: Session, proposal_id: int):
     }
 
 
-def add_reference_by_proposal_id(db: Session, user_id: int, proposal_id: int, referred_proposal_id: int):
+def add_reference_by_proposal_id(db: Session, user_details_id: int, proposal_id: int, referred_proposal_id: int):
     db_proposal = get_basic_proposal_by_id(db, proposal_id)
-    if not db_proposal or db_proposal.user_id != user_id:
+    if not db_proposal or db_proposal.user_details_id != user_details_id:
         return None
     db_reference = ProposalReference(
         referred_proposal_id=referred_proposal_id,
@@ -163,9 +164,11 @@ def add_reference_by_proposal_id(db: Session, user_id: int, proposal_id: int, re
 
 
 def get_comments_by_proposal_id(db: Session, proposal_id: int):
-    db_comments = db.query(Comment, User.alias).filter(
+    db_comments = db.query(Comment, UserDetails.name).filter(
         Comment.proposal_id == proposal_id
-    ).join(User, Comment.user_id == User.id).all()
+    ).join(
+        UserDetails, Comment.user_details_id == UserDetails.id
+    ).all()
     comments = []
     for comment in db_comments:
         likes = get_likes_by_comment_id(db, comment[0].id)
@@ -173,7 +176,7 @@ def get_comments_by_proposal_id(db: Session, proposal_id: int):
             CommentSchema(
                 id=comment[0].id,
                 date=comment[0].date,
-                user_id=comment[0].user_id,
+                user_details_id=comment[0].user_details_id,
                 parent=comment[0].parent,
                 comment=comment[0].comment,
                 alias=comment[1],
@@ -186,16 +189,16 @@ def get_comments_by_proposal_id(db: Session, proposal_id: int):
 
 
 def get_comment_by_id(db: Session, id: int):
-    db_comment = db.query(Comment, User.alias).filter(
+    db_comment = db.query(Comment, UserDetails.name).filter(
         Comment.id == id
-    ).join(User, Comment.user_id == User.id).first()
+    ).join(UserDetails, Comment.user_details_id == UserDetails.id).first()
     if not db_comment:
         return None
     likes = get_likes_by_comment_id(db, db_comment[0].id)
     comment = CommentSchema(
         id=db_comment[0].id,
         date=db_comment[0].date,
-        user_id=db_comment[0].user_id,
+        user_details_id=db_comment[0].user_details_id,
         alias=db_comment[1],
         parent=db_comment[0].parent,
         comment=db_comment[0].comment,
@@ -208,7 +211,7 @@ def get_comment_by_id(db: Session, id: int):
 def add_commment_by_proposal_id(db: Session, proposal_id: int, comment: CreateOrUpdateComment):
     db_comment = Comment(
         proposal_id=proposal_id,
-        user_id=comment.user_id,
+        user_details_id=comment.user_details_id,
         parent=comment.parent,
         comment=comment.comment
     )
@@ -224,9 +227,9 @@ def get_addendums_by_proposal_id(db: Session, proposal_id: int):
     return db_addendums
 
 
-def add_addendum_by_proposal_id(db: Session, user_id: int, proposal_id: int, addendum: CreateOrUpdateAddendum):
+def add_addendum_by_proposal_id(db: Session, user_details_id: int, proposal_id: int, addendum: CreateOrUpdateAddendum):
     db_proposal = get_basic_proposal_by_id(db, proposal_id)
-    if not db_proposal or db_proposal.user_id != user_id:
+    if not db_proposal or db_proposal.user_details_id != user_details_id:
         return None
     db_addendum = Addendum(
         proposal_id=proposal_id,
@@ -254,7 +257,7 @@ def get_proposal_by_id(db: Session, id: int):
     proposal = ProposalSchema(
         id=db_proposal.id,
         dao_id=db_proposal.dao_id,
-        user_id=db_proposal.user_id,
+        user_details_id=db_proposal.user_details_id,
         name=db_proposal.name,
         image_url=db_proposal.image_url,
         category=db_proposal.category,
@@ -286,7 +289,7 @@ def get_proposals_by_dao_id(db: Session, dao_id: int):
 def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     db_proposal = Proposal(
         dao_id=proposal.dao_id,
-        user_id=proposal.user_id,
+        user_details_id=proposal.user_details_id,
         name=proposal.name,
         image_url=proposal.image_url,
         category=proposal.category,
@@ -318,13 +321,13 @@ def create_proposal_references(db: Session, id: int, references: t.List[int]):
     return True
 
 
-def edit_proposal_basic_by_id(db: Session, user_id: int, id: int, proposal: UpdateProposalBasicSchema):
+def edit_proposal_basic_by_id(db: Session, user_details_id: int, id: int, proposal: UpdateProposalBasicSchema):
     db_proposal = db.query(Proposal).filter(Proposal.id == id).first()
     if not db_proposal:
         return None
 
     # safety check
-    if db_proposal.user_id != user_id or proposal.user_id != user_id:
+    if db_proposal.user_details_id != user_details_id or proposal.user_details_id != user_details_id:
         return None
 
     update_data = proposal.dict(exclude_unset=True)

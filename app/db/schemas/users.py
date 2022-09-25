@@ -76,15 +76,15 @@ class UpdateUserProfileSettings(BaseModel):
 
 class UserProfileSettings(UpdateUserProfileSettings):
     id: int
-    user_id: int
-    dao_id: int
+    user_details_id: int
 
     class Config:
         orm_mode = True
 
 
 class FollowUserRequest(BaseModel):
-    user_id: int
+    current_user_details_id: int    # user_details_id for current user
+    user_details_id: int
     type: str
 
 

@@ -4,7 +4,7 @@ import typing as t
 
 
 class CreateAndUpdateNotification(BaseModel):
-    user_id: int
+    user_details_id: int
     img: t.Optional[str]
     action: t.Optional[str]
     proposal_id: t.Optional[int]

@@ -11,7 +11,7 @@ class Proposal(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     dao_id = Column(Integer)
-    user_id = Column(Integer)
+    user_details_id = Column(Integer)
     name = Column(String)
     image_url = Column(String)
     category = Column(String)
@@ -40,7 +40,7 @@ class Comment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     proposal_id = Column(Integer)
-    user_id = Column(Integer)
+    user_details_id = Column(Integer)
     comment = Column(String)
     parent = Column(Integer)
     date = Column(DateTime(timezone=True), server_default=func.now())
@@ -51,7 +51,7 @@ class ProposalLike(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     proposal_id = Column(Integer)
-    user_id = Column(Integer)
+    user_details_id = Column(Integer)
     liked = Column(Boolean)
 
 
@@ -60,7 +60,7 @@ class ProposalCommentLike(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     comment_id = Column(Integer)
-    user_id = Column(Integer)
+    user_details_id = Column(Integer)
     liked = Column(Boolean)
 
 
@@ -69,7 +69,7 @@ class ProposalFollower(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     proposal_id = Column(Integer)
-    user_id = Column(Integer)
+    user_details_id = Column(Integer)
 
 
 class ProposalReference(Base):

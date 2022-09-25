@@ -20,7 +20,8 @@ from db.crud.users import (
     edit_user_profile_settings,
     update_user_follower,
     update_primary_address_for_user,
-    get_dao_users
+    get_dao_users,
+    get_user_details_by_id,
 )
 from db.schemas.users import UserCreate, UserEdit, User, UserDetails, UserProfileSettings, UpdateUserDetails, UpdateUserProfileSettings, FollowUserRequest, UserAddressConfig, PrimaryAddressChangeRequest
 from db.schemas.ergoauth import LoginRequestWebResponse, ErgoAuthResponse
@@ -275,6 +276,25 @@ def user_search(
 
 
 @r.get(
+    "/by_dao_id/{dao_id}",
+    response_model=t.List[UserDetails],
+    response_model_exclude_none=True,
+    name="users:user-dao-details"
+)
+def user_dao_details(
+    dao_id: int,
+    db=Depends(get_db),
+):
+    """
+    Get users by dao
+    """
+    try:
+        return get_dao_users(db, dao_id)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+
+
+@r.get(
     "/details/{user_id}",
     response_model=UserDetails,
     response_model_exclude_none=True,
@@ -301,7 +321,7 @@ def user_details_all(
     name="users:user-profile-settings"
 )
 def user_profile_settings(
-    dao_id: int,
+    user_details_id: int,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
 ):
@@ -309,26 +329,12 @@ def user_profile_settings(
     Get any user profile preferences
     """
     try:
-        return get_user_profile_settings(db, user.id, dao_id)
-    except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
-
-
-@r.get(
-    "/by_dao_id/{dao_id}",
-    response_model=t.List[UserDetails],
-    response_model_exclude_none=True,
-    name="users:user-dao-details"
-)
-def user_dao_details(
-    dao_id: int,
-    db=Depends(get_db),
-):
-    """
-    Get users by dao
-    """
-    try:
-        return get_dao_users(db, dao_id)
+        user_details = get_user_details_by_id(db, user_details_id)
+        if type(user_details) == JSONResponse:
+            return user_details
+        if user_details.user_id != user.id:
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+        return get_user_profile_settings(db, user_details_id)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
@@ -351,11 +357,10 @@ def create_user_profile(
 
 
 @r.put(
-    "/details/{user_id}", response_model=UserDetails, response_model_exclude_none=True, name="users:edit-details"
+    "/details/{user_details_id}", response_model=UserDetails, response_model_exclude_none=True, name="users:edit-details"
 )
 def edit_user_details(
-    user_id: int,
-    dao_id: int,
+    user_details_id: int,
     user_details: UpdateUserDetails,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
@@ -364,9 +369,12 @@ def edit_user_details(
     Update existing user details
     """
     try:
-        if user_id != current_user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="User not authorized")
-        return edit_user_profile(db, user_id, dao_id, user_details)
+        _user_details = get_user_details_by_id(db, user_details_id)
+        if type(_user_details) == JSONResponse:
+            return _user_details
+        if _user_details.user_id != current_user.id:
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+        return edit_user_profile(db, user_details_id, user_details)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
@@ -375,7 +383,7 @@ def edit_user_details(
     "/profile/settings", response_model=UserProfileSettings, response_model_exclude_none=True, name="users:edit-profile-settings"
 )
 def edit_user_settings(
-    dao_id: int,
+    user_details_id: int,
     user_settings: UpdateUserProfileSettings,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
@@ -384,7 +392,12 @@ def edit_user_settings(
     Update existing user preferences
     """
     try:
-        return edit_user_profile_settings(db, current_user.id, dao_id, user_settings)
+        user_details = get_user_details_by_id(db, user_details_id)
+        if type(user_details) == JSONResponse:
+            return user_details
+        if user_details.user_id != current_user.id:
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+        return edit_user_profile_settings(db, user_details_id, user_settings)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
@@ -401,6 +414,12 @@ def user_profile_follow(
     Follow/Unfollow user
     """
     try:
-        return update_user_follower(db, current_user.id, req)
+        user_details_id = req.current_user_details_id
+        user_details = get_user_details_by_id(db, user_details_id)
+        if type(user_details) == JSONResponse:
+            return user_details
+        if user_details.user_id != current_user.id:
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+        return update_user_follower(db, user_details_id, req)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')

@@ -43,8 +43,7 @@ class UserProfileSettings(Base):
     __tablename__ = "user_profile_settings"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer)
-    dao_id = Column(Integer)
+    user_details_id = Column(Integer)
     settings = Column(JSON)
 
 
