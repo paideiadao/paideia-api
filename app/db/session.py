@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from config import Config, Network  # api specific config
 CFG = Config[Network]
 
-engine = create_engine(CFG.connectionString)
+engine = create_engine(CFG.connection_string)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

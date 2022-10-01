@@ -9,4 +9,5 @@ def test_always_passes():
 
 def test_ping():
     res = ping()
-    assert res["hello"] == "world"
+    assert res["status"] == "ok"
+    assert "message" in res

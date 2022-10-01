@@ -1,7 +1,7 @@
 import uvicorn
 import databases
 
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 
@@ -12,13 +12,14 @@ from api.util import util_router
 from api.activities import activity_router
 from api.proposals import proposal_router
 from api.notifications import notification_router
+from api.assets import assets_router
 
-from core.auth import get_current_active_user
+
 from config import Config, Network
 
 
 CFG = Config[Network]
-DATABASE_URL = CFG.connectionString
+DATABASE_URL = CFG.connection_string
 
 
 database = databases.Database(DATABASE_URL)
@@ -66,11 +67,15 @@ app.add_middleware(
 
 @app.get("/api/ping")
 def ping():
-    return {"hello": "world"}
+    return {
+        "status": "ok",
+        "message": "Service is healthy"
+    }
 
 
 app.include_router(users_router, prefix="/api/users", tags=["users"])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+app.include_router(assets_router, prefix="/api/assets", tags=["assets"])
 app.include_router(dao_router, prefix="/api/dao", tags=["dao"])
 app.include_router(proposal_router, prefix="/api/proposals", tags=["proposals"])
 app.include_router(activity_router, prefix="/api/activities", tags=["activities"])

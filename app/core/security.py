@@ -13,7 +13,7 @@ CFG = Config[Network]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/admin/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = CFG.jwtSecret
+SECRET_KEY = CFG.jwt_secret
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
@@ -56,4 +56,4 @@ def generate_signing_message() -> str:
     # we need a message to sign. This message should be unique for our dApp,
     # never occur twice and should not be predictable, so we use a timestring, a unique name
     # and a random component
-    return str(secrets.token_urlsafe() + CFG.ergoAuthSeed + str(int(time.time())))
+    return str(secrets.token_urlsafe() + CFG.ergoauth_seed + str(int(time.time())))

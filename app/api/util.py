@@ -30,11 +30,11 @@ def upload(fileobject: UploadFile = File(...), current_user=Depends(get_current_
             str(current_time.timestamp()).replace('.', '')
         file_extension = split_file_name[1]  # file extention
         data = fileobject.file._file  # Converting tempfile.SpooledTemporaryFile to io.BytesIO
-        filename_mod = CFG.s3Key + "." + file_name_unique + file_extension
-        uploads3 = S3.Bucket(CFG.s3Bucket).put_object(
+        filename_mod = CFG.s3_key + "." + file_name_unique + file_extension
+        uploads3 = S3.Bucket(CFG.s3_bucket).put_object(
             Key=filename_mod, Body=data, ACL='public-read')
         if uploads3:
-            s3_url = f"https://{CFG.s3Bucket}.s3.{CFG.awsRegion}.amazonaws.com/{filename_mod}"
+            s3_url = f"https://{CFG.s3_bucket}.s3.{CFG.aws_region}.amazonaws.com/{filename_mod}"
             return {"status": "success", "image_url": s3_url}  # response added
         else:
             return JSONResponse(status_code=400, content="Failed to upload to S3")
