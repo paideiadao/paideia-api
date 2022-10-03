@@ -1,3 +1,5 @@
+## proposals.py (crud)
+
 import typing as t
 
 from sqlalchemy.orm import Session
@@ -164,7 +166,7 @@ def add_reference_by_proposal_id(db: Session, user_details_id: int, proposal_id:
 
 
 def get_comments_by_proposal_id(db: Session, proposal_id: int):
-    db_comments = db.query(Comment, UserDetails.name).filter(
+    db_comments = db.query(Comment, UserDetails.name, UserDetails.profile_img_url).filter(
         Comment.proposal_id == proposal_id
     ).join(
         UserDetails, Comment.user_details_id == UserDetails.id
@@ -179,6 +181,7 @@ def get_comments_by_proposal_id(db: Session, proposal_id: int):
                 user_details_id=comment[0].user_details_id,
                 parent=comment[0].parent,
                 comment=comment[0].comment,
+                profile_img_url=comment[2],
                 alias=comment[1],
                 likes=likes["likes"],
                 dislikes=likes["dislikes"]
@@ -189,7 +192,7 @@ def get_comments_by_proposal_id(db: Session, proposal_id: int):
 
 
 def get_comment_by_id(db: Session, id: int):
-    db_comment = db.query(Comment, UserDetails.name).filter(
+    db_comment = db.query(Comment, UserDetails.name, UserDetails.profile_img_url).filter(
         Comment.id == id
     ).join(UserDetails, Comment.user_details_id == UserDetails.id).first()
     if not db_comment:
@@ -199,6 +202,7 @@ def get_comment_by_id(db: Session, id: int):
         id=db_comment[0].id,
         date=db_comment[0].date,
         user_details_id=db_comment[0].user_details_id,
+        profile_img_url=db_comment[2],
         alias=db_comment[1],
         parent=db_comment[0].parent,
         comment=db_comment[0].comment,
