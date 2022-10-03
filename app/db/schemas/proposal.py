@@ -46,6 +46,7 @@ class Comment(CreateOrUpdateComment):
     id: int
     date: datetime.datetime
     alias: str
+    profile_img_url: t.Optional[str]
     likes: t.List[int]  # list of user_details_ids who like
     dislikes: t.List[int]  # list of user_details_ids who dislike
 
