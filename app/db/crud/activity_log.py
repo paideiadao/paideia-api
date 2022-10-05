@@ -10,10 +10,12 @@ from db.schemas import activity
 ########################################
 
 
-def get_user_activities(db: Session, user_details_id: int):
+def get_user_activities(db: Session, user_details_id: int, limit: int = 100):
     return db.query(activity_log.Activity).filter(
         activity_log.Activity.user_details_id == user_details_id
-    ).all()
+    ).order_by(
+        activity_log.Activity.date.desc()
+    ).limit(limit).all()
 
 
 def create_user_activity(db: Session, user_details_id: int, activity: activity.CreateOrUpdateActivity):
