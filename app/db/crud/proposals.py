@@ -2,6 +2,8 @@
 
 import typing as t
 
+from fastapi import status
+from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
 from db.models.users import UserDetails
@@ -47,7 +49,7 @@ def get_likes_by_comment_id(db: Session, comment_id: int):
 
 def set_likes_by_proposal_id(db: Session, proposal_id: int, user_details_id: int, type: str):
     if type not in ("like", "dislike", "remove"):
-        return None
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="invalid like request type")
     db.query(ProposalLike).filter(ProposalLike.proposal_id == proposal_id).filter(
         ProposalLike.user_details_id == user_details_id
     ).delete()
@@ -72,7 +74,7 @@ def set_likes_by_proposal_id(db: Session, proposal_id: int, user_details_id: int
 
 def set_likes_by_comment_id(db: Session, comment_id: int, user_details_id: int, type: str):
     if type not in ("like", "dislike", "remove"):
-        return None
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="invalid like request type")
     db.query(ProposalCommentLike).filter(
         ProposalCommentLike.comment_id == comment_id
     ).filter(
@@ -109,7 +111,7 @@ def get_followers_by_proposal_id(db: Session, proposal_id: int):
 
 def set_followers_by_proposal_id(db: Session, proposal_id: int, user_details_id: int, type: str):
     if type not in ("follow", "unfollow"):
-        return None
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="invalid follow request type")
     db.query(ProposalFollower).filter(ProposalFollower.proposal_id == proposal_id).filter(
         ProposalFollower.user_details_id == user_details_id).delete()
     if type == "follow":
@@ -154,7 +156,7 @@ def get_references_by_proposal_id(db: Session, proposal_id: int):
 def add_reference_by_proposal_id(db: Session, user_details_id: int, proposal_id: int, referred_proposal_id: int):
     db_proposal = get_basic_proposal_by_id(db, proposal_id)
     if not db_proposal or db_proposal.user_details_id != user_details_id:
-        return None
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
     db_reference = ProposalReference(
         referred_proposal_id=referred_proposal_id,
         referring_proposal_id=proposal_id
@@ -196,7 +198,7 @@ def get_comment_by_id(db: Session, id: int):
         Comment.id == id
     ).join(UserDetails, Comment.user_details_id == UserDetails.id).first()
     if not db_comment:
-        return None
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="comment not found")
     likes = get_likes_by_comment_id(db, db_comment[0].id)
     comment = CommentSchema(
         id=db_comment[0].id,
@@ -234,7 +236,7 @@ def get_addendums_by_proposal_id(db: Session, proposal_id: int):
 def add_addendum_by_proposal_id(db: Session, user_details_id: int, proposal_id: int, addendum: CreateOrUpdateAddendum):
     db_proposal = get_basic_proposal_by_id(db, proposal_id)
     if not db_proposal or db_proposal.user_details_id != user_details_id:
-        return None
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
     db_addendum = Addendum(
         proposal_id=proposal_id,
         name=addendum.name,
@@ -249,7 +251,7 @@ def add_addendum_by_proposal_id(db: Session, user_details_id: int, proposal_id: 
 def get_proposal_by_id(db: Session, id: int):
     db_proposal = db.query(Proposal).filter(Proposal.id == id).first()
     if not db_proposal:
-        return None
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
     likes = get_likes_by_proposal_id(db, id)
     followers = get_followers_by_proposal_id(db, id)
     references = get_references_by_proposal_id(db, id)
@@ -315,7 +317,7 @@ def create_new_proposal(db: Session, proposal: CreateProposalSchema):
 def create_proposal_references(db: Session, id: int, references: t.List[int]):
     for reference in references:
         temp_proposal = get_proposal_by_id(db, reference)
-        if temp_proposal is not None and id != reference:
+        if type(temp_proposal) != JSONResponse and id != reference:
             proposal_reference = ProposalReference(
                 referred_proposal_id=reference,
                 referring_proposal_id=id
@@ -328,11 +330,11 @@ def create_proposal_references(db: Session, id: int, references: t.List[int]):
 def edit_proposal_basic_by_id(db: Session, user_details_id: int, id: int, proposal: UpdateProposalBasicSchema):
     db_proposal = db.query(Proposal).filter(Proposal.id == id).first()
     if not db_proposal:
-        return None
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
 
     # safety check
     if db_proposal.user_details_id != user_details_id or proposal.user_details_id != user_details_id:
-        return None
+        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
 
     update_data = proposal.dict(exclude_unset=True)
 
@@ -357,7 +359,7 @@ def edit_proposal_basic_by_id(db: Session, user_details_id: int, id: int, propos
 def delete_proposal_by_id(db: Session, id: int):
     proposal = get_proposal_by_id(db, id)
     if not proposal:
-        return None
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
     # delete stuff
     db.query(ProposalReference).filter(or_(ProposalReference.referred_proposal_id ==
                                        id, ProposalReference.referring_proposal_id == id)).delete()

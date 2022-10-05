@@ -1,6 +1,3 @@
-import datetime
-import typing as t
-
 from fastapi import status
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
