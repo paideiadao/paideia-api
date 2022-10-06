@@ -4,8 +4,10 @@ import random
 from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 from starlette.responses import JSONResponse
 
+from api.notifications import notification_create
 from db.session import get_db
 from db.schemas.activity import CreateOrUpdateActivity, ActivityConstants
+from db.schemas.notifications import CreateAndUpdateNotification, NotificationConstants
 from db.schemas.proposal import Proposal, CreateProposal, LikeProposalRequest, FollowProposalRequest, UpdateProposalBasic, CreateOrUpdateComment, CreateOrUpdateAddendum, AddReferenceRequest
 from db.crud.proposals import (
     get_proposal_by_id,
@@ -22,7 +24,9 @@ from db.crud.proposals import (
     add_reference_by_proposal_id
 )
 from db.crud.activity_log import create_user_activity
+from db.crud.notifications import generate_action
 from db.crud.users import get_user_details_by_id
+from core.async_handler import run_coroutine_in_sync
 from core.auth import get_current_active_user, get_current_active_superuser
 from websocket.connection_manager import connection_manager
 
@@ -133,6 +137,8 @@ def like_proposal(proposal_id: int, req: LikeProposalRequest, db=Depends(get_db)
         likes = set_likes_by_proposal_id(db, proposal_id, user_details_id, req.type)
         # add to activities and notifier
         if type(likes) != JSONResponse:
+            proposal = get_proposal_by_id(db, proposal_id)
+            # activity logging
             action = {
                 "like": ActivityConstants.LIKED_DISCUSSION,
                 "dislike": ActivityConstants.DISLIKED_DISCUSSION,
@@ -141,10 +147,19 @@ def like_proposal(proposal_id: int, req: LikeProposalRequest, db=Depends(get_db)
             activity = CreateOrUpdateActivity(
                 user_details_id=user_details_id,
                 action=action[req.type],
-                value=get_proposal_by_id(db, proposal_id).name,
+                value=proposal.name,
                 category=ActivityConstants.PROPOSAL_CATEGORY,
             )
             create_user_activity(db, user_details_id, activity)
+            # notifications
+            if req.type == "like" and proposal.user_details_id != user_details_id:
+                notification = CreateAndUpdateNotification(
+                    user_details_id=proposal.user_details_id,
+                    action=generate_action(user_details.name, NotificationConstants.LIKED_DISCUSSION),
+                    proposal_id=proposal.id
+                )
+                # handle async web sockets stuff
+                run_coroutine_in_sync(notification_create(proposal.user_details_id, notification, db, current_user=None))
         return likes
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
@@ -165,6 +180,8 @@ def follow_proposal(proposal_id: int, req: FollowProposalRequest, db=Depends(get
         followers = set_followers_by_proposal_id(db, proposal_id, req.user_details_id, req.type)
         # add to activities and notifier
         if type(followers) != JSONResponse:
+            proposal = get_proposal_by_id(db, proposal_id)
+            # activity logging
             action = {
                 "follow": ActivityConstants.FOLLOWED_DISCUSSION,
                 "unfollow": ActivityConstants.UNFOLLOWED_DISCUSSION,
@@ -172,10 +189,19 @@ def follow_proposal(proposal_id: int, req: FollowProposalRequest, db=Depends(get
             activity = CreateOrUpdateActivity(
                 user_details_id=user_details_id,
                 action=action[req.type],
-                value=get_proposal_by_id(db, proposal_id).name,
+                value=proposal.name,
                 category=ActivityConstants.PROPOSAL_CATEGORY,
             )
             create_user_activity(db, user_details_id, activity)
+            # notifications
+            if req.type == "follow" and proposal.user_details_id != user_details_id:
+                notification = CreateAndUpdateNotification(
+                    user_details_id=proposal.user_details_id,
+                    action=generate_action(user_details.name, NotificationConstants.FOLLOW_DISCUSSION),
+                    proposal_id=proposal.id
+                )
+                # handle async web sockets stuff
+                run_coroutine_in_sync(notification_create(proposal.user_details_id, notification, db, current_user=None))
         return followers
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
@@ -213,19 +239,39 @@ async def comment_proposal(
             }
         )
         # add to activities and notifier
+        proposal = get_proposal_by_id(db, proposal_id)
+        # activity logging
         activity = CreateOrUpdateActivity(
             user_details_id=user_details_id,
             action=ActivityConstants.COMMENT,
-            value=get_proposal_by_id(db, proposal_id).name,
+            value=proposal.name,
             category=ActivityConstants.COMMENT_CATEGORY,
         )
         create_user_activity(db, user_details_id, activity)
+        # notifications
+        if proposal.user_details_id != user_details_id:
+            notification = CreateAndUpdateNotification(
+                user_details_id=proposal.user_details_id,
+                action=generate_action(user_details.name, NotificationConstants.COMMENTED_ON_DISCUSSION),
+                proposal_id=proposal.id
+            )
+            await notification_create(proposal.user_details_id, notification, db, current_user=None)
+        if "parent" in comment_dict and comment_dict["parent"] != None:
+            parent_comment_id = comment_dict["parent"]
+            parent_user_details_id = get_comment_by_id(db, parent_comment_id).user_details_id
+            if parent_user_details_id != user_details_id:
+                notification = CreateAndUpdateNotification(
+                    user_details_id=parent_user_details_id,
+                    action=generate_action(user_details.name, NotificationConstants.COMMENT_REPLY),
+                    proposal_id=proposal.id
+                )
+                await notification_create(parent_user_details_id, notification, db, current_user=None)
         return comment_dict
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
-# todo: add notifications to parent users
+# todo: add notifications and activity logging
 @r.put(
     "/comment/like/{comment_id}",
     name="proposals:like-proposal-comment"

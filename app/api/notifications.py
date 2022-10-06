@@ -29,11 +29,17 @@ notification_router = r = APIRouter()
 def notifications_list(
     user_details_id: int,
     db=Depends(get_db),
+    current_user=Depends(get_current_active_user)
 ):
     """
     Get all notifications for a user
     """
     try:
+        user_details = get_user_details_by_id(db, user_details_id)
+        if type(user_details) == JSONResponse:
+            return user_details
+        if user_details.user_id != current_user.id:
+            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
         return get_notifications(db, user_details_id)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')

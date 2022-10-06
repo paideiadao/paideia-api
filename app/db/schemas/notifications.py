@@ -3,6 +3,15 @@ import datetime
 import typing as t
 
 
+class NotificationConstants:
+    # actions
+    COMMENT_REPLY = "replied to your comment on the discussion"
+    COMMENT_LIKE = "liked your comoment on the discussion"
+    LIKED_DISCUSSION = "liked the discussion"
+    FOLLOW_DISCUSSION = "followed the discussion"
+    COMMENTED_ON_DISCUSSION = "commented on the discussion"
+
+
 class CreateAndUpdateNotification(BaseModel):
     user_details_id: int
     img: t.Optional[str]
