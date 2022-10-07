@@ -94,7 +94,7 @@ def get_dao_users(db: Session, dao_id: int) -> t.List[schemas.UserDetails]:
     all_dao_users_raw = db.query(models.UserDetails).filter(models.UserDetails.dao_id==dao_id).all()
     all_dao_users = []
     for user in all_dao_users_raw:
-        follower_data = get_followers_by_user_id(db, user.user_id)
+        follower_data = get_followers_by_user_id(db, user.id)
         all_dao_users.append(schemas.UserDetails(
             id=user.id,
             user_id=user.user_id,
