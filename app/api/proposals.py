@@ -1,9 +1,11 @@
 import typing as t
 import random
+
 from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 from starlette.responses import JSONResponse
 
 from db.session import get_db
+from db.schemas.activity import CreateOrUpdateActivity, ActivityConstants
 from db.schemas.proposal import Proposal, CreateProposal, LikeProposalRequest, FollowProposalRequest, UpdateProposalBasic, CreateOrUpdateComment, CreateOrUpdateAddendum, AddReferenceRequest
 from db.crud.proposals import (
     get_proposal_by_id,
@@ -19,6 +21,7 @@ from db.crud.proposals import (
     add_addendum_by_proposal_id,
     add_reference_by_proposal_id
 )
+from db.crud.activity_log import create_user_activity
 from db.crud.users import get_user_details_by_id
 from core.auth import get_current_active_user, get_current_active_superuser
 from websocket.connection_manager import connection_manager
@@ -48,8 +51,6 @@ def get_proposals(dao_id: int, db=Depends(get_db)):
 def get_proposal(proposal_id: int, db=Depends(get_db)):
     try:
         proposal = get_proposal_by_id(db, proposal_id)
-        if not proposal:
-            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
         return proposal
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
@@ -69,7 +70,17 @@ def create_proposal(proposal: CreateProposal, db=Depends(get_db), user=Depends(g
             return user_details
         if user_details.user_id != user.id:
             return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
-        return create_new_proposal(db, proposal)
+        proposal = create_new_proposal(db, proposal)
+        # add to activities
+        if type(proposal) != JSONResponse:
+            activity = CreateOrUpdateActivity(
+                user_details_id=user_details_id,
+                action=ActivityConstants.CREATED_DISCUSSION,
+                value=proposal.name,
+                category=ActivityConstants.PROPOSAL_CATEGORY,
+            )
+            create_user_activity(db, user_details_id, activity)
+        return proposal
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
@@ -83,8 +94,8 @@ def create_proposal(proposal: CreateProposal, db=Depends(get_db), user=Depends(g
 def edit_proposal(proposal_id: int, proposal: UpdateProposalBasic, db=Depends(get_db), user=Depends(get_current_active_user)):
     try:
         _proposal = get_proposal_by_id(db, proposal_id)
-        if not _proposal:
-            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
+        if type(_proposal) == JSONResponse:
+            return _proposal
         user_details = get_user_details_by_id(db, _proposal.user_details_id)
         if type(user_details) == JSONResponse:
             return user_details
@@ -93,6 +104,15 @@ def edit_proposal(proposal_id: int, proposal: UpdateProposalBasic, db=Depends(ge
         proposal = edit_proposal_basic_by_id(
             db, _proposal.user_details_id, proposal_id, proposal
         )
+        # add to activities
+        if type(proposal) != JSONResponse:
+            activity = CreateOrUpdateActivity(
+                user_details_id=_proposal.user_details_id,
+                action=ActivityConstants.EDITED_DISCUSSION,
+                value=proposal.name,
+                category=ActivityConstants.PROPOSAL_CATEGORY,
+            )
+            create_user_activity(db, _proposal.user_details_id, activity)
         return proposal
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
@@ -110,7 +130,22 @@ def like_proposal(proposal_id: int, req: LikeProposalRequest, db=Depends(get_db)
             return user_details
         if user_details.user_id != user.id:
             return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
-        return set_likes_by_proposal_id(db, proposal_id, user_details_id, req.type)
+        likes = set_likes_by_proposal_id(db, proposal_id, user_details_id, req.type)
+        # add to activities and notifier
+        if type(likes) != JSONResponse:
+            action = {
+                "like": ActivityConstants.LIKED_DISCUSSION,
+                "dislike": ActivityConstants.DISLIKED_DISCUSSION,
+                "remove": ActivityConstants.REMOVED_LIKE_DISCUSSION,
+            }
+            activity = CreateOrUpdateActivity(
+                user_details_id=user_details_id,
+                action=action[req.type],
+                value=get_proposal_by_id(db, proposal_id).name,
+                category=ActivityConstants.PROPOSAL_CATEGORY,
+            )
+            create_user_activity(db, user_details_id, activity)
+        return likes
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
@@ -127,7 +162,21 @@ def follow_proposal(proposal_id: int, req: FollowProposalRequest, db=Depends(get
             return user_details
         if user_details.user_id != user.id:
             return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
-        return set_followers_by_proposal_id(db, proposal_id, req.user_details_id, req.type)
+        followers = set_followers_by_proposal_id(db, proposal_id, req.user_details_id, req.type)
+        # add to activities and notifier
+        if type(followers) != JSONResponse:
+            action = {
+                "follow": ActivityConstants.FOLLOWED_DISCUSSION,
+                "unfollow": ActivityConstants.UNFOLLOWED_DISCUSSION,
+            }
+            activity = CreateOrUpdateActivity(
+                user_details_id=user_details_id,
+                action=action[req.type],
+                value=get_proposal_by_id(db, proposal_id).name,
+                category=ActivityConstants.PROPOSAL_CATEGORY,
+            )
+            create_user_activity(db, user_details_id, activity)
+        return followers
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
@@ -153,6 +202,9 @@ async def comment_proposal(
         ret = add_commment_by_proposal_id(db, proposal_id, comment)
         comment_dict = get_comment_by_id(db, ret.id).dict()
         comment_dict["date"] = str(comment_dict["date"])
+        if type(comment_dict) == JSONResponse:
+            return comment_dict
+        # web sockets
         await connection_manager.send_personal_message_by_substring_matcher(
             "proposal_comments_" + str(proposal_id),
             {
@@ -160,11 +212,20 @@ async def comment_proposal(
                 "comment": comment_dict,
             }
         )
-        return ret
+        # add to activities and notifier
+        activity = CreateOrUpdateActivity(
+            user_details_id=user_details_id,
+            action=ActivityConstants.COMMENT,
+            value=get_proposal_by_id(db, proposal_id).name,
+            category=ActivityConstants.COMMENT_CATEGORY,
+        )
+        create_user_activity(db, user_details_id, activity)
+        return comment_dict
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
+# todo: add notifications to parent users
 @r.put(
     "/comment/like/{comment_id}",
     name="proposals:like-proposal-comment"
@@ -189,8 +250,8 @@ def like_comment(comment_id: int, req: LikeProposalRequest, db=Depends(get_db), 
 def create_addendum_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum, db=Depends(get_db), user=Depends(get_current_active_user)):
     try:
         proposal = get_proposal_by_id(db, proposal_id)
-        if not proposal:
-            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
+        if type(proposal) == JSONResponse:
+            return proposal
         user_details = get_user_details_by_id(db, proposal.user_details_id)
         if type(user_details) == JSONResponse:
             return user_details
@@ -199,9 +260,26 @@ def create_addendum_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum,
         addendum = add_addendum_by_proposal_id(
             db, proposal.user_details_id, proposal_id, addendum
         )
-        if not addendum:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
-        return addendum
+        if type(addendum) == JSONResponse:
+            return addendum
+        addendum_dict = {
+            "id": addendum.id,
+            "proposal_id": addendum.proposal_id,
+            "name": addendum.name,
+            "content": addendum.content,
+            "date": str(addendum.date)
+        }
+        # add to activitites
+        activity = CreateOrUpdateActivity(
+            user_details_id=proposal.user_details_id,
+            action=ActivityConstants.ADDED_ADDENDUM,
+            value=addendum.name,
+            secondary_action=ActivityConstants.ADDENDUM_PR,
+            secondary_value=proposal.name,
+            category=ActivityConstants.PROPOSAL_CATEGORY,
+        )
+        create_user_activity(db, proposal.user_details_id, activity)
+        return addendum_dict
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
@@ -213,8 +291,8 @@ def create_addendum_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum,
 def reference_proposal(proposal_id: int, req: AddReferenceRequest, db=Depends(get_db), user=Depends(get_current_active_user)):
     try:
         proposal = get_proposal_by_id(db, proposal_id)
-        if not proposal:
-            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
+        if type(proposal) == JSONResponse:
+            return proposal
         user_details = get_user_details_by_id(db, proposal.user_details_id)
         if type(user_details) == JSONResponse:
             return user_details
@@ -223,8 +301,6 @@ def reference_proposal(proposal_id: int, req: AddReferenceRequest, db=Depends(ge
         reference = add_reference_by_proposal_id(
             db, proposal.user_details_id, proposal_id, req.referred_proposal_id
         )
-        if not reference:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
         return reference
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
@@ -239,8 +315,6 @@ def reference_proposal(proposal_id: int, req: AddReferenceRequest, db=Depends(ge
 def delete_proposal(proposal_id: int, db=Depends(get_db), user=Depends(get_current_active_superuser)):
     try:
         proposal = delete_proposal_by_id(db, proposal_id)
-        if not proposal:
-            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
         return proposal
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))

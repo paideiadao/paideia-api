@@ -2,7 +2,7 @@ import typing as t
 
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
-from core.auth import get_current_active_superuser
+from core.auth import get_current_active_user, get_current_active_superuser
 from db.session import get_db
 from db.schemas.activity import Activity, CreateOrUpdateActivity
 from db.crud.activity_log import get_user_activities, create_user_activity, delete_activity
@@ -18,7 +18,8 @@ activity_router = r = APIRouter()
 )
 def activity_list(
     user_details_id: int,
-    db=Depends(get_db)
+    db=Depends(get_db),
+    current_user=Depends(get_current_active_user)
 ):
     """
     Get all user activities
