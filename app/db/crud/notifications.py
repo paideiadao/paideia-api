@@ -73,3 +73,7 @@ def cleanup_notifications(db: Session):
     }
     db.commit()
     return ret
+
+
+def generate_action(username: str, action: str):
+    return username + ' ' + action
