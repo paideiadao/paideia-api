@@ -12,6 +12,7 @@ from db.schemas.proposal import Proposal, CreateProposal, LikeProposalRequest, F
 from db.crud.proposals import (
     get_proposal_by_id,
     get_proposals_by_dao_id,
+    get_proposals_by_user_id,
     get_comment_by_id,
     create_new_proposal,
     delete_proposal_by_id,
@@ -42,6 +43,18 @@ proposal_router = r = APIRouter()
 def get_proposals(dao_id: int, db=Depends(get_db)):
     try:
         return get_proposals_by_dao_id(db, dao_id)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+
+
+@r.get(
+    "/by_user_details_id/{user_details_id}",
+    response_model_exclude_none=True,
+    name="proposals:user-proposals"
+)
+def get_user_proposals(user_details_id: int, db=Depends(get_db)):
+    try:
+        return get_proposals_by_user_id(db, user_details_id)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 

@@ -292,6 +292,13 @@ def get_proposals_by_dao_id(db: Session, dao_id: int):
     return proposals
 
 
+def get_proposals_by_user_id(db: Session, user_details_id: int):
+    db_proposals = db.query(Proposal).filter(
+        Proposal.user_details_id == user_details_id
+    ).all()
+    return db_proposals
+
+
 def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     db_proposal = Proposal(
         dao_id=proposal.dao_id,
