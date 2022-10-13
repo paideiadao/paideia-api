@@ -203,7 +203,7 @@ def get_user_profile(db: Session, user_id: int, dao_id: int):
     ).first()
     if not db_profile:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="user not found")
-    follower_data = get_followers_by_user_id(db, user_id)
+    follower_data = get_followers_by_user_id(db, db_profile.id)
     return schemas.UserDetails(
         id=db_profile.id,
         user_id=db_profile.user_id,
