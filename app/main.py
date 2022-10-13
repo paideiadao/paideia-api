@@ -13,6 +13,7 @@ from api.activities import activity_router
 from api.proposals import proposal_router
 from api.notifications import notification_router
 from api.assets import assets_router
+from api.blogs import blogs_router
 
 
 from config import Config, Network
@@ -80,6 +81,7 @@ app.include_router(dao_router, prefix="/api/dao", tags=["dao"])
 app.include_router(proposal_router, prefix="/api/proposals", tags=["proposals"])
 app.include_router(activity_router, prefix="/api/activities", tags=["activities"])
 app.include_router(notification_router, prefix="/api/notificatons", tags=["notifications"])
+app.include_router(blogs_router, prefix="/api/blogs", tags=["blogs"])
 app.include_router(util_router, prefix="/api/util", tags=["util"])
 
 
