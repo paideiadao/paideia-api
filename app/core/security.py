@@ -8,6 +8,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 
 from config import Config, Network
+
 CFG = Config[Network]
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/admin/token")
@@ -19,7 +20,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
 
 def get_md5_hash(string: str) -> str:
-    return hashlib.md5(string.encode('utf-8')).hexdigest()
+    return hashlib.md5(string.encode("utf-8")).hexdigest()
 
 
 def get_password_hash(password: str) -> str:

@@ -6,6 +6,7 @@ import typing as t
 # Note: alias by default is the primary wallet address
 # except for admin accounts
 
+
 class UserBase(BaseModel):
     alias: str
     is_active: bool = True
@@ -65,6 +66,8 @@ class UserDetails(UpdateUserDetails):
     dao_id: int
     followers: t.List[int]
     following: t.List[int]
+    address: str
+    created: int
 
     class Config:
         orm_mode = True
@@ -83,7 +86,7 @@ class UserProfileSettings(UpdateUserProfileSettings):
 
 
 class FollowUserRequest(BaseModel):
-    current_user_details_id: int    # user_details_id for current user
+    current_user_details_id: int  # user_details_id for current user
     user_details_id: int
     type: str
 

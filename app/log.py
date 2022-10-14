@@ -7,8 +7,8 @@ class LogConfig(BaseModel):
     """Logging configuration to be set for the server"""
 
     LOGGER_NAME: str = "paideia"
-    LOG_FORMAT: str = '{log_color}{levelname:<8s}:{asctime}:{name:>8s}::{message}'
-    LOG_STYLE: str = '{'
+    LOG_FORMAT: str = "{log_color}{levelname:<8s}:{asctime}:{name:>8s}::{message}"
+    LOG_STYLE: str = "{"
     LOG_LEVEL: str = "DEBUG"
 
     # Logging config
@@ -16,9 +16,9 @@ class LogConfig(BaseModel):
     disable_existing_loggers = False
     formatters = {
         "default": {
-            '()': 'colorlog.ColoredFormatter',
-            'format': LOG_FORMAT,
-            'style': LOG_STYLE,
+            "()": "colorlog.ColoredFormatter",
+            "format": LOG_FORMAT,
+            "style": LOG_STYLE,
             # 'datefmt': '%m-%d %H:%M:%S',
         },
     }
@@ -34,4 +34,5 @@ class LogConfig(BaseModel):
     }
 
 
-def myself(): return inspect.stack()[1][3]
+def myself():
+    return inspect.stack()[1][3]

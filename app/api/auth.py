@@ -1,13 +1,31 @@
 from datetime import timedelta
 
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+    status,
+)
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
 from ergo_python_appkit.appkit import ErgoAppKit
 
-from db.crud.users import blacklist_token, get_user_by_wallet_address, get_user_by_wallet_addresses, get_primary_wallet_address_by_user_id
-from db.schemas.ergoauth import LoginRequestWebResponse, LoginRequest, LoginRequestMobileResponse, ErgoAuthRequest, ErgoAuthResponse
+from db.crud.users import (
+    blacklist_token,
+    get_user_by_wallet_address,
+    get_user_by_wallet_addresses,
+    get_primary_wallet_address_by_user_id,
+)
+from db.schemas.ergoauth import (
+    LoginRequestWebResponse,
+    LoginRequest,
+    LoginRequestMobileResponse,
+    ErgoAuthRequest,
+    ErgoAuthResponse,
+)
 from db.session import get_db
 
 from core import security
@@ -29,30 +47,25 @@ auth_router = r = APIRouter()
 ##################################
 
 
-BASE_ERGOAUTH = "ergoauth://api.paideia.im"
-BASE_URL = "https://api.paideia.im"
+BASE_ERGOAUTH = "ergoauth://192.168.1.10"
+BASE_URL = "http://localhost:8000/api"
 
 
 @r.post("/login", response_model=LoginRequestWebResponse, name="ergoauth:login-web")
-async def ergoauth_login_web(
-    addresses: LoginRequest,
-    db=Depends(get_db)
-):
+async def ergoauth_login_web(addresses: LoginRequest, db=Depends(get_db)):
     try:
         # get primary address by default
         default_address = addresses.addresses[0]
         user = get_user_by_wallet_addresses(db, addresses.addresses)
         if user:
-            default_address = get_primary_wallet_address_by_user_id(
-                db, user.id
-            )
+            default_address = get_primary_wallet_address_by_user_id(db, user.id)
 
         verificationId = generate_verification_id()
         tokenUrl = f"{BASE_URL}/auth/token/{verificationId}"
         ret = LoginRequestWebResponse(
             address=default_address,
             signingMessage=generate_signing_message(),
-            tokenUrl=tokenUrl
+            tokenUrl=tokenUrl,
         )
         cache.set(f"ergoauth_signing_request_{verificationId}", ret.dict())
         return ret
@@ -62,14 +75,16 @@ async def ergoauth_login_web(
 
 # should we add a response type here
 @r.post("/token/{request_id}", name="ergoauth:login")
-async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Depends(get_db)):
+async def ergoauth_token(
+    request_id: str, authResponse: ErgoAuthResponse, db=Depends(get_db)
+):
     try:
         signingRequest = cache.get(f"ergoauth_signing_request_{request_id}")
         verified = ErgoAppKit.verifyErgoAuthSignedMessage(
             signingRequest["address"],
             signingRequest["signingMessage"],
             authResponse.signedMessage,
-            authResponse.proof
+            authResponse.proof,
         )
         user = create_and_get_user_by_primary_wallet_address(
             db, signingRequest["address"]
@@ -85,11 +100,11 @@ async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Dep
             )
             cache.invalidate(f"ergoauth_signing_request_{request_id}")
             return {
-                "access_token": access_token, 
-                "token_type": "bearer", 
-                "permissions": permissions, 
-                'id': user.id,
-                'alias': user.alias
+                "access_token": access_token,
+                "token_type": "bearer",
+                "permissions": permissions,
+                "id": user.id,
+                "alias": user.alias,
             }
         else:
             raise HTTPException(
@@ -103,56 +118,62 @@ async def ergoauth_token(request_id: str, authResponse: ErgoAuthResponse, db=Dep
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
-@r.post("/login/mobile", response_model=LoginRequestMobileResponse, name="ergoauth:login-mobile")
-async def ergoauth_login_mobile(
-    addresses: LoginRequest
-):
+@r.post(
+    "/login/mobile",
+    response_model=LoginRequestMobileResponse,
+    name="ergoauth:login-mobile",
+)
+async def ergoauth_login_mobile(addresses: LoginRequest):
     try:
         verificationId = generate_verification_id()
         # update url on deployment
         signingRequestUrl = f"{BASE_ERGOAUTH}/auth/signing_request/{verificationId}"
         replyTo = f"{BASE_URL}/auth/verify/{verificationId}"
-        sigmaBoolean = ErgoAppKit.getSigmaBooleanFromAddress(
-            addresses.addresses[0])
+        sigmaBoolean = ErgoAppKit.getSigmaBooleanFromAddress(addresses.addresses[0])
         ergoAuthRequest = ErgoAuthRequest(
             address=addresses.addresses[0],
             signingMessage=generate_signing_message(),
             sigmaBoolean=sigmaBoolean,
-            replyTo=replyTo
+            replyTo=replyTo,
         )
-        cache.set(
-            f"ergoauth_signing_request_{verificationId}",
-            ergoAuthRequest.dict()
-        )
+        cache.set(f"ergoauth_signing_request_{verificationId}", ergoAuthRequest.dict())
         return LoginRequestMobileResponse(
             address=addresses.addresses[0],
             verificationId=verificationId,
-            signingRequestUrl=signingRequestUrl
+            signingRequestUrl=signingRequestUrl,
         )
     except Exception as e:
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
-@r.get("/signing_request/{request_id}", response_model=ErgoAuthRequest, name="ergoauth:signing-request")
+@r.get(
+    "/signing_request/{request_id}",
+    response_model=ErgoAuthRequest,
+    name="ergoauth:signing-request",
+)
 async def ergoauth_login_mobile(request_id: str):
     try:
         ret = cache.get(f"ergoauth_signing_request_{request_id}")
         if not ret:
-            return JSONResponse(status_code=400, content=f"ERR::login::invalid request id")
+            return JSONResponse(
+                status_code=400, content=f"ERR::login::invalid request id"
+            )
         return ret
     except Exception as e:
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
 @r.post("/verify/{request_id}", name="ergoauth:verify")
-async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=Depends(get_db)):
+async def ergoauth_verify(
+    request_id: str, authResponse: ErgoAuthResponse, db=Depends(get_db)
+):
     try:
         signingRequest = cache.get(f"ergoauth_signing_request_{request_id}")
         verified = ErgoAppKit.verifyErgoAuthSignedMessage(
             signingRequest["address"],
             signingRequest["signingMessage"],
             authResponse.signedMessage,
-            authResponse.proof
+            authResponse.proof,
         )
         user = create_and_get_user_by_primary_wallet_address(
             db, signingRequest["address"]
@@ -169,20 +190,24 @@ async def ergoauth_verify(request_id: str, authResponse: ErgoAuthResponse, db=De
             )
             token = {
                 "access_token": access_token,
-                "token_type": "bearer", 
+                "token_type": "bearer",
                 "permissions": permissions,
-                'id': user.id,
-                'alias': user.alias
+                "id": user.id,
+                "alias": user.alias,
             }
             # use websockets to notify the frontend
-            await connection_manager.send_personal_message("ergoauth_" + request_id, token)
+            await connection_manager.send_personal_message(
+                "ergoauth_" + request_id, token
+            )
             # invalidate the the request_id
             cache.invalidate(f"ergoauth_signing_request_{request_id}")
             return {"status": "ok"}
         else:
             # notify frontend on failure
             permissions = "login_error"
-            await connection_manager.send_personal_message("ergoauth_" + request_id, {"permissions": permissions})
+            await connection_manager.send_personal_message(
+                "ergoauth_" + request_id, {"permissions": permissions}
+            )
             return {"status": "failed"}
     except Exception as e:
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
@@ -214,12 +239,15 @@ async def websocket_endpoint(websocket: WebSocket, request_id: str):
 #         return JSONResponse(status_code=400, content=f"ERR::signup::{str(e)}")
 
 
-def create_and_get_user_by_primary_wallet_address(db: Session, primary_wallet_address: str):
+def create_and_get_user_by_primary_wallet_address(
+    db: Session, primary_wallet_address: str
+):
     user = get_user_by_wallet_address(db, primary_wallet_address)
     if user:
         return user
-    user = sign_up_new_user(db, primary_wallet_address,
-                            "__ergoauth_default", primary_wallet_address)
+    user = sign_up_new_user(
+        db, primary_wallet_address, "__ergoauth_default", primary_wallet_address
+    )
     return user
 
 
@@ -239,9 +267,7 @@ async def admin_login(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        access_token_expires = timedelta(
-            minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        access_token_expires = timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
         if user.is_superuser:
             permissions = "admin"
         else:
@@ -254,7 +280,11 @@ async def admin_login(
             data={"sub": user.alias, "permissions": permissions},
             expires_delta=access_token_expires,
         )
-        return {"access_token": access_token, "token_type": "bearer", "permissions": permissions}
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "permissions": permissions,
+        }
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -274,9 +304,7 @@ async def admin_signup(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        access_token_expires = timedelta(
-            minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        access_token_expires = timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
         if user.is_superuser:
             permissions = "admin"
         else:
@@ -298,7 +326,11 @@ async def admin_signup(
 
 
 @r.post("/logout", name="auth:logout")
-async def logout(db=Depends(get_db), token: str = Depends(security.oauth2_scheme), current_user=Depends(get_current_active_user)):
+async def logout(
+    db=Depends(get_db),
+    token: str = Depends(security.oauth2_scheme),
+    current_user=Depends(get_current_active_user),
+):
     try:
         return blacklist_token(db, token)
     except Exception as e:

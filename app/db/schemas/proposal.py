@@ -68,6 +68,10 @@ class Proposal(CreateOrUpdateProposal):
     comments: t.List[Comment]
     addendums: t.List[Addendum]
     references_meta: t.List
+    profile_img_url: str
+    user_followers: t.List[int]
+    created: int
+    alias: str
 
     class Config:
         orm_mode = True
