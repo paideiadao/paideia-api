@@ -36,7 +36,6 @@ def create_user_activity(
 ):
     db_activity = activity_log.Activity(
         user_details_id=user_details_id,
-        img_url=activity.img_url,
         action=activity.action,
         value=activity.value,
         secondary_action=activity.secondary_action,
