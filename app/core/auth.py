@@ -6,7 +6,12 @@ from db.session import get_db
 from db.models import users as models
 from db.schemas import users as schemas
 from db.schemas.token import TokenData
-from db.crud.users import get_blacklisted_token, get_user_by_alias, create_user, get_user_by_wallet_address
+from db.crud.users import (
+    get_blacklisted_token,
+    get_user_by_alias,
+    create_user,
+    get_user_by_wallet_address,
+)
 from core import security
 
 

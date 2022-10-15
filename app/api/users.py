@@ -23,7 +23,18 @@ from db.crud.users import (
     get_dao_users,
     get_user_details_by_id,
 )
-from db.schemas.users import UserCreate, UserEdit, User, UserDetails, UserProfileSettings, UpdateUserDetails, UpdateUserProfileSettings, FollowUserRequest, UserAddressConfig, PrimaryAddressChangeRequest
+from db.schemas.users import (
+    UserCreate,
+    UserEdit,
+    User,
+    UserDetails,
+    UserProfileSettings,
+    UpdateUserDetails,
+    UpdateUserProfileSettings,
+    FollowUserRequest,
+    UserAddressConfig,
+    PrimaryAddressChangeRequest,
+)
 from db.schemas.ergoauth import LoginRequestWebResponse, ErgoAuthResponse
 
 from core.auth import get_current_active_user, get_current_active_superuser
@@ -42,7 +53,7 @@ BASE_URL = "https://api.paideia.im"
     "/",
     response_model=t.List[User],
     response_model_exclude_none=True,
-    name="users:all-users"
+    name="users:all-users",
 )
 async def users_list(
     response: Response,
@@ -58,7 +69,9 @@ async def users_list(
         response.headers["Content-Range"] = f"0-9/{len(users)}"
         return users
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.get("/me", response_model=User, response_model_exclude_none=True, name="users:me")
@@ -73,7 +86,7 @@ async def user_me(current_user=Depends(get_current_active_user)):
     "/{user_id}",
     response_model=User,
     response_model_exclude_none=True,
-    name="users:user"
+    name="users:user",
 )
 async def user_details(
     user_id: int,
@@ -86,7 +99,9 @@ async def user_details(
     try:
         return get_user(db, user_id)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.post("/", response_model=User, response_model_exclude_none=True, name="users:create")
@@ -101,11 +116,16 @@ async def user_create(
     try:
         return create_user(db, user)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.put(
-    "/{user_id}", response_model=User, response_model_exclude_none=True, name="users:edit"
+    "/{user_id}",
+    response_model=User,
+    response_model_exclude_none=True,
+    name="users:edit",
 )
 async def user_edit(
     user_id: int,
@@ -119,11 +139,16 @@ async def user_edit(
     try:
         return edit_user(db, user_id, user)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.delete(
-    "/{user_id}", response_model=User, response_model_exclude_none=True, name="users:delete"
+    "/{user_id}",
+    response_model=User,
+    response_model_exclude_none=True,
+    name="users:delete",
 )
 async def user_delete(
     user_id: int,
@@ -136,7 +161,9 @@ async def user_delete(
     try:
         return delete_user(db, user_id)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 ####################
@@ -148,7 +175,7 @@ async def user_delete(
     "/address_config/{user_id}",
     response_model=UserAddressConfig,
     response_model_exclude_none=True,
-    name="user:user-address-config"
+    name="user:user-address-config",
 )
 def user_address_config(
     user_id: int,
@@ -161,15 +188,19 @@ def user_address_config(
     try:
         if user_id == current_user.id:
             return get_user_address_config(db, user_id)
-        return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="not authorized to read")
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED, content="not authorized to read"
+        )
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.post(
     "/change_primary_address",
     response_model=LoginRequestWebResponse,
-    name="user:edit-user-address-config"
+    name="user:edit-user-address-config",
 )
 def edit_user_address_config(
     req: PrimaryAddressChangeRequest,
@@ -186,19 +217,20 @@ def edit_user_address_config(
             "user_id": current_user.id,
             "address": req.address,
             "signingMessage": generate_signing_message(),
-            "tokenUrl": tokenUrl
+            "tokenUrl": tokenUrl,
         }
-        cache.set(
-            f"ergoauth_primary_address_change_request_{verificationId}", ret)
+        cache.set(f"ergoauth_primary_address_change_request_{verificationId}", ret)
         return ret
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.post(
     "/verify_address/{request_id}",
     response_model=UserAddressConfig,
-    name="user:verify-user-address-change"
+    name="user:verify-user-address-change",
 )
 def verify_user_address_change(
     request_id: str,
@@ -214,27 +246,24 @@ def verify_user_address_change(
             f"ergoauth_primary_address_change_request_{request_id}"
         )
         if signingRequest["user_id"] != current_user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
 
         verified = ErgoAppKit.verifyErgoAuthSignedMessage(
             signingRequest["address"],
             signingRequest["signingMessage"],
             authResponse.signedMessage,
-            authResponse.proof
+            authResponse.proof,
         )
         if verified:
-            cache.invalidate(
-                f"ergoauth_primary_address_change_request_{request_id}"
-            )
+            cache.invalidate(f"ergoauth_primary_address_change_request_{request_id}")
             permissions = "user"
             access_token_expires = timedelta(
                 minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES
             )
             access_token = security.create_access_token(
-                data={
-                    "sub": signingRequest['address'],
-                    "permissions": permissions
-                },
+                data={"sub": signingRequest["address"], "permissions": permissions},
                 expires_delta=access_token_expires,
             )
             ret = update_primary_address_for_user(
@@ -244,24 +273,25 @@ def verify_user_address_change(
                 id=ret.id,
                 alias=ret.alias,
                 addresses=ret.registered_addresses,
-                access_token=access_token
+                access_token=access_token,
             )
         else:
-            JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED,
-                         content="user not authorized")
+            JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
 
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 ##################
 ## USER PROFILE ##
 ##################
 
-@r.get(
-    "/details/search",
-    name="users:user-search"
-)
+
+@r.get("/details/search", name="users:user-search")
 def user_search(
     search_string: str,
     db=Depends(get_db),
@@ -272,14 +302,16 @@ def user_search(
     try:
         return search_users(db, search_string)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.get(
     "/by_dao_id/{dao_id}",
     response_model=t.List[UserDetails],
     response_model_exclude_none=True,
-    name="users:user-dao-details"
+    name="users:user-dao-details",
 )
 def user_dao_details(
     dao_id: int,
@@ -291,14 +323,16 @@ def user_dao_details(
     try:
         return get_dao_users(db, dao_id)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.get(
     "/details/{user_id}",
     response_model=UserDetails,
     response_model_exclude_none=True,
-    name="users:user-details"
+    name="users:user-details",
 )
 def user_details_all(
     user_id: int,
@@ -311,14 +345,16 @@ def user_details_all(
     try:
         return get_user_profile(db, user_id, dao_id)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.get(
     "/profile/settings",
     response_model=UserProfileSettings,
     response_model_exclude_none=True,
-    name="users:user-profile-settings"
+    name="users:user-profile-settings",
 )
 def user_profile_settings(
     user_details_id: int,
@@ -333,14 +369,21 @@ def user_profile_settings(
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         return get_user_profile_settings(db, user_details_id)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.post(
-    "/create_user_profile", response_model=UserDetails, response_model_exclude_none=True, name="users:create-details"
+    "/create_user_profile",
+    response_model=UserDetails,
+    response_model_exclude_none=True,
+    name="users:create-details",
 )
 def create_user_profile(
     dao_id: int,
@@ -353,11 +396,16 @@ def create_user_profile(
     try:
         return create_user_dao_profile(db, current_user.id, dao_id)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.put(
-    "/details/{user_details_id}", response_model=UserDetails, response_model_exclude_none=True, name="users:edit-details"
+    "/details/{user_details_id}",
+    response_model=UserDetails,
+    response_model_exclude_none=True,
+    name="users:edit-details",
 )
 def edit_user_details(
     user_details_id: int,
@@ -373,14 +421,21 @@ def edit_user_details(
         if type(_user_details) == JSONResponse:
             return _user_details
         if _user_details.user_id != current_user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         return edit_user_profile(db, user_details_id, user_details)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.put(
-    "/profile/settings", response_model=UserProfileSettings, response_model_exclude_none=True, name="users:edit-profile-settings"
+    "/profile/settings",
+    response_model=UserProfileSettings,
+    response_model_exclude_none=True,
+    name="users:edit-profile-settings",
 )
 def edit_user_settings(
     user_details_id: int,
@@ -396,14 +451,20 @@ def edit_user_settings(
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != current_user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         return edit_user_profile_settings(db, user_details_id, user_settings)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.put(
-    "/profile/follow", response_model_exclude_none=True, name="users:edit-profile-follow"
+    "/profile/follow",
+    response_model_exclude_none=True,
+    name="users:edit-profile-follow",
 )
 def user_profile_follow(
     req: FollowUserRequest,
@@ -419,7 +480,11 @@ def user_profile_follow(
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != current_user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         return update_user_follower(db, user_details_id, req)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )

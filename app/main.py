@@ -27,11 +27,7 @@ database = databases.Database(DATABASE_URL)
 Base: DeclarativeMeta = declarative_base()
 
 
-app = FastAPI(
-    title="paideia-api",
-    docs_url="/api/docs",
-    openapi_url="/api"
-)
+app = FastAPI(title="paideia-api", docs_url="/api/docs", openapi_url="/api")
 
 
 @app.on_event("startup")
@@ -68,10 +64,7 @@ app.add_middleware(
 
 @app.get("/api/ping")
 def ping():
-    return {
-        "status": "ok",
-        "message": "Service is healthy"
-    }
+    return {"status": "ok", "message": "Service is healthy"}
 
 
 app.include_router(users_router, prefix="/api/users", tags=["users"])
@@ -80,7 +73,9 @@ app.include_router(assets_router, prefix="/api/assets", tags=["assets"])
 app.include_router(dao_router, prefix="/api/dao", tags=["dao"])
 app.include_router(proposal_router, prefix="/api/proposals", tags=["proposals"])
 app.include_router(activity_router, prefix="/api/activities", tags=["activities"])
-app.include_router(notification_router, prefix="/api/notificatons", tags=["notifications"])
+app.include_router(
+    notification_router, prefix="/api/notificatons", tags=["notifications"]
+)
 app.include_router(blogs_router, prefix="/api/blogs", tags=["blogs"])
 app.include_router(util_router, prefix="/api/util", tags=["util"])
 

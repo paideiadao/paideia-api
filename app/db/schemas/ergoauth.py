@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 import typing as t
 
+
 class LoginRequest(BaseModel):
     addresses: t.List[str]
 
@@ -21,7 +22,9 @@ class ErgoAuthRequest(BaseModel):
     address: str
     signingMessage: str
     sigmaBoolean: str
-    userMessage: str = "sign this message using your wallet to approve authenticate paideia.im"
+    userMessage: str = (
+        "sign this message using your wallet to approve authenticate paideia.im"
+    )
     messageSeverity: str = "INFORMATION"
     replyTo: str
 

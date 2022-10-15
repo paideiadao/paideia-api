@@ -8,7 +8,16 @@ from api.notifications import notification_create
 from db.session import get_db
 from db.schemas.activity import CreateOrUpdateActivity, ActivityConstants
 from db.schemas.notifications import CreateAndUpdateNotification, NotificationConstants
-from db.schemas.proposal import Proposal, CreateProposal, LikeProposalRequest, FollowProposalRequest, UpdateProposalBasic, CreateOrUpdateComment, CreateOrUpdateAddendum, AddReferenceRequest
+from db.schemas.proposal import (
+    Proposal,
+    CreateProposal,
+    LikeProposalRequest,
+    FollowProposalRequest,
+    UpdateProposalBasic,
+    CreateOrUpdateComment,
+    CreateOrUpdateAddendum,
+    AddReferenceRequest,
+)
 from db.crud.proposals import (
     get_proposal_by_id,
     get_proposals_by_dao_id,
@@ -22,7 +31,7 @@ from db.crud.proposals import (
     edit_proposal_basic_by_id,
     add_commment_by_proposal_id,
     add_addendum_by_proposal_id,
-    add_reference_by_proposal_id
+    add_reference_by_proposal_id,
 )
 from db.crud.activity_log import create_user_activity
 from db.crud.notifications import generate_action
@@ -38,7 +47,7 @@ proposal_router = r = APIRouter()
     "/by_dao_id/{dao_id}",
     response_model=t.List[Proposal],
     response_model_exclude_none=True,
-    name="proposals:all-proposals"
+    name="proposals:all-proposals",
 )
 def get_proposals(dao_id: int, db=Depends(get_db)):
     try:
@@ -50,11 +59,12 @@ def get_proposals(dao_id: int, db=Depends(get_db)):
 @r.get(
     "/by_user_details_id/{user_details_id}",
     response_model_exclude_none=True,
-    name="proposals:user-proposals"
+    name="proposals:user-proposals",
 )
 def get_user_proposals(user_details_id: int, db=Depends(get_db)):
     try:
-        return get_proposals_by_user_id(db, user_details_id)
+        basic_proposals = get_proposals_by_user_id(db, user_details_id)
+        return list(map(lambda x: get_proposal_by_id(db, x.id), basic_proposals))
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
@@ -63,7 +73,7 @@ def get_user_proposals(user_details_id: int, db=Depends(get_db)):
     "/{proposal_id}",
     response_model=Proposal,
     response_model_exclude_none=True,
-    name="proposals:proposal"
+    name="proposals:proposal",
 )
 def get_proposal(proposal_id: int, db=Depends(get_db)):
     try:
@@ -77,16 +87,20 @@ def get_proposal(proposal_id: int, db=Depends(get_db)):
     "/",
     response_model=Proposal,
     response_model_exclude_none=True,
-    name="proposals:create-proposal"
+    name="proposals:create-proposal",
 )
-def create_proposal(proposal: CreateProposal, db=Depends(get_db), user=Depends(get_current_active_user)):
+def create_proposal(
+    proposal: CreateProposal, db=Depends(get_db), user=Depends(get_current_active_user)
+):
     try:
         user_details_id = proposal.user_details_id
         user_details = get_user_details_by_id(db, user_details_id)
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         proposal = create_new_proposal(db, proposal)
         # add to activities
         if type(proposal) != JSONResponse:
@@ -106,9 +120,14 @@ def create_proposal(proposal: CreateProposal, db=Depends(get_db), user=Depends(g
     "/{proposal_id}",
     response_model=Proposal,
     response_model_exclude_none=True,
-    name="proposals:edit-proposal"
+    name="proposals:edit-proposal",
 )
-def edit_proposal(proposal_id: int, proposal: UpdateProposalBasic, db=Depends(get_db), user=Depends(get_current_active_user)):
+def edit_proposal(
+    proposal_id: int,
+    proposal: UpdateProposalBasic,
+    db=Depends(get_db),
+    user=Depends(get_current_active_user),
+):
     try:
         _proposal = get_proposal_by_id(db, proposal_id)
         if type(_proposal) == JSONResponse:
@@ -117,7 +136,9 @@ def edit_proposal(proposal_id: int, proposal: UpdateProposalBasic, db=Depends(ge
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         proposal = edit_proposal_basic_by_id(
             db, _proposal.user_details_id, proposal_id, proposal
         )
@@ -135,18 +156,22 @@ def edit_proposal(proposal_id: int, proposal: UpdateProposalBasic, db=Depends(ge
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
-@r.put(
-    "/like/{proposal_id}",
-    name="proposals:like-proposal"
-)
-def like_proposal(proposal_id: int, req: LikeProposalRequest, db=Depends(get_db), user=Depends(get_current_active_user)):
+@r.put("/like/{proposal_id}", name="proposals:like-proposal")
+def like_proposal(
+    proposal_id: int,
+    req: LikeProposalRequest,
+    db=Depends(get_db),
+    user=Depends(get_current_active_user),
+):
     try:
         user_details_id = req.user_details_id
         user_details = get_user_details_by_id(db, user_details_id)
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         likes = set_likes_by_proposal_id(db, proposal_id, user_details_id, req.type)
         # add to activities and notifier
         if type(likes) != JSONResponse:
@@ -168,29 +193,41 @@ def like_proposal(proposal_id: int, req: LikeProposalRequest, db=Depends(get_db)
             if req.type == "like" and proposal.user_details_id != user_details_id:
                 notification = CreateAndUpdateNotification(
                     user_details_id=proposal.user_details_id,
-                    action=generate_action(user_details.name, NotificationConstants.LIKED_DISCUSSION),
-                    proposal_id=proposal.id
+                    action=generate_action(
+                        user_details.name, NotificationConstants.LIKED_DISCUSSION
+                    ),
+                    proposal_id=proposal.id,
                 )
                 # handle async web sockets stuff
-                run_coroutine_in_sync(notification_create(proposal.user_details_id, notification, db, current_user=None))
+                run_coroutine_in_sync(
+                    notification_create(
+                        proposal.user_details_id, notification, db, current_user=None
+                    )
+                )
         return likes
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
-@r.put(
-    "/follow/{proposal_id}",
-    name="proposals:follow-proposal"
-)
-def follow_proposal(proposal_id: int, req: FollowProposalRequest, db=Depends(get_db), user=Depends(get_current_active_user)):
+@r.put("/follow/{proposal_id}", name="proposals:follow-proposal")
+def follow_proposal(
+    proposal_id: int,
+    req: FollowProposalRequest,
+    db=Depends(get_db),
+    user=Depends(get_current_active_user),
+):
     try:
         user_details_id = req.user_details_id
         user_details = get_user_details_by_id(db, user_details_id)
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
-        followers = set_followers_by_proposal_id(db, proposal_id, req.user_details_id, req.type)
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
+        followers = set_followers_by_proposal_id(
+            db, proposal_id, req.user_details_id, req.type
+        )
         # add to activities and notifier
         if type(followers) != JSONResponse:
             proposal = get_proposal_by_id(db, proposal_id)
@@ -210,25 +247,28 @@ def follow_proposal(proposal_id: int, req: FollowProposalRequest, db=Depends(get
             if req.type == "follow" and proposal.user_details_id != user_details_id:
                 notification = CreateAndUpdateNotification(
                     user_details_id=proposal.user_details_id,
-                    action=generate_action(user_details.name, NotificationConstants.FOLLOW_DISCUSSION),
-                    proposal_id=proposal.id
+                    action=generate_action(
+                        user_details.name, NotificationConstants.FOLLOW_DISCUSSION
+                    ),
+                    proposal_id=proposal.id,
                 )
                 # handle async web sockets stuff
-                run_coroutine_in_sync(notification_create(proposal.user_details_id, notification, db, current_user=None))
+                run_coroutine_in_sync(
+                    notification_create(
+                        proposal.user_details_id, notification, db, current_user=None
+                    )
+                )
         return followers
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
-@r.put(
-    "/comment/{proposal_id}",
-    name="proposals:comment-proposal"
-)
+@r.put("/comment/{proposal_id}", name="proposals:comment-proposal")
 async def comment_proposal(
     proposal_id: int,
     comment: CreateOrUpdateComment,
     db=Depends(get_db),
-    user=Depends(get_current_active_user)
+    user=Depends(get_current_active_user),
 ):
     try:
         user_details_id = comment.user_details_id
@@ -236,8 +276,10 @@ async def comment_proposal(
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
-        
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
+
         ret = add_commment_by_proposal_id(db, proposal_id, comment)
         comment_dict = get_comment_by_id(db, ret.id).dict()
         comment_dict["date"] = str(comment_dict["date"])
@@ -249,7 +291,7 @@ async def comment_proposal(
             {
                 "proposal_id": proposal_id,
                 "comment": comment_dict,
-            }
+            },
         )
         # add to activities and notifier
         proposal = get_proposal_by_id(db, proposal_id)
@@ -265,48 +307,64 @@ async def comment_proposal(
         if proposal.user_details_id != user_details_id:
             notification = CreateAndUpdateNotification(
                 user_details_id=proposal.user_details_id,
-                action=generate_action(user_details.name, NotificationConstants.COMMENTED_ON_DISCUSSION),
-                proposal_id=proposal.id
+                action=generate_action(
+                    user_details.name, NotificationConstants.COMMENTED_ON_DISCUSSION
+                ),
+                proposal_id=proposal.id,
             )
-            await notification_create(proposal.user_details_id, notification, db, current_user=None)
+            await notification_create(
+                proposal.user_details_id, notification, db, current_user=None
+            )
         if "parent" in comment_dict and comment_dict["parent"] != None:
             parent_comment_id = comment_dict["parent"]
-            parent_user_details_id = get_comment_by_id(db, parent_comment_id).user_details_id
+            parent_user_details_id = get_comment_by_id(
+                db, parent_comment_id
+            ).user_details_id
             if parent_user_details_id != user_details_id:
                 notification = CreateAndUpdateNotification(
                     user_details_id=parent_user_details_id,
-                    action=generate_action(user_details.name, NotificationConstants.COMMENT_REPLY),
-                    proposal_id=proposal.id
+                    action=generate_action(
+                        user_details.name, NotificationConstants.COMMENT_REPLY
+                    ),
+                    proposal_id=proposal.id,
                 )
-                await notification_create(parent_user_details_id, notification, db, current_user=None)
+                await notification_create(
+                    parent_user_details_id, notification, db, current_user=None
+                )
         return comment_dict
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
 # todo: add notifications and activity logging
-@r.put(
-    "/comment/like/{comment_id}",
-    name="proposals:like-proposal-comment"
-)
-def like_comment(comment_id: int, req: LikeProposalRequest, db=Depends(get_db), user=Depends(get_current_active_user)):
+@r.put("/comment/like/{comment_id}", name="proposals:like-proposal-comment")
+def like_comment(
+    comment_id: int,
+    req: LikeProposalRequest,
+    db=Depends(get_db),
+    user=Depends(get_current_active_user),
+):
     try:
         user_details_id = req.user_details_id
         user_details = get_user_details_by_id(db, user_details_id)
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         return set_likes_by_comment_id(db, comment_id, user_details_id, req.type)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
-@r.put(
-    "/addendum/{proposal_id}",
-    name="proposals:addendum-proposal"
-)
-def create_addendum_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum, db=Depends(get_db), user=Depends(get_current_active_user)):
+@r.put("/addendum/{proposal_id}", name="proposals:addendum-proposal")
+def create_addendum_proposal(
+    proposal_id: int,
+    addendum: CreateOrUpdateAddendum,
+    db=Depends(get_db),
+    user=Depends(get_current_active_user),
+):
     try:
         proposal = get_proposal_by_id(db, proposal_id)
         if type(proposal) == JSONResponse:
@@ -315,7 +373,9 @@ def create_addendum_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum,
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         addendum = add_addendum_by_proposal_id(
             db, proposal.user_details_id, proposal_id, addendum
         )
@@ -326,7 +386,7 @@ def create_addendum_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum,
             "proposal_id": addendum.proposal_id,
             "name": addendum.name,
             "content": addendum.content,
-            "date": str(addendum.date)
+            "date": str(addendum.date),
         }
         # add to activitites
         activity = CreateOrUpdateActivity(
@@ -343,11 +403,13 @@ def create_addendum_proposal(proposal_id: int, addendum: CreateOrUpdateAddendum,
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
-@r.put(
-    "/reference/{proposal_id}",
-    name="proposals:reference-proposal"
-)
-def reference_proposal(proposal_id: int, req: AddReferenceRequest, db=Depends(get_db), user=Depends(get_current_active_user)):
+@r.put("/reference/{proposal_id}", name="proposals:reference-proposal")
+def reference_proposal(
+    proposal_id: int,
+    req: AddReferenceRequest,
+    db=Depends(get_db),
+    user=Depends(get_current_active_user),
+):
     try:
         proposal = get_proposal_by_id(db, proposal_id)
         if type(proposal) == JSONResponse:
@@ -356,7 +418,9 @@ def reference_proposal(proposal_id: int, req: AddReferenceRequest, db=Depends(ge
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         reference = add_reference_by_proposal_id(
             db, proposal.user_details_id, proposal_id, req.referred_proposal_id
         )
@@ -369,9 +433,11 @@ def reference_proposal(proposal_id: int, req: AddReferenceRequest, db=Depends(ge
     "/{proposal_id}",
     response_model=Proposal,
     response_model_exclude_none=True,
-    name="proposals:delete-proposal"
+    name="proposals:delete-proposal",
 )
-def delete_proposal(proposal_id: int, db=Depends(get_db), user=Depends(get_current_active_superuser)):
+def delete_proposal(
+    proposal_id: int, db=Depends(get_db), user=Depends(get_current_active_superuser)
+):
     try:
         proposal = delete_proposal_by_id(db, proposal_id)
         return proposal
@@ -381,8 +447,7 @@ def delete_proposal(proposal_id: int, db=Depends(get_db), user=Depends(get_curre
 
 @r.websocket("/ws/{proposal_id}")
 async def websocket_endpoint(websocket: WebSocket, proposal_id: str):
-    random_key = "proposal_comments_" + \
-        proposal_id + "_" + str(random.random())
+    random_key = "proposal_comments_" + proposal_id + "_" + str(random.random())
     await connection_manager.connect(random_key, websocket)
     try:
         while True:

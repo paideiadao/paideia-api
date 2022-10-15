@@ -58,7 +58,7 @@ class CreateOrUpdateGovernance(BaseModel):
     amount: t.Optional[float]
     currency: t.Optional[str]
     support_needed: t.Optional[int]
-    governance_whitelist: t.List[int]   # ergo_address_id
+    governance_whitelist: t.List[int]  # ergo_address_id
 
 
 class Governance(CreateOrUpdateGovernance):

@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from config import Config, Network  # api specific config
+
 CFG = Config[Network]
 
 engine = create_engine(CFG.connection_string)

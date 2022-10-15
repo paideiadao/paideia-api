@@ -11,7 +11,7 @@ from db.crud.notifications import (
     edit_notification,
     delete_notification,
     get_notifications,
-    get_notification
+    get_notification,
 )
 from db.crud.users import get_user_details_by_id
 from db.schemas.notifications import CreateAndUpdateNotification, Notification
@@ -24,12 +24,12 @@ notification_router = r = APIRouter()
     "/{user_details_id}",
     response_model=t.List[Notification],
     response_model_exclude_none=True,
-    name="notifications:all-notifications"
+    name="notifications:all-notifications",
 )
 def notifications_list(
     user_details_id: int,
     db=Depends(get_db),
-    current_user=Depends(get_current_active_user)
+    current_user=Depends(get_current_active_user),
 ):
     """
     Get all notifications for a user
@@ -39,13 +39,22 @@ def notifications_list(
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != current_user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized")
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
         return get_notifications(db, user_details_id)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
-@r.post("/{user_details_id}", response_model=Notification, response_model_exclude_none=True, name="notifications:create")
+@r.post(
+    "/{user_details_id}",
+    response_model=Notification,
+    response_model_exclude_none=True,
+    name="notifications:create",
+)
 async def notification_create(
     user_details_id: int,
     notification: CreateAndUpdateNotification,
@@ -57,13 +66,23 @@ async def notification_create(
     """
     try:
         ret = create_notification(db, user_details_id, notification)
-        await connection_manager.send_personal_message("notification_user_details_id_" + str(user_details_id), {"notifications": get_notifications(db, user_details_id)})
+        await connection_manager.send_personal_message(
+            "notification_user_details_id_" + str(user_details_id),
+            {"notifications": get_notifications(db, user_details_id)},
+        )
         return ret
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
-@r.put("/mark_as_read/{notification_id}", response_model=Notification, response_model_exclude_none=True, name="notifications:read")
+@r.put(
+    "/mark_as_read/{notification_id}",
+    response_model=Notification,
+    response_model_exclude_none=True,
+    name="notifications:read",
+)
 def notification_edit(
     notification_id: int,
     db=Depends(get_db),
@@ -75,21 +94,29 @@ def notification_edit(
     try:
         notification = get_notification(db, notification_id)
         if not notification:
-            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="notification not found")
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND, content="notification not found"
+            )
         user_details_id = notification.user_details_id
         user_details = get_user_details_by_id(db, user_details_id)
         if type(user_details) == JSONResponse:
             return user_details
         if user_details.user_id != current_user.id:
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorizeds")
-        return edit_notification(db, notification_id, CreateAndUpdateNotification(user_details_id=user_details_id, is_read=True))
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorizeds"
+            )
+        return edit_notification(
+            db,
+            notification_id,
+            CreateAndUpdateNotification(user_details_id=user_details_id, is_read=True),
+        )
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
-@r.delete(
-    "/clean_up", name="notifications:clean-up"
-)
+@r.delete("/clean_up", name="notifications:clean-up")
 def notification_cleanup(
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -100,11 +127,16 @@ def notification_cleanup(
     try:
         return cleanup_notifications(db)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.delete(
-    "/{notification_id}", response_model=Notification, response_model_exclude_none=True, name="notifications:delete"
+    "/{notification_id}",
+    response_model=Notification,
+    response_model_exclude_none=True,
+    name="notifications:delete",
 )
 def notification_delete(
     notification_id: int,
@@ -117,7 +149,9 @@ def notification_delete(
     try:
         return delete_notification(db, notification_id)
     except Exception as e:
-        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 @r.websocket("/ws/{user_details_id}")

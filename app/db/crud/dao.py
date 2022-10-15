@@ -1,11 +1,30 @@
 import typing as t
 
 from sqlalchemy.orm import Session
-from db.models.tokenomics import Distribution, TokenHolder, Tokenomics, TokenomicsTokenHolder
+from db.models.tokenomics import (
+    Distribution,
+    TokenHolder,
+    Tokenomics,
+    TokenomicsTokenHolder,
+)
 from db.models.dao import Dao
 from db.models.dao_design import DaoDesign, FooterSocialLinks
 from db.models.governance import Governance, GovernanceWhitelist
-from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrUpdateDistribution, CreateOrUpdateFooterSocialLinks, CreateOrUpdateGovernance, CreateOrUpdateTokenHolder, CreateOrUpdateTokenomics, DaoDesign as DaoDesignSchema, Governance as GovernanceSchema, Dao as DaoSchema, Tokenomics as TokenomicsSchema, TokenHolder as TokenHolderSchema, Distribution as DistributionSchema
+from db.schemas.dao import (
+    CreateOrUpdateDao,
+    CreateOrUpdateDaoDesign,
+    CreateOrUpdateDistribution,
+    CreateOrUpdateFooterSocialLinks,
+    CreateOrUpdateGovernance,
+    CreateOrUpdateTokenHolder,
+    CreateOrUpdateTokenomics,
+    DaoDesign as DaoDesignSchema,
+    Governance as GovernanceSchema,
+    Dao as DaoSchema,
+    Tokenomics as TokenomicsSchema,
+    TokenHolder as TokenHolderSchema,
+    Distribution as DistributionSchema,
+)
 
 
 ################################
@@ -14,35 +33,47 @@ from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrU
 
 
 def get_dao_governance_whitelist(db: Session, dao_governance_id: int):
-    return list(map(lambda x: x.ergo_address_id, db.query(GovernanceWhitelist).filter(GovernanceWhitelist.governance_id == dao_governance_id).all()))
+    return list(
+        map(
+            lambda x: x.ergo_address_id,
+            db.query(GovernanceWhitelist)
+            .filter(GovernanceWhitelist.governance_id == dao_governance_id)
+            .all(),
+        )
+    )
 
 
-def set_dao_governance_whitelist(db: Session, dao_governance_id: int, whitelist: t.List[int]):
+def set_dao_governance_whitelist(
+    db: Session, dao_governance_id: int, whitelist: t.List[int]
+):
     # delete older entries if they exist
     db.query(GovernanceWhitelist).filter(
-        GovernanceWhitelist.governance_id == dao_governance_id).delete()
+        GovernanceWhitelist.governance_id == dao_governance_id
+    ).delete()
     db.commit()
     # add new users
     for ergo_address_id in whitelist:
         db_governance_whitelist = GovernanceWhitelist(
-            governance_id=dao_governance_id,
-            ergo_address_id=ergo_address_id
+            governance_id=dao_governance_id, ergo_address_id=ergo_address_id
         )
         db.add(db_governance_whitelist)
     db.commit()
-    return list(map(lambda x: x.ergo_address_id, db.query(GovernanceWhitelist).filter(GovernanceWhitelist.governance_id == dao_governance_id).all()))
+    return list(
+        map(
+            lambda x: x.ergo_address_id,
+            db.query(GovernanceWhitelist)
+            .filter(GovernanceWhitelist.governance_id == dao_governance_id)
+            .all(),
+        )
+    )
 
 
 def get_dao_governance(db: Session, dao_id: int):
-    db_dao_governance = db.query(Governance).filter(
-        Governance.dao_id == dao_id
-    ).first()
+    db_dao_governance = db.query(Governance).filter(Governance.dao_id == dao_id).first()
     if not db_dao_governance:
         return None
 
-    governance_whitelist = get_dao_governance_whitelist(
-        db, db_dao_governance.id
-    )
+    governance_whitelist = get_dao_governance_whitelist(db, db_dao_governance.id)
     return GovernanceSchema(
         id=db_dao_governance.id,
         is_optimistic=db_dao_governance.is_optimistic,
@@ -53,11 +84,13 @@ def get_dao_governance(db: Session, dao_id: int):
         amount=db_dao_governance.amount,
         currency=db_dao_governance.currency,
         support_needed=db_dao_governance.support_needed,
-        governance_whitelist=governance_whitelist
+        governance_whitelist=governance_whitelist,
     )
 
 
-def create_dao_governance(db: Session, dao_id: int, dao_governance: CreateOrUpdateGovernance):
+def create_dao_governance(
+    db: Session, dao_id: int, dao_governance: CreateOrUpdateGovernance
+):
     db_dao_governance = Governance(
         dao_id=dao_id,
         is_optimistic=dao_governance.is_optimistic,
@@ -67,7 +100,7 @@ def create_dao_governance(db: Session, dao_id: int, dao_governance: CreateOrUpda
         vote_duration__sec=dao_governance.vote_duration__sec,
         amount=dao_governance.amount,
         currency=dao_governance.currency,
-        support_needed=dao_governance.support_needed
+        support_needed=dao_governance.support_needed,
     )
     db.add(db_dao_governance)
     db.commit()
@@ -87,14 +120,14 @@ def create_dao_governance(db: Session, dao_id: int, dao_governance: CreateOrUpda
         amount=dao_governance.amount,
         currency=dao_governance.currency,
         support_needed=dao_governance.support_needed,
-        governance_whitelist=governance_whitelist
+        governance_whitelist=governance_whitelist,
     )
 
 
-def edit_dao_governance(db: Session, dao_id: int, dao_governance: CreateOrUpdateGovernance):
-    db_dao_governance = db.query(Governance).filter(
-        Governance.dao_id == dao_id
-    ).first()
+def edit_dao_governance(
+    db: Session, dao_id: int, dao_governance: CreateOrUpdateGovernance
+):
+    db_dao_governance = db.query(Governance).filter(Governance.dao_id == dao_id).first()
     if not db_dao_governance:
         return None
 
@@ -122,13 +155,12 @@ def edit_dao_governance(db: Session, dao_id: int, dao_governance: CreateOrUpdate
         amount=db_dao_governance.amount,
         currency=db_dao_governance.currency,
         support_needed=db_dao_governance.support_needed,
-        governance_whitelist=governance_whitelist
+        governance_whitelist=governance_whitelist,
     )
 
 
 def delete_dao_governance(db: Session, dao_id: int):
-    db_dao_governance = db.query(Governance).filter(
-        Governance.dao_id == dao_id).first()
+    db_dao_governance = db.query(Governance).filter(Governance.dao_id == dao_id).first()
     if not db_dao_governance:
         return None
 
@@ -141,29 +173,45 @@ def delete_dao_governance(db: Session, dao_id: int):
 
 
 def get_dao_tokenomics_tokenholders(db: Session, dao_tokenomics_id: int):
-    return list(map(lambda x: TokenHolderSchema(id=x[0].id, ergo_address_id=x[0].ergo_address_id, percentage=x[0].percentage, balance=x[0].balance),
-                    db.query(TokenHolder, TokenomicsTokenHolder).
-                    filter(TokenHolder.id == TokenomicsTokenHolder.token_holder_id).
-                    filter(TokenomicsTokenHolder.tokenomics_id == dao_tokenomics_id).
-                    all()))
+    return list(
+        map(
+            lambda x: TokenHolderSchema(
+                id=x[0].id,
+                ergo_address_id=x[0].ergo_address_id,
+                percentage=x[0].percentage,
+                balance=x[0].balance,
+            ),
+            db.query(TokenHolder, TokenomicsTokenHolder)
+            .filter(TokenHolder.id == TokenomicsTokenHolder.token_holder_id)
+            .filter(TokenomicsTokenHolder.tokenomics_id == dao_tokenomics_id)
+            .all(),
+        )
+    )
 
 
-def set_dao_tokenomics_tokenholders(db: Session, dao_tokenomics_id: int, tokenholders: t.List[CreateOrUpdateTokenHolder]):
+def set_dao_tokenomics_tokenholders(
+    db: Session, dao_tokenomics_id: int, tokenholders: t.List[CreateOrUpdateTokenHolder]
+):
     # delete old entires
-    old_tokenholders = db.query(TokenomicsTokenHolder).filter(
-        TokenomicsTokenHolder.tokenomics_id == dao_tokenomics_id).all()
+    old_tokenholders = (
+        db.query(TokenomicsTokenHolder)
+        .filter(TokenomicsTokenHolder.tokenomics_id == dao_tokenomics_id)
+        .all()
+    )
     for tokenholder in old_tokenholders:
-        db.query(TokenHolder).filter(TokenHolder.id ==
-                                     tokenholder.token_holder_id).delete()
+        db.query(TokenHolder).filter(
+            TokenHolder.id == tokenholder.token_holder_id
+        ).delete()
     db.query(TokenomicsTokenHolder).filter(
-        TokenomicsTokenHolder.tokenomics_id == dao_tokenomics_id).delete()
+        TokenomicsTokenHolder.tokenomics_id == dao_tokenomics_id
+    ).delete()
     db.commit()
 
     for tokenholder in tokenholders:
         db_tokenholder = TokenHolder(
             ergo_address_id=tokenholder.ergo_address_id,
             percentage=tokenholder.percentage,
-            balance=tokenholder.balance
+            balance=tokenholder.balance,
         )
         db.add(db_tokenholder)
         db.commit()
@@ -175,22 +223,48 @@ def set_dao_tokenomics_tokenholders(db: Session, dao_tokenomics_id: int, tokenho
         db.add(db_tokenomics_token_holder)
         db.commit()
 
-    return list(map(lambda x: TokenHolderSchema(id=x[0].id, ergo_address_id=x[0].ergo_address_id, percentage=x[0].percentage, balance=x[0].balance),
-                    db.query(TokenHolder, TokenomicsTokenHolder).
-                    filter(TokenHolder.id == TokenomicsTokenHolder.token_holder_id).
-                    filter(TokenomicsTokenHolder.tokenomics_id == dao_tokenomics_id).
-                    all()))
+    return list(
+        map(
+            lambda x: TokenHolderSchema(
+                id=x[0].id,
+                ergo_address_id=x[0].ergo_address_id,
+                percentage=x[0].percentage,
+                balance=x[0].balance,
+            ),
+            db.query(TokenHolder, TokenomicsTokenHolder)
+            .filter(TokenHolder.id == TokenomicsTokenHolder.token_holder_id)
+            .filter(TokenomicsTokenHolder.tokenomics_id == dao_tokenomics_id)
+            .all(),
+        )
+    )
 
 
 def get_dao_tokenomics_distributions(db: Session, dao_tokenomics_id: int):
-    return list(map(lambda x: DistributionSchema(id=x.id, distribution_type=x.distribution_type, balance=x.balance, percentage=x.percentage, additionalDetails={}),
-                    db.query(Distribution).filter(Distribution.tokenomics_id == dao_tokenomics_id).all()))
+    return list(
+        map(
+            lambda x: DistributionSchema(
+                id=x.id,
+                distribution_type=x.distribution_type,
+                balance=x.balance,
+                percentage=x.percentage,
+                additionalDetails={},
+            ),
+            db.query(Distribution)
+            .filter(Distribution.tokenomics_id == dao_tokenomics_id)
+            .all(),
+        )
+    )
 
 
-def set_dao_tokenomics_distributions(db: Session, dao_tokenomics_id: int, distributions: t.List[CreateOrUpdateDistribution]):
+def set_dao_tokenomics_distributions(
+    db: Session,
+    dao_tokenomics_id: int,
+    distributions: t.List[CreateOrUpdateDistribution],
+):
     # delete older entries if they exist
     db.query(Distribution).filter(
-        Distribution.tokenomics_id == dao_tokenomics_id).delete()
+        Distribution.tokenomics_id == dao_tokenomics_id
+    ).delete()
     db.commit()
     # add new users
     for distribution in distributions:
@@ -198,17 +272,28 @@ def set_dao_tokenomics_distributions(db: Session, dao_tokenomics_id: int, distri
             tokenomics_id=dao_tokenomics_id,
             distribution_type=distribution.distribution_type,
             balance=distribution.balance,
-            percentage=distribution.percentage
+            percentage=distribution.percentage,
         )
         db.add(db_distribution)
     db.commit()
-    return list(map(lambda x: DistributionSchema(id=x.id, distribution_type=x.distribution_type, balance=x.balance, percentage=x.percentage, additionalDetails={}),
-                    db.query(Distribution).filter(Distribution.tokenomics_id == dao_tokenomics_id).all()))
+    return list(
+        map(
+            lambda x: DistributionSchema(
+                id=x.id,
+                distribution_type=x.distribution_type,
+                balance=x.balance,
+                percentage=x.percentage,
+                additionalDetails={},
+            ),
+            db.query(Distribution)
+            .filter(Distribution.tokenomics_id == dao_tokenomics_id)
+            .all(),
+        )
+    )
 
 
 def get_dao_tokenomics(db: Session, dao_id: int):
-    db_tokenomics = db.query(Tokenomics).filter(
-        Tokenomics.dao_id == dao_id).first()
+    db_tokenomics = db.query(Tokenomics).filter(Tokenomics.dao_id == dao_id).first()
     if not db_tokenomics:
         return None
 
@@ -230,7 +315,9 @@ def get_dao_tokenomics(db: Session, dao_id: int):
     )
 
 
-def create_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateTokenomics):
+def create_dao_tokenomics(
+    db: Session, dao_id: int, tokenomics: CreateOrUpdateTokenomics
+):
     db_dao_tokenomics = Tokenomics(
         dao_id=dao_id,
         type=tokenomics.type,
@@ -240,7 +327,7 @@ def create_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateTo
         token_amount=tokenomics.token_amount,
         token_image_url=tokenomics.token_image_url,
         token_remaining=tokenomics.token_remaining,
-        is_activated=tokenomics.is_activated
+        is_activated=tokenomics.is_activated,
     )
 
     db.add(db_dao_tokenomics)
@@ -248,9 +335,11 @@ def create_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateTo
     db.refresh(db_dao_tokenomics)
 
     token_holders = set_dao_tokenomics_tokenholders(
-        db, db_dao_tokenomics.id, tokenomics.token_holders)
+        db, db_dao_tokenomics.id, tokenomics.token_holders
+    )
     distributions = set_dao_tokenomics_distributions(
-        db, db_dao_tokenomics.id, tokenomics.distributions)
+        db, db_dao_tokenomics.id, tokenomics.distributions
+    )
 
     return TokenomicsSchema(
         id=db_dao_tokenomics.id,
@@ -268,8 +357,7 @@ def create_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateTo
 
 
 def edit_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateTokenomics):
-    db_tokenomics = db.query(Tokenomics).filter(
-        Tokenomics.dao_id == dao_id).first()
+    db_tokenomics = db.query(Tokenomics).filter(Tokenomics.dao_id == dao_id).first()
     if not db_tokenomics:
         return None
 
@@ -284,9 +372,11 @@ def edit_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateToke
     db.refresh(db_tokenomics)
 
     token_holders = set_dao_tokenomics_tokenholders(
-        db, db_tokenomics.id, tokenomics.token_holders)
+        db, db_tokenomics.id, tokenomics.token_holders
+    )
     distributions = set_dao_tokenomics_distributions(
-        db, db_tokenomics.id, tokenomics.distributions)
+        db, db_tokenomics.id, tokenomics.distributions
+    )
 
     return TokenomicsSchema(
         id=db_tokenomics.id,
@@ -304,8 +394,7 @@ def edit_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateToke
 
 
 def delete_dao_tokenomics(db: Session, dao_id: int):
-    db_tokenomics = db.query(Tokenomics).filter(
-        Tokenomics.dao_id == dao_id).first()
+    db_tokenomics = db.query(Tokenomics).filter(Tokenomics.dao_id == dao_id).first()
     if not db_tokenomics:
         return None
 
@@ -319,29 +408,41 @@ def delete_dao_tokenomics(db: Session, dao_id: int):
 
 
 def get_dao_design_footer_links(db: Session, dao_design_id: int):
-    return db.query(FooterSocialLinks).filter(FooterSocialLinks.design_id == dao_design_id).all()
+    return (
+        db.query(FooterSocialLinks)
+        .filter(FooterSocialLinks.design_id == dao_design_id)
+        .all()
+    )
 
 
-def set_dao_design_footer_links(db: Session, dao_design_id: int, footer_links: t.List[CreateOrUpdateFooterSocialLinks]):
+def set_dao_design_footer_links(
+    db: Session,
+    dao_design_id: int,
+    footer_links: t.List[CreateOrUpdateFooterSocialLinks],
+):
     # delete older entries if they exist
     db.query(FooterSocialLinks).filter(
-        FooterSocialLinks.design_id == dao_design_id).delete()
+        FooterSocialLinks.design_id == dao_design_id
+    ).delete()
     db.commit()
     # add new links
     for social_link in footer_links:
         db_footer_link = FooterSocialLinks(
             design_id=dao_design_id,
             social_network=social_link.social_network,
-            link_url=social_link.link_url
+            link_url=social_link.link_url,
         )
         db.add(db_footer_link)
     db.commit()
-    return db.query(FooterSocialLinks).filter(FooterSocialLinks.design_id == dao_design_id).all()
+    return (
+        db.query(FooterSocialLinks)
+        .filter(FooterSocialLinks.design_id == dao_design_id)
+        .all()
+    )
 
 
 def get_dao_design(db: Session, dao_id: int):
-    db_dao_design = db.query(DaoDesign).filter(
-        DaoDesign.dao_id == dao_id).first()
+    db_dao_design = db.query(DaoDesign).filter(DaoDesign.dao_id == dao_id).first()
     if not db_dao_design:
         return None
 
@@ -355,7 +456,7 @@ def get_dao_design(db: Session, dao_id: int):
         banner_url=db_dao_design.banner_url,
         show_footer=db_dao_design.show_footer,
         footer_text=db_dao_design.footer_text,
-        footer_social_links=footer_links
+        footer_social_links=footer_links,
     )
 
 
@@ -367,14 +468,15 @@ def create_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDes
         show_banner=dao_design.show_banner,
         banner_url=dao_design.banner_url,
         show_footer=dao_design.show_footer,
-        footer_text=dao_design.footer_text
+        footer_text=dao_design.footer_text,
     )
     db.add(db_dao_design)
     db.commit()
     db.refresh(db_dao_design)
 
     footer_links = set_dao_design_footer_links(
-        db, db_dao_design.id, dao_design.footer_social_links)
+        db, db_dao_design.id, dao_design.footer_social_links
+    )
 
     return DaoDesignSchema(
         id=db_dao_design.id,
@@ -384,13 +486,12 @@ def create_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDes
         banner_url=dao_design.banner_url,
         show_footer=dao_design.show_footer,
         footer_text=dao_design.footer_text,
-        footer_social_links=footer_links
+        footer_social_links=footer_links,
     )
 
 
 def edit_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDesign):
-    db_dao_design = db.query(DaoDesign).filter(
-        DaoDesign.dao_id == dao_id).first()
+    db_dao_design = db.query(DaoDesign).filter(DaoDesign.dao_id == dao_id).first()
     if not db_dao_design:
         return None
 
@@ -405,7 +506,8 @@ def edit_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDesig
     db.refresh(db_dao_design)
 
     footer_links = set_dao_design_footer_links(
-        db, db_dao_design.id, dao_design.footer_social_links)
+        db, db_dao_design.id, dao_design.footer_social_links
+    )
 
     return DaoDesignSchema(
         id=db_dao_design.id,
@@ -415,13 +517,12 @@ def edit_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDesig
         banner_url=db_dao_design.banner_url,
         show_footer=db_dao_design.show_footer,
         footer_text=db_dao_design.footer_text,
-        footer_social_links=footer_links
+        footer_social_links=footer_links,
     )
 
 
 def delete_dao_design(db: Session, dao_id: int):
-    db_dao_design = db.query(DaoDesign).filter(
-        DaoDesign.dao_id == dao_id).first()
+    db_dao_design = db.query(DaoDesign).filter(DaoDesign.dao_id == dao_id).first()
     if not db_dao_design:
         return None
 
@@ -457,7 +558,7 @@ def get_dao(db: Session, id: int):
         is_draft=db_dao.is_draft,
         is_published=db_dao.is_published,
         nav_stage=db_dao.nav_stage,
-        is_review=db_dao.is_review
+        is_review=db_dao.is_review,
     )
 
 
@@ -469,11 +570,13 @@ def get_dao_by_url(db: Session, name: str):
     if name == "paideia":
         name = "dao"
 
-    dao_list = list(filter(
-        lambda x: (len(x.dao_url.split('/')) !=
-                   0) and (x.dao_url.split('/')[-1] == name),
-        get_all_daos(db)
-    ))
+    dao_list = list(
+        filter(
+            lambda x: (len(x.dao_url.split("/")) != 0)
+            and (x.dao_url.split("/")[-1] == name),
+            get_all_daos(db),
+        )
+    )
     if len(dao_list) == 0:
         return None
 
@@ -489,7 +592,7 @@ def create_dao(db: Session, dao: CreateOrUpdateDao):
         is_draft=dao.is_draft,
         is_published=dao.is_published,
         nav_stage=dao.nav_stage,
-        is_review=dao.is_review
+        is_review=dao.is_review,
     )
     # make the entry for the dao
     # we need to add the tokenomics, design and governance id later
@@ -521,7 +624,7 @@ def create_dao(db: Session, dao: CreateOrUpdateDao):
         is_draft=dao.is_draft,
         is_published=dao.is_published,
         nav_stage=dao.nav_stage,
-        is_review=dao.is_review
+        is_review=dao.is_review,
     )
 
 
@@ -555,7 +658,7 @@ def edit_dao(db: Session, id: int, dao: CreateOrUpdateDao):
         is_draft=db_dao.is_draft,
         is_published=db_dao.is_published,
         nav_stage=db_dao.nav_stage,
-        is_review=db_dao.is_review
+        is_review=db_dao.is_review,
     )
 
 
@@ -578,5 +681,5 @@ def delete_dao(db: Session, id: int):
         is_draft=db_dao.is_draft,
         is_published=db_dao.is_published,
         nav_stage=db_dao.nav_stage,
-        is_review=db_dao.is_review
+        is_review=db_dao.is_review,
     )
