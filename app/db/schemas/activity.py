@@ -26,7 +26,6 @@ class ActivityConstants:
 
 class CreateOrUpdateActivity(BaseModel):
     user_details_id: int
-    img_url: t.Optional[str]
     action: t.Optional[str]
     value: t.Optional[str]
     secondary_action: t.Optional[str]
@@ -43,4 +42,5 @@ class Activity(CreateOrUpdateActivity):
 
 
 class vwActivity(Activity):
-    name: str
+    name: t.Optional[str]
+    img_url: t.Optional[str]

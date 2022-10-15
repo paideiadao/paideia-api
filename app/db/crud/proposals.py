@@ -311,7 +311,6 @@ def get_proposal_by_id(db: Session, id: int):
         else []
     )
     user_details = get_user_details_by_id(db, db_proposal.user_details_id)
-    address = get_primary_wallet_address_by_user_id(db, user_details.user_id)
     proposal = ProposalSchema(
         id=db_proposal.id,
         dao_id=db_proposal.dao_id,
@@ -336,7 +335,6 @@ def get_proposal_by_id(db: Session, id: int):
         is_proposal=db_proposal.is_proposal,
         profile_img_url=user_details.profile_img_url,
         alias=user_details.name,
-        address=address,
         user_followers=get_followers_by_user_id(db, user_details.id)["followers"],
         created=len(get_proposals_by_user_id(db, user_details.id)),
     )

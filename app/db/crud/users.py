@@ -66,14 +66,16 @@ def get_user_by_wallet_addresses(db: Session, addresses: t.List[str]):
 
 
 def get_primary_wallet_address_by_user_id(db: Session, user_id: int):
-    return (
+    db_ret = (
         db.query(models.User, models.ErgoAddress)
         .filter(models.User.id == user_id)
         .filter(models.User.id == models.ErgoAddress.user_id)
         .filter(models.User.primary_wallet_address_id == models.ErgoAddress.id)
-        .first()[1]
-        .address
+        .first()
     )
+    if not db_ret:
+        return None
+    return db_ret[1].address
 
 
 def search_users(db: Session, search_string: str):
@@ -114,7 +116,7 @@ def get_dao_users(db: Session, dao_id: int) -> t.List[schemas.UserDetails]:
     all_dao_users = []
     for user in all_dao_users_raw:
         follower_data = get_followers_by_user_id(db, user.id)
-        address = get_primary_wallet_address_by_user_id(db, user.id)
+        address = get_primary_wallet_address_by_user_id(db, user.user_id)
         all_dao_users.append(
             schemas.UserDetails(
                 id=user.id,
