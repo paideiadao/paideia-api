@@ -40,3 +40,7 @@ class Activity(CreateOrUpdateActivity):
 
     class Config:
         orm_mode = True
+
+
+class vwActivity(Activity):
+    name: str

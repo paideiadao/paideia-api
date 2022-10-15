@@ -12,7 +12,7 @@ from db.crud.activity_log import (
 )
 from db.crud.users import get_user_details_by_id
 from db.session import get_db
-from db.schemas.activity import Activity, CreateOrUpdateActivity
+from db.schemas.activity import Activity, CreateOrUpdateActivity, vwActivity
 
 
 activity_router = r = APIRouter()
@@ -20,7 +20,7 @@ activity_router = r = APIRouter()
 
 @r.get(
     "/{user_details_id}",
-    response_model=t.List[Activity],
+    response_model=t.List[vwActivity],
     response_model_exclude_none=True,
     name="activities:all-user-activities",
 )
@@ -49,7 +49,7 @@ def activity_list(
 
 @r.get(
     "/by_dao_id/{dao_id}",
-    response_model=t.List[Activity],
+    response_model=t.List[vwActivity],
     response_model_exclude_none=True,
     name="activities:all-user-activities",
 )

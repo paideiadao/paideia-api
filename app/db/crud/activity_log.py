@@ -13,9 +13,9 @@ from db.schemas import activity
 
 def get_user_activities(db: Session, user_details_id: int, limit: int = 100):
     return (
-        db.query(activity_log.Activity)
-        .filter(activity_log.Activity.user_details_id == user_details_id)
-        .order_by(activity_log.Activity.date.desc())
+        db.query(activity_log.vw_activity_log)
+        .filter(activity_log.vw_activity_log.user_details_id == user_details_id)
+        .order_by(activity_log.vw_activity_log.date.desc())
         .limit(limit)
         .all()
     )
@@ -23,10 +23,9 @@ def get_user_activities(db: Session, user_details_id: int, limit: int = 100):
 
 def get_dao_activities(db: Session, dao_id: int, limit: int = 100):
     return (
-        db.query(activity_log.Activity)
-        .join(UserDetails, activity_log.Activity.user_details_id == UserDetails.id)
+        db.query(activity_log.vw_activity_log)
         .filter(UserDetails.dao_id == dao_id)
-        .order_by(activity_log.Activity.date.desc())
+        .order_by(activity_log.vw_activity_log.date.desc())
         .limit(limit)
         .all()
     )
