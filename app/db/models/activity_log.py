@@ -11,7 +11,6 @@ class Activity(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_details_id = Column(Integer)
-    img_url = Column(String)
     action = Column(String)
     value = Column(String)
     secondary_action = Column(String)
