@@ -15,6 +15,7 @@ from api.notifications import notification_router
 from api.assets import assets_router
 from api.blogs import blogs_router
 from api.faq import faq_router
+from api.quotes import quotes_router
 
 
 from config import Config, Network
@@ -79,6 +80,7 @@ app.include_router(
 )
 app.include_router(blogs_router, prefix="/api/blogs", tags=["blogs"])
 app.include_router(faq_router, prefix="/api/faq", tags=["faq"])
+app.include_router(quotes_router, prefix="/api/quotes", tags=["quotes"])
 app.include_router(util_router, prefix="/api/util", tags=["util"])
 
 

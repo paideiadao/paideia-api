@@ -1,6 +1,8 @@
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
 import typing as t
+
+from fastapi import status
+from sqlalchemy.orm import Session
+from starlette.responses import JSONResponse
 
 from db.models import faqs as models
 from db.schemas import faq as schemas
@@ -11,10 +13,7 @@ from db.schemas import faq as schemas
 #########################################
 
 def get_faq(db: Session, id: int):
-    faq = db.query(models.Faq).filter(models.Faq.id == id).first()
-    if not faq:
-        raise HTTPException(status_code=404, detail="faq not found")
-    return faq
+    return db.query(models.Faq).filter(models.Faq.id == id).first()
 
 
 def get_faqs(
@@ -38,8 +37,8 @@ def create_faq(db: Session, faq: schemas.CreateAndUpdateFaq):
 def delete_faq(db: Session, id: int):
     faq = get_faq(db, id)
     if not faq:
-        raise HTTPException(status.HTTP_404_NOT_FOUND,
-                            detail="faq not found")
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
+                            content="faq not found")
     db.delete(faq)
     db.commit()
     return faq
@@ -50,8 +49,8 @@ def edit_faq(
 ) -> schemas.Faq:
     db_faq = get_faq(db, id)
     if not db_faq:
-        raise HTTPException(status.HTTP_404_NOT_FOUND,
-                            detail="faq not found")
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
+                            content="faq not found")
 
     update_data = faq.dict(exclude_unset=True)
     for key, value in update_data.items():
