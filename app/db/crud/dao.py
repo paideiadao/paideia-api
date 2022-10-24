@@ -566,9 +566,6 @@ def get_dao_by_url(db: Session, name: str):
     # preliminary filter
     if name in ("dao",):
         return None
-    # special case for paideia dao
-    if name == "paideia":
-        name = "dao"
 
     dao_list = list(
         filter(
