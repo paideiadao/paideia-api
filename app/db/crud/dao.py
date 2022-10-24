@@ -667,19 +667,11 @@ def delete_dao(db: Session, id: int):
     if not db_dao:
         return None
 
+    db_dao = db_dao.__dict__
     delete_dao_design(db, id)
     delete_dao_governance(db, id)
     delete_dao_tokenomics(db, id)
     db.query(Dao).filter(Dao.id == id).delete()
     db.commit()
 
-    return DaoSchema(
-        id=db_dao.id,
-        dao_name=db_dao.dao_name,
-        dao_short_description=db_dao.dao_short_description,
-        dao_url=db_dao.dao_url,
-        is_draft=db_dao.is_draft,
-        is_published=db_dao.is_published,
-        nav_stage=db_dao.nav_stage,
-        is_review=db_dao.is_review,
-    )
+    return db_dao
