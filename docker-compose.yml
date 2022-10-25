@@ -3,12 +3,12 @@ version: '3.9'
 services:
   api:
     container_name: paideia-api
-    env_file: .env
+    env_file: ${ENV_FILE}
     build:
       context: .
       dockerfile: Dockerfile
-    ports: 
-      - 8000:8000
+    ports:
+      - 8001:8000
     deploy:
       restart_policy:
         condition: on-failure
@@ -20,10 +20,14 @@ services:
         options:
             max-file: 5
             max-size: 10m
-    volumes: 
+    volumes:
      - ./app:/app
+    networks:
+      - p-net
     command: uvicorn main:app --reload --workers 4 --reload-dir /app --host 0.0.0.0 --port 8000 --proxy-headers --use-colors --forwarded-allow-ips '52.72.64.235'
 
 networks:
   net:
     driver: bridge
+  p-net:
+    external: true
