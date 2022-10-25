@@ -22,12 +22,12 @@ class CreateProposal(BaseModel):
     category: t.Optional[str]
     content: t.Optional[str]
     voting_system: t.Optional[str]
-    references: t.List[int]  # list of proposal ids
-    actions: t.Optional[t.List[dict]]
+    references: t.List[int] = [] # list of proposal ids
+    actions: t.Optional[t.List[dict]] = []
     tags: t.Optional[t.List[str]]
     attachments: t.List[str]
-    status: t.Optional[str]
-    is_proposal: bool
+    status: t.Optional[str] = "discussion"
+    is_proposal: bool = False
 
 
 class UpdateProposalBasic(CreateProposal):

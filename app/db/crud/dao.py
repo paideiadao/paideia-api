@@ -129,7 +129,7 @@ def edit_dao_governance(
 ):
     db_dao_governance = db.query(Governance).filter(Governance.dao_id == dao_id).first()
     if not db_dao_governance:
-        return None
+        return create_dao_governance(db, dao_id, dao_governance)
 
     update_data = dao_governance.dict(exclude_unset=True)
     for key, value in update_data.items():
@@ -359,7 +359,7 @@ def create_dao_tokenomics(
 def edit_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateTokenomics):
     db_tokenomics = db.query(Tokenomics).filter(Tokenomics.dao_id == dao_id).first()
     if not db_tokenomics:
-        return None
+        return create_dao_tokenomics(db, dao_id, tokenomics)
 
     update_data = tokenomics.dict(exclude_unset=True)
     for key, value in update_data.items():
@@ -493,7 +493,7 @@ def create_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDes
 def edit_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDesign):
     db_dao_design = db.query(DaoDesign).filter(DaoDesign.dao_id == dao_id).first()
     if not db_dao_design:
-        return None
+        return create_dao_design(db, dao_id, dao_design)
 
     update_data = dao_design.dict(exclude_unset=True)
     for key, value in update_data.items():

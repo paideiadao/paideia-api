@@ -22,13 +22,15 @@ def get_user_activities(db: Session, user_details_id: int, limit: int = 100):
 
 
 def get_dao_activities(db: Session, dao_id: int, limit: int = 100):
-    return (
-        db.query(activity_log.vw_activity_log)
+    dao_activities = (
+        db.query(activity_log.vw_activity_log, UserDetails)
+        .filter(UserDetails.id == activity_log.vw_activity_log.user_details_id)
         .filter(UserDetails.dao_id == dao_id)
         .order_by(activity_log.vw_activity_log.date.desc())
         .limit(limit)
         .all()
     )
+    return list(map(lambda x : x[0], dao_activities))
 
 
 def create_user_activity(

@@ -10,7 +10,6 @@ from db.crud.activity_log import (
     delete_activity,
     get_dao_activities,
 )
-from db.crud.users import get_user_details_by_id
 from db.session import get_db
 from db.schemas.activity import Activity, CreateOrUpdateActivity, vwActivity
 
@@ -27,19 +26,11 @@ activity_router = r = APIRouter()
 def activity_list(
     user_details_id: int,
     db=Depends(get_db),
-    current_user=Depends(get_current_active_user),
 ):
     """
     Get all user activities
     """
     try:
-        user_details = get_user_details_by_id(db, user_details_id)
-        if type(user_details) == JSONResponse:
-            return user_details
-        if user_details.user_id != current_user.id:
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
-            )
         return get_user_activities(db, user_details_id)
     except Exception as e:
         return JSONResponse(
