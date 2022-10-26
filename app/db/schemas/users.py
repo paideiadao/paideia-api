@@ -66,8 +66,8 @@ class UserDetails(UpdateUserDetails):
     dao_id: int
     followers: t.List[int]
     following: t.List[int]
-    address: str
-    created: int
+    address: t.Optional[str]
+    created: int = 0
 
     class Config:
         orm_mode = True

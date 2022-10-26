@@ -10,10 +10,10 @@ class DaoBasic(BaseModel):
     governance_id: t.Optional[int]
     tokenomics_id: t.Optional[int]
     design_id: t.Optional[int]
-    is_draft: t.Optional[bool]
-    is_published: t.Optional[bool]
+    is_draft: t.Optional[bool] = True
+    is_published: t.Optional[bool] = False
     nav_stage: t.Optional[int]
-    is_review: t.Optional[bool]
+    is_review: t.Optional[bool] = True
 
     class Config:
         orm_mode = True
@@ -32,7 +32,7 @@ class FooterSocialLinks(CreateOrUpdateFooterSocialLinks):
 
 
 class CreateOrUpdateDaoDesign(BaseModel):
-    theme_id: int
+    theme_id: int = 0
     logo_url: t.Optional[str]
     show_banner: t.Optional[bool]
     banner_url: t.Optional[str]
@@ -56,9 +56,9 @@ class CreateOrUpdateGovernance(BaseModel):
     quorum: t.Optional[int]
     vote_duration__sec: t.Optional[int]
     amount: t.Optional[float]
-    currency: t.Optional[str]
+    currency: t.Optional[str] = "ERG"
     support_needed: t.Optional[int]
-    governance_whitelist: t.List[int]  # ergo_address_id
+    governance_whitelist: t.List[int] = []  # ergo address id
 
 
 class Governance(CreateOrUpdateGovernance):
@@ -97,7 +97,7 @@ class Distribution(CreateOrUpdateDistribution):
 
 
 class CreateOrUpdateTokenomics(BaseModel):
-    type: str
+    type: str = "token"
     token_id: t.Optional[str]
     token_name: t.Optional[str]
     token_ticker: t.Optional[str]
@@ -105,14 +105,14 @@ class CreateOrUpdateTokenomics(BaseModel):
     token_image_url: t.Optional[str]
     token_remaining: t.Optional[float]
     is_activated: t.Optional[bool]
-    token_holders: t.List[CreateOrUpdateTokenHolder]
-    distributions: t.List[CreateOrUpdateDistribution]
+    token_holders: t.List[CreateOrUpdateTokenHolder] = []
+    distributions: t.List[CreateOrUpdateDistribution] = []
 
 
 class Tokenomics(CreateOrUpdateTokenomics):
     id: int
-    token_holders: t.List[TokenHolder]
-    distributions: t.List[Distribution]
+    token_holders: t.List[TokenHolder] = []
+    distributions: t.List[Distribution] = []
 
 
 class CreateOrUpdateDao(BaseModel):

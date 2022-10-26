@@ -337,13 +337,20 @@ def user_dao_details(
 def user_details_all(
     user_id: int,
     dao_id: int,
+    mapping: str = "user_id",
     db=Depends(get_db),
 ):
     """
     Get any user details
     """
     try:
-        return get_user_profile(db, user_id, dao_id)
+        if mapping == "user_details_id":
+            user_details = get_user_details_by_id(db, user_id)
+            if type(user_details) == JSONResponse:
+                return user_details
+            return get_user_profile(db, user_details.user_id, user_details.dao_id)
+        else:
+            return get_user_profile(db, user_id, dao_id)
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"

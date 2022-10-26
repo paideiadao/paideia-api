@@ -129,7 +129,7 @@ def edit_dao_governance(
 ):
     db_dao_governance = db.query(Governance).filter(Governance.dao_id == dao_id).first()
     if not db_dao_governance:
-        return None
+        return create_dao_governance(db, dao_id, dao_governance)
 
     update_data = dao_governance.dict(exclude_unset=True)
     for key, value in update_data.items():
@@ -359,7 +359,7 @@ def create_dao_tokenomics(
 def edit_dao_tokenomics(db: Session, dao_id: int, tokenomics: CreateOrUpdateTokenomics):
     db_tokenomics = db.query(Tokenomics).filter(Tokenomics.dao_id == dao_id).first()
     if not db_tokenomics:
-        return None
+        return create_dao_tokenomics(db, dao_id, tokenomics)
 
     update_data = tokenomics.dict(exclude_unset=True)
     for key, value in update_data.items():
@@ -493,7 +493,7 @@ def create_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDes
 def edit_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDesign):
     db_dao_design = db.query(DaoDesign).filter(DaoDesign.dao_id == dao_id).first()
     if not db_dao_design:
-        return None
+        return create_dao_design(db, dao_id, dao_design)
 
     update_data = dao_design.dict(exclude_unset=True)
     for key, value in update_data.items():
@@ -566,9 +566,6 @@ def get_dao_by_url(db: Session, name: str):
     # preliminary filter
     if name in ("dao",):
         return None
-    # special case for paideia dao
-    if name == "paideia":
-        name = "dao"
 
     dao_list = list(
         filter(
@@ -667,19 +664,11 @@ def delete_dao(db: Session, id: int):
     if not db_dao:
         return None
 
+    db_dao = db_dao.__dict__
     delete_dao_design(db, id)
     delete_dao_governance(db, id)
     delete_dao_tokenomics(db, id)
     db.query(Dao).filter(Dao.id == id).delete()
     db.commit()
 
-    return DaoSchema(
-        id=db_dao.id,
-        dao_name=db_dao.dao_name,
-        dao_short_description=db_dao.dao_short_description,
-        dao_url=db_dao.dao_url,
-        is_draft=db_dao.is_draft,
-        is_published=db_dao.is_published,
-        nav_stage=db_dao.nav_stage,
-        is_review=db_dao.is_review,
-    )
+    return db_dao
