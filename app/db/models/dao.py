@@ -21,7 +21,7 @@ class Dao(Base):
     is_review = Column(Boolean)
 
 class vw_daos(Base):
-    __tablename__ = "vw_activity_log"
+    __tablename__ = "vw_daos"
 
     id = Column(Integer, primary_key=True, index=True)
     dao_name = Column(String)
