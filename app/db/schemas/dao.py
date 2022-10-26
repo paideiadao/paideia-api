@@ -18,6 +18,16 @@ class DaoBasic(BaseModel):
     class Config:
         orm_mode = True
 
+class VwDao(BaseModel):
+    id: int
+    dao_name: str
+    dao_url: str
+    token_id: str
+    logo_url: str
+
+    class Config:
+        orm_mode = True
+
 
 class CreateOrUpdateFooterSocialLinks(BaseModel):
     social_network: t.Optional[str]

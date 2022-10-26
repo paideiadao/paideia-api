@@ -1,6 +1,7 @@
 import typing as t
 
 from sqlalchemy.orm import Session
+from app.db.models.dao import vw_daos
 from db.models.tokenomics import (
     Distribution,
     TokenHolder,
@@ -535,7 +536,7 @@ def delete_dao_design(db: Session, dao_id: int):
 
 
 def get_all_daos(db: Session):
-    return db.query(Dao).all()
+    return db.query(vw_daos).all()
 
 
 def get_dao(db: Session, id: int):
