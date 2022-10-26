@@ -46,12 +46,8 @@ auth_router = r = APIRouter()
 ##           ERGOAUTH           ##
 ##################################
 
-# BASE_ERGOAUTH = "ergoauth://api.paideia.im"
-# BASE_URL = "https://api.paideia.im"
-
-BASE_ERGOAUTH = "ergoauth://192.168.1.10"
-BASE_URL = "http://localhost:8000/api"
-
+BASE_ERGOAUTH = "ergoauth://api.paideia.im"
+BASE_URL = "https://api.paideia.im"
 
 @r.post("/login", response_model=LoginRequestWebResponse, name="ergoauth:login-web")
 async def ergoauth_login_web(addresses: LoginRequest, db=Depends(get_db)):
