@@ -28,3 +28,8 @@ class vw_daos(Base):
     dao_url = Column(String)
     token_id = Column(String)
     logo_url = Column(String)
+    token_ticker = Column(String)
+    member_count = Column(Integer)
+    proposal_count = Column(Integer)
+
+

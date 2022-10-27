@@ -23,7 +23,10 @@ class VwDao(BaseModel):
     dao_name: str
     dao_url: str
     token_id: str
-    logo_url: str
+    logo_url: t.Optional[str]
+    token_ticker: str
+    member_count: int
+    proposal_count: int
 
     class Config:
         orm_mode = True
