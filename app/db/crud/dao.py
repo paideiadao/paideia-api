@@ -7,7 +7,7 @@ from db.models.tokenomics import (
     Tokenomics,
     TokenomicsTokenHolder,
 )
-from db.models.dao import Dao
+from db.models.dao import Dao,vw_daos
 from db.models.dao_design import DaoDesign, FooterSocialLinks
 from db.models.governance import Governance, GovernanceWhitelist
 from db.schemas.dao import (
@@ -535,7 +535,7 @@ def delete_dao_design(db: Session, dao_id: int):
 
 
 def get_all_daos(db: Session):
-    return db.query(Dao).all()
+    return db.query(vw_daos).all()
 
 
 def get_dao(db: Session, id: int):

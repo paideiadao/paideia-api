@@ -19,3 +19,17 @@ class Dao(Base):
     is_published = Column(Boolean)
     nav_stage = Column(Integer)
     is_review = Column(Boolean)
+
+class vw_daos(Base):
+    __tablename__ = "vw_daos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    dao_name = Column(String)
+    dao_url = Column(String)
+    token_id = Column(String)
+    logo_url = Column(String)
+    token_ticker = Column(String)
+    member_count = Column(Integer)
+    proposal_count = Column(Integer)
+
+

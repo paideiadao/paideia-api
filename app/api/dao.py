@@ -13,14 +13,14 @@ from db.crud.dao import (
 )
 from db.session import get_db
 
-from db.schemas.dao import CreateOrUpdateDao, Dao, DaoBasic
+from db.schemas.dao import CreateOrUpdateDao, Dao, VwDao
 
 dao_router = r = APIRouter()
 
 
 @r.get(
     "/",
-    response_model=t.List[DaoBasic],
+    response_model=t.List[VwDao],
     response_model_exclude_none=True,
     name="dao:all-dao",
 )
