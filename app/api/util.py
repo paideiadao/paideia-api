@@ -24,14 +24,14 @@ def upload(
     """
     Upload files to s3 bucket
 
-    compression_type options (max px for smaller side): 
+    compression_type options (max px for long side): 
      xs: 40px
      s: 120px
      m: 240px
      l: 720px
      original: no compression
 
-    eg: 100 x 200 image with xs compression would be resized to 40 x 80
+    eg: 100 x 200 image with xs compression would be resized to 20 x 40
     """
     try:
         filename = fileobject.filename
