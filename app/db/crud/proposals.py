@@ -263,6 +263,20 @@ def add_commment_by_proposal_id(
     return db_comment
 
 
+def delete_comment_by_comment_id(
+    db: Session, comment_id: int,
+):
+    db_comment = db.query(Comment).filter(Comment.id == comment_id).first()
+    if not db_comment:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content="comment not found"
+        )
+    comment = get_comment_by_id(db, comment_id)
+    db.delete(db_comment)
+    db.commit()
+    return comment
+
+
 def get_addendums_by_proposal_id(db: Session, proposal_id: int):
     db_addendums = db.query(Addendum).filter(Addendum.proposal_id == proposal_id).all()
     return db_addendums

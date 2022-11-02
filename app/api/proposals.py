@@ -30,6 +30,7 @@ from db.crud.proposals import (
     set_followers_by_proposal_id,
     edit_proposal_basic_by_id,
     add_commment_by_proposal_id,
+    delete_comment_by_comment_id,
     add_addendum_by_proposal_id,
     add_reference_by_proposal_id,
 )
@@ -336,6 +337,29 @@ async def comment_proposal(
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
+@r.delete("/comment/{comment_id}", name="proposals:delete-comment-proposal")
+async def delete_comment_proposal(
+    comment_id: int,
+    db=Depends(get_db),
+    user=Depends(get_current_active_user),
+):
+    try:
+        comment = get_comment_by_id(db, comment_id)
+        if type(comment) == JSONResponse:
+            return comment
+        user_details_id = comment.user_details_id
+        user_details = get_user_details_by_id(db, user_details_id)
+        if type(user_details) == JSONResponse:
+            return user_details
+        if user_details.user_id != user.id:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
+        return delete_comment_by_comment_id(db, comment_id)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+
+
 # todo: add notifications and activity logging
 @r.put("/comment/like/{comment_id}", name="proposals:like-proposal-comment")
 def like_comment(
@@ -436,11 +460,18 @@ def reference_proposal(
     name="proposals:delete-proposal",
 )
 def delete_proposal(
-    proposal_id: int, db=Depends(get_db), user=Depends(get_current_active_superuser)
+    proposal_id: int, db=Depends(get_db), user=Depends(get_current_active_user)
 ):
     try:
-        proposal = delete_proposal_by_id(db, proposal_id)
-        return proposal
+        proposal = get_proposal_by_id(db, proposal_id)
+        if type(proposal) == JSONResponse:
+            return proposal
+        user_details = get_user_details_by_id(db, proposal.user_details_id)
+        if user_details.user_id != user.id:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
+        return delete_proposal_by_id(db, proposal_id)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
