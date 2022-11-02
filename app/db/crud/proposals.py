@@ -208,6 +208,7 @@ def get_comments_by_proposal_id(db: Session, proposal_id: int):
         comments.append(
             CommentSchema(
                 id=comment[0].id,
+                proposal_id=proposal_id,
                 date=comment[0].date,
                 user_details_id=comment[0].user_details_id,
                 parent=comment[0].parent,
@@ -236,6 +237,7 @@ def get_comment_by_id(db: Session, id: int):
     likes = get_likes_by_comment_id(db, db_comment[0].id)
     comment = CommentSchema(
         id=db_comment[0].id,
+        proposal_id=db_comment[0].proposal_id,
         date=db_comment[0].date,
         user_details_id=db_comment[0].user_details_id,
         profile_img_url=db_comment[2],

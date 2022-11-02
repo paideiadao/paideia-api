@@ -360,7 +360,6 @@ async def delete_comment_proposal(
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
-# todo: add notifications and activity logging
 @r.put("/comment/like/{comment_id}", name="proposals:like-proposal-comment")
 def like_comment(
     comment_id: int,
@@ -377,7 +376,41 @@ def like_comment(
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
             )
-        return set_likes_by_comment_id(db, comment_id, user_details_id, req.type)
+        likes = set_likes_by_comment_id(db, comment_id, user_details_id, req.type)
+        # add to activities and notifier
+        if type(likes) != JSONResponse:
+            comment = get_comment_by_id(db, comment_id)
+            proposal = get_proposal_by_id(db, comment.proposal_id)
+            # activity logging
+            action = {
+                "like": ActivityConstants.LIKED_COMMENT,
+                "dislike": ActivityConstants.DISLIKE_COMMENT,
+                "remove": ActivityConstants.REMOVED_LIKE_COMMENT,
+            }
+            if req.type == "like":
+                activity = CreateOrUpdateActivity(
+                    user_details_id=user_details_id,
+                    action=action[req.type],
+                    value=proposal.name,
+                    category=ActivityConstants.COMMENT_CATEGORY,
+                )
+                create_user_activity(db, user_details_id, activity)
+            # notifications
+            if req.type == "like" and proposal.user_details_id != user_details_id:
+                notification = CreateAndUpdateNotification(
+                    user_details_id=proposal.user_details_id,
+                    action=generate_action(
+                        user_details.name, NotificationConstants.COMMENT_LIKE
+                    ),
+                    proposal_id=proposal.id,
+                )
+                # handle async web sockets stuff
+                run_coroutine_in_sync(
+                    notification_create(
+                        proposal.user_details_id, notification, db, current_user=None
+                    )
+                )
+            return likes
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 

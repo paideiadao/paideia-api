@@ -44,6 +44,7 @@ class CreateOrUpdateProposal(CreateProposal):
 
 class Comment(CreateOrUpdateComment):
     id: int
+    proposal_id: int
     date: datetime.datetime
     alias: str
     profile_img_url: t.Optional[str]
