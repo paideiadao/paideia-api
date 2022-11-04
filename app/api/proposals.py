@@ -20,6 +20,7 @@ from db.schemas.proposal import (
 )
 from db.crud.proposals import (
     get_proposal_by_id,
+    get_proposal_by_slug,
     get_proposals_by_dao_id,
     get_proposals_by_user_id,
     get_comment_by_id,
@@ -71,15 +72,17 @@ def get_user_proposals(user_details_id: int, db=Depends(get_db)):
 
 
 @r.get(
-    "/{proposal_id}",
+    "/{proposal_slug}",
     response_model=Proposal,
     response_model_exclude_none=True,
     name="proposals:proposal",
 )
-def get_proposal(proposal_id: int, db=Depends(get_db)):
+def get_proposal(proposal_slug: str, db=Depends(get_db)):
     try:
-        proposal = get_proposal_by_id(db, proposal_id)
-        return proposal
+        if proposal_slug.isdecimal():
+            return get_proposal_by_id(db, int(proposal_slug))
+        else:
+            return get_proposal_by_slug(db, proposal_slug)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 

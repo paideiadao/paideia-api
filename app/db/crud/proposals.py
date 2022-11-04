@@ -357,6 +357,17 @@ def get_proposal_by_id(db: Session, id: int):
     return proposal
 
 
+def get_proposal_by_slug(db: Session, slug: str):
+    proposal_id = int(slug.split("-")[-1])
+    proposal = get_proposal_by_id(db, proposal_id)
+    if type(proposal) == JSONResponse:
+        return proposal
+    slug_test = '-'.join(proposal.name.lower().split()) + "-" + str(proposal_id)
+    if slug_test != slug:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
+    return proposal
+
+
 def get_proposals_by_dao_id(db: Session, dao_id: int):
     db_proposals = db.query(Proposal).filter(Proposal.dao_id == dao_id).all()
     proposals = list(map(lambda x: get_proposal_by_id(db, x.id), db_proposals))
