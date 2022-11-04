@@ -208,6 +208,7 @@ def get_comments_by_proposal_id(db: Session, proposal_id: int):
         comments.append(
             CommentSchema(
                 id=comment[0].id,
+                proposal_id=proposal_id,
                 date=comment[0].date,
                 user_details_id=comment[0].user_details_id,
                 parent=comment[0].parent,
@@ -236,6 +237,7 @@ def get_comment_by_id(db: Session, id: int):
     likes = get_likes_by_comment_id(db, db_comment[0].id)
     comment = CommentSchema(
         id=db_comment[0].id,
+        proposal_id=db_comment[0].proposal_id,
         date=db_comment[0].date,
         user_details_id=db_comment[0].user_details_id,
         profile_img_url=db_comment[2],
@@ -261,6 +263,20 @@ def add_commment_by_proposal_id(
     db.commit()
     db.refresh(db_comment)
     return db_comment
+
+
+def delete_comment_by_comment_id(
+    db: Session, comment_id: int,
+):
+    db_comment = db.query(Comment).filter(Comment.id == comment_id).first()
+    if not db_comment:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content="comment not found"
+        )
+    comment = get_comment_by_id(db, comment_id)
+    db.delete(db_comment)
+    db.commit()
+    return comment
 
 
 def get_addendums_by_proposal_id(db: Session, proposal_id: int):
@@ -338,6 +354,17 @@ def get_proposal_by_id(db: Session, id: int):
         user_followers=get_followers_by_user_id(db, user_details.id)["followers"],
         created=len(get_proposals_by_user_id(db, user_details.id)),
     )
+    return proposal
+
+
+def get_proposal_by_slug(db: Session, slug: str):
+    proposal_id = int(slug.split("-")[-1])
+    proposal = get_proposal_by_id(db, proposal_id)
+    if type(proposal) == JSONResponse:
+        return proposal
+    slug_test = '-'.join(proposal.name.lower().split()) + "-" + str(proposal_id)
+    if slug_test != slug:
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
     return proposal
 
 
