@@ -13,7 +13,6 @@ from db.crud.users import (
     get_user_details_by_id,
 )
 from db.models.users import UserDetails
-
 from db.models.proposals import (
     Proposal,
     ProposalReference,
@@ -32,6 +31,8 @@ from db.schemas.proposal import (
     CreateOrUpdateAddendum,
     CreateOrUpdateComment,
 )
+from util.util import generate_slug
+
 
 #####################################
 ### CRUD OPERATIONS FOR PROPOSALS ###
@@ -362,7 +363,7 @@ def get_proposal_by_slug(db: Session, slug: str):
     proposal = get_proposal_by_id(db, proposal_id)
     if type(proposal) == JSONResponse:
         return proposal
-    slug_test = '-'.join(proposal.name.lower().split()) + "-" + str(proposal_id)
+    slug_test = generate_slug(proposal.name, proposal_id)
     if slug_test != slug:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="proposal not found")
     return proposal
