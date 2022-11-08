@@ -19,6 +19,9 @@ class ActivityConstants:
     FOLLOWED_DISCUSSION = "followed the discussion"
     UNFOLLOWED_DISCUSSION = "unfollowed the discussion"
     COMMENT = "made a comment on the proposal"
+    LIKED_COMMENT = "liked a comment on the proposal"
+    DISLIKE_COMMENT = "disliked a comment on the proposal"
+    REMOVED_LIKE_COMMENT = "removed a like from a comment on the proposal"
     ADDED_ADDENDUM = "added an addendum"
     # secondary
     ADDENDUM_PR = "to the proposal"

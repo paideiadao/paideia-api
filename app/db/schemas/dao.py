@@ -32,6 +32,21 @@ class VwDao(BaseModel):
         orm_mode = True
 
 
+class VwDao(BaseModel):
+    id: int
+    dao_name: str
+    dao_url: str
+    dao_short_description: t.Optional[str]
+    logo_url: t.Optional[str]
+    token_id: t.Optional[str]
+    token_ticker: t.Optional[str]
+    member_count: int = 0
+    proposal_count: int = 0
+
+    class Config:
+        orm_mode = True
+
+
 class CreateOrUpdateFooterSocialLinks(BaseModel):
     social_network: t.Optional[str]
     link_url: t.Optional[str]

@@ -17,4 +17,5 @@ pytest
 pytest-asyncio
 pytest-mock
 colorlog
+Pillow
 git+https://github.com/ergo-pad/ergo-python-appkit@main

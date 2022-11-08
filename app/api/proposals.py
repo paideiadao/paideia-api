@@ -20,6 +20,7 @@ from db.schemas.proposal import (
 )
 from db.crud.proposals import (
     get_proposal_by_id,
+    get_proposal_by_slug,
     get_proposals_by_dao_id,
     get_proposals_by_user_id,
     get_comment_by_id,
@@ -30,6 +31,7 @@ from db.crud.proposals import (
     set_followers_by_proposal_id,
     edit_proposal_basic_by_id,
     add_commment_by_proposal_id,
+    delete_comment_by_comment_id,
     add_addendum_by_proposal_id,
     add_reference_by_proposal_id,
 )
@@ -70,15 +72,17 @@ def get_user_proposals(user_details_id: int, db=Depends(get_db)):
 
 
 @r.get(
-    "/{proposal_id}",
+    "/{proposal_slug}",
     response_model=Proposal,
     response_model_exclude_none=True,
     name="proposals:proposal",
 )
-def get_proposal(proposal_id: int, db=Depends(get_db)):
+def get_proposal(proposal_slug: str, db=Depends(get_db)):
     try:
-        proposal = get_proposal_by_id(db, proposal_id)
-        return proposal
+        if proposal_slug.isdecimal():
+            return get_proposal_by_id(db, int(proposal_slug))
+        else:
+            return get_proposal_by_slug(db, proposal_slug)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
@@ -336,7 +340,29 @@ async def comment_proposal(
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
-# todo: add notifications and activity logging
+@r.delete("/comment/{comment_id}", name="proposals:delete-comment-proposal")
+async def delete_comment_proposal(
+    comment_id: int,
+    db=Depends(get_db),
+    user=Depends(get_current_active_user),
+):
+    try:
+        comment = get_comment_by_id(db, comment_id)
+        if type(comment) == JSONResponse:
+            return comment
+        user_details_id = comment.user_details_id
+        user_details = get_user_details_by_id(db, user_details_id)
+        if type(user_details) == JSONResponse:
+            return user_details
+        if user_details.user_id != user.id:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
+        return delete_comment_by_comment_id(db, comment_id)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+
+
 @r.put("/comment/like/{comment_id}", name="proposals:like-proposal-comment")
 def like_comment(
     comment_id: int,
@@ -353,7 +379,41 @@ def like_comment(
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
             )
-        return set_likes_by_comment_id(db, comment_id, user_details_id, req.type)
+        likes = set_likes_by_comment_id(db, comment_id, user_details_id, req.type)
+        # add to activities and notifier
+        if type(likes) != JSONResponse:
+            comment = get_comment_by_id(db, comment_id)
+            proposal = get_proposal_by_id(db, comment.proposal_id)
+            # activity logging
+            action = {
+                "like": ActivityConstants.LIKED_COMMENT,
+                "dislike": ActivityConstants.DISLIKE_COMMENT,
+                "remove": ActivityConstants.REMOVED_LIKE_COMMENT,
+            }
+            if req.type == "like":
+                activity = CreateOrUpdateActivity(
+                    user_details_id=user_details_id,
+                    action=action[req.type],
+                    value=proposal.name,
+                    category=ActivityConstants.COMMENT_CATEGORY,
+                )
+                create_user_activity(db, user_details_id, activity)
+            # notifications
+            if req.type == "like" and proposal.user_details_id != user_details_id:
+                notification = CreateAndUpdateNotification(
+                    user_details_id=proposal.user_details_id,
+                    action=generate_action(
+                        user_details.name, NotificationConstants.COMMENT_LIKE
+                    ),
+                    proposal_id=proposal.id,
+                )
+                # handle async web sockets stuff
+                run_coroutine_in_sync(
+                    notification_create(
+                        proposal.user_details_id, notification, db, current_user=None
+                    )
+                )
+            return likes
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
@@ -436,11 +496,18 @@ def reference_proposal(
     name="proposals:delete-proposal",
 )
 def delete_proposal(
-    proposal_id: int, db=Depends(get_db), user=Depends(get_current_active_superuser)
+    proposal_id: int, db=Depends(get_db), user=Depends(get_current_active_user)
 ):
     try:
-        proposal = delete_proposal_by_id(db, proposal_id)
-        return proposal
+        proposal = get_proposal_by_id(db, proposal_id)
+        if type(proposal) == JSONResponse:
+            return proposal
+        user_details = get_user_details_by_id(db, proposal.user_details_id)
+        if user_details.user_id != user.id:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
+        return delete_proposal_by_id(db, proposal_id)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 

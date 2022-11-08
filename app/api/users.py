@@ -22,6 +22,7 @@ from db.crud.users import (
     update_primary_address_for_user,
     get_dao_users,
     get_user_details_by_id,
+    get_user_details_by_slug,
 )
 from db.schemas.users import (
     UserCreate,
@@ -351,6 +352,30 @@ def user_details_all(
             return get_user_profile(db, user_details.user_id, user_details.dao_id)
         else:
             return get_user_profile(db, user_id, dao_id)
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
+
+
+@r.get(
+    "/details_by_slug/{user_details_slug}",
+    response_model=UserDetails,
+    response_model_exclude_none=True,
+    name="users:user-details-slug",
+)
+def user_details_slug(
+    user_details_slug: str,
+    db=Depends(get_db),
+):
+    """
+    Get any user details
+    """
+    try:
+        user_details = get_user_details_by_slug(db, user_details_slug)
+        if type(user_details) == JSONResponse:
+            return user_details
+        return get_user_profile(db, user_details.user_id, user_details.dao_id)
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"

@@ -7,7 +7,7 @@ from db.models.tokenomics import (
     Tokenomics,
     TokenomicsTokenHolder,
 )
-from db.models.dao import Dao,vw_daos
+from db.models.dao import Dao, vw_daos
 from db.models.dao_design import DaoDesign, FooterSocialLinks
 from db.models.governance import Governance, GovernanceWhitelist
 from db.schemas.dao import (

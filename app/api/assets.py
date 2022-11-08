@@ -22,7 +22,6 @@ TOKEN_CONFIG = {
 }
 
 
-
 @r.post("/locked/{token}", name="assets:locked-token")
 def locked_tokens(token: str, req: AddressList):
     try:
