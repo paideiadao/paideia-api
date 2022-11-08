@@ -8,6 +8,7 @@ from db.models import users as models
 from db.models.proposals import Proposal
 from db.schemas import users as schemas
 from core.security import get_password_hash
+from util.util import generate_slug
 
 
 #################################
@@ -31,6 +32,19 @@ def get_user_details_by_id(db: Session, user_details_id: int):
         .first()
     )
     if not user_details:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content="user not found"
+        )
+    return user_details
+
+
+def get_user_details_by_slug(db: Session, slug: str):
+    user_details_id = int(slug.split("-")[-1])
+    user_details = get_user_details_by_id(db, user_details_id)
+    if type(user_details) == JSONResponse:
+        return user_details
+    slug_test = generate_slug(user_details.name, user_details_id)
+    if slug_test != slug:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND, content="user not found"
         )
