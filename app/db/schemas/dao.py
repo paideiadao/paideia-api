@@ -22,20 +22,6 @@ class VwDao(BaseModel):
     id: int
     dao_name: str
     dao_url: str
-    token_id: str
-    logo_url: t.Optional[str]
-    token_ticker: str
-    member_count: int
-    proposal_count: int
-
-    class Config:
-        orm_mode = True
-
-
-class VwDao(BaseModel):
-    id: int
-    dao_name: str
-    dao_url: str
     dao_short_description: t.Optional[str]
     logo_url: t.Optional[str]
     token_id: t.Optional[str]
