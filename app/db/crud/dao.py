@@ -8,7 +8,7 @@ from db.models.tokenomics import (
     TokenomicsTokenHolder,
 )
 from db.models.dao import Dao, vw_daos
-from db.models.dao_design import DaoDesign, FooterSocialLinks
+from db.models.dao_design import DaoDesign, FooterSocialLinks, DaoTheme
 from db.models.governance import Governance, GovernanceWhitelist
 from db.schemas.dao import (
     CreateOrUpdateDao,
@@ -440,6 +440,8 @@ def set_dao_design_footer_links(
         .all()
     )
 
+def get_dao_theme(db: Session, theme_id: int):
+    return db.query(DaoTheme).filter(DaoTheme.id == theme_id).first()
 
 def get_dao_design(db: Session, dao_id: int):
     db_dao_design = db.query(DaoDesign).filter(DaoDesign.dao_id == dao_id).first()
@@ -447,10 +449,14 @@ def get_dao_design(db: Session, dao_id: int):
         return None
 
     footer_links = get_dao_design_footer_links(db, db_dao_design.id)
-
+    theme = get_dao_theme(db, db_dao_design.theme_id)
     return DaoDesignSchema(
         id=db_dao_design.id,
         theme_id=db_dao_design.theme_id,
+        primary_color=theme.primary_color,
+        secondary_color=theme.secondary_color,
+        dark_primary_color = theme.dark_primary_color,
+        dark_secondary_color = theme.dark_secondary_color,
         logo_url=db_dao_design.logo_url,
         show_banner=db_dao_design.show_banner,
         banner_url=db_dao_design.banner_url,

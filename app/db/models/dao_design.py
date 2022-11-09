@@ -22,6 +22,12 @@ class DaoTheme(Base):
     __tablename__ = "dao_themes"
 
     id = Column(Integer, primary_key=True)
+    theme_name = Column(String)
+    primary_color = Column(String)
+    secondary_color = Column(String)
+    dark_primary_color = Column(String)
+    dark_secondary_color = Column(String)
+
 
 
 class FooterSocialLinks(Base):

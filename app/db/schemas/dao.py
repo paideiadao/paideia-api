@@ -18,7 +18,6 @@ class DaoBasic(BaseModel):
     class Config:
         orm_mode = True
 
-
 class VwDao(BaseModel):
     id: int
     dao_name: str
@@ -59,6 +58,10 @@ class CreateOrUpdateDaoDesign(BaseModel):
 class DaoDesign(CreateOrUpdateDaoDesign):
     id: int
     footer_social_links: t.List[FooterSocialLinks]
+    primary_color: str
+    secondary_color: str
+    dark_primary_color: str
+    dark_secondary_color: str
 
     class Config:
         orm_mode = True

@@ -20,7 +20,6 @@ class Dao(Base):
     nav_stage = Column(Integer)
     is_review = Column(Boolean)
 
-
 class vw_daos(Base):
     __tablename__ = "vw_daos"
 
