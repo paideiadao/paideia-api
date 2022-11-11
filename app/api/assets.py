@@ -47,3 +47,34 @@ def locked_tokens(req: AddressList):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
+
+
+@r.post("/dao_membership", name="assets:check-dao-membership")
+def dao_membership(req: AddressList):
+    try:
+        address_list = req.addresses
+        # call to danaides service
+        ret = requests.post(
+            f"{CFG.danaides_api}/token/daoMembership",
+            json={
+                "addresses": address_list,
+                "tokens": list(TOKEN_CONFIG.values()),
+            },
+        )
+        ret = ret.json()
+        sanitized_ret = {}
+        for token_id in ret:
+            sanitized_ret[get_token_name_from_id(token_id)] = ret[token_id]
+        return sanitized_ret
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
+
+
+def get_token_name_from_id(token_id):
+    for token in TOKEN_CONFIG:
+        if TOKEN_CONFIG[token]["token_id"] == token_id:
+            return token
+    return "unknown"
