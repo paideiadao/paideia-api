@@ -24,6 +24,13 @@ class Dao(Base):
     created_dtz = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class HighlightedDaos(Base):
+    __tablename__ = "project_highlights"
+
+    id = Column(Integer, primary_key=True, index=True)
+    dao_id = Column(Integer)
+
+
 class vw_daos(Base):
     __tablename__ = "vw_daos"
 

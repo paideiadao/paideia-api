@@ -7,7 +7,7 @@ from db.models.tokenomics import (
     Tokenomics,
     TokenomicsTokenHolder,
 )
-from db.models.dao import Dao, vw_daos
+from db.models.dao import Dao, HighlightedDaos, vw_daos
 from db.models.dao_design import DaoDesign, FooterSocialLinks, DaoTheme
 from db.models.governance import Governance, GovernanceWhitelist
 from db.schemas.dao import (
@@ -440,8 +440,10 @@ def set_dao_design_footer_links(
         .all()
     )
 
+
 def get_dao_theme(db: Session, theme_id: int):
     return db.query(DaoTheme).filter(DaoTheme.id == theme_id).first()
+
 
 def get_dao_design(db: Session, dao_id: int):
     db_dao_design = db.query(DaoDesign).filter(DaoDesign.dao_id == dao_id).first()
@@ -668,3 +670,30 @@ def delete_dao(db: Session, id: int):
     db.commit()
 
     return db_dao
+
+
+##############################
+## HIGHLIGHTED PROJECTS CMS ##
+##############################
+
+
+def get_highlighted_projects(db: Session):
+    q = db.query(vw_daos, HighlightedDaos).filter(vw_daos.id == HighlightedDaos.dao_id).all()
+    return list(map(lambda x: x[0], q))
+
+
+def add_to_highlighted_projects(db: Session, dao_id: int):
+    db_highlighted_project = HighlightedDaos(dao_id=dao_id)
+    db.add(db_highlighted_project)
+    db.commit()
+    db.refresh(db_highlighted_project)
+    return db_highlighted_project
+
+
+def remove_from_highlighted_projects(db: Session, dao_id: int):
+    db_highlighted_project = db.query(HighlightedDaos).filter(HighlightedDaos.dao_id == dao_id).first()
+    if db_highlighted_project == None:
+        return db_highlighted_project
+    db.delete(db_highlighted_project)
+    db.commit()
+    return db_highlighted_project
