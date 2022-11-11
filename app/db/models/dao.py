@@ -1,4 +1,5 @@
-from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy import Boolean, Column, Integer, String, DateTime
+from sqlalchemy.sql import func
 
 from db.session import Base
 
@@ -19,6 +20,9 @@ class Dao(Base):
     is_published = Column(Boolean)
     nav_stage = Column(Integer)
     is_review = Column(Boolean)
+    category = Column(String)
+    created_dtz = Column(DateTime(timezone=True), server_default=func.now())
+
 
 class vw_daos(Base):
     __tablename__ = "vw_daos"
@@ -27,6 +31,8 @@ class vw_daos(Base):
     dao_name = Column(String)
     dao_url = Column(String)
     dao_short_description = Column(String)
+    category = Column(Boolean)
+    created_dtz = Column(DateTime(timezone=True))
     logo_url = Column(String)
     token_id = Column(String)
     token_ticker = Column(String)

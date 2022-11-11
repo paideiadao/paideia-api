@@ -453,6 +453,7 @@ def get_dao_design(db: Session, dao_id: int):
     return DaoDesignSchema(
         id=db_dao_design.id,
         theme_id=db_dao_design.theme_id,
+        theme_name=theme.theme_name,
         primary_color=theme.primary_color,
         secondary_color=theme.secondary_color,
         dark_primary_color = theme.dark_primary_color,
@@ -480,20 +481,11 @@ def create_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDes
     db.commit()
     db.refresh(db_dao_design)
 
-    footer_links = set_dao_design_footer_links(
+    set_dao_design_footer_links(
         db, db_dao_design.id, dao_design.footer_social_links
     )
 
-    return DaoDesignSchema(
-        id=db_dao_design.id,
-        theme_id=dao_design.theme_id,
-        logo_url=dao_design.logo_url,
-        show_banner=dao_design.show_banner,
-        banner_url=dao_design.banner_url,
-        show_footer=dao_design.show_footer,
-        footer_text=dao_design.footer_text,
-        footer_social_links=footer_links,
-    )
+    return get_dao_design(db, db_dao_design.dao_id)
 
 
 def edit_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDesign):
@@ -511,20 +503,11 @@ def edit_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDesig
     db.commit()
     db.refresh(db_dao_design)
 
-    footer_links = set_dao_design_footer_links(
+    set_dao_design_footer_links(
         db, db_dao_design.id, dao_design.footer_social_links
     )
 
-    return DaoDesignSchema(
-        id=db_dao_design.id,
-        theme_id=db_dao_design.theme_id,
-        logo_url=db_dao_design.logo_url,
-        show_banner=db_dao_design.show_banner,
-        banner_url=db_dao_design.banner_url,
-        show_footer=db_dao_design.show_footer,
-        footer_text=db_dao_design.footer_text,
-        footer_social_links=footer_links,
-    )
+    return get_dao_design(db, dao_id)
 
 
 def delete_dao_design(db: Session, dao_id: int):
@@ -565,6 +548,8 @@ def get_dao(db: Session, id: int):
         is_published=db_dao.is_published,
         nav_stage=db_dao.nav_stage,
         is_review=db_dao.is_review,
+        category=db_dao.category,
+        created_dtz=db_dao.created_dtz,
     )
 
 
@@ -596,6 +581,7 @@ def create_dao(db: Session, dao: CreateOrUpdateDao):
         is_published=dao.is_published,
         nav_stage=dao.nav_stage,
         is_review=dao.is_review,
+        category=dao.category,
     )
     # make the entry for the dao
     # we need to add the tokenomics, design and governance id later
@@ -628,6 +614,8 @@ def create_dao(db: Session, dao: CreateOrUpdateDao):
         is_published=dao.is_published,
         nav_stage=dao.nav_stage,
         is_review=dao.is_review,
+        category=dao.category,
+        created_dtz=db_dao.created_dtz,
     )
 
 
@@ -662,6 +650,8 @@ def edit_dao(db: Session, id: int, dao: CreateOrUpdateDao):
         is_published=db_dao.is_published,
         nav_stage=db_dao.nav_stage,
         is_review=db_dao.is_review,
+        category=db_dao.category,
+        created_dtz=db_dao.created_dtz,
     )
 
 
