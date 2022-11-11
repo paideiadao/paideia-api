@@ -91,7 +91,7 @@ def dao_get(
 def dao_create(
     dao: CreateOrUpdateDao,
     db=Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(get_current_active_superuser),
 ):
     """
     Create a new dao (draft)
@@ -111,7 +111,7 @@ def dao_edit(
     id: int,
     dao: CreateOrUpdateDao,
     db=Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(get_current_active_superuser),
 ):
     """
     edit existing dao
@@ -152,7 +152,7 @@ def dao_highlight(
 def dao_delete(
     id: int,
     db=Depends(get_db),
-    current_user=Depends(get_current_active_user),
+    current_user=Depends(get_current_active_superuser),
 ):
     """
     delete dao
