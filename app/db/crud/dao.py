@@ -7,7 +7,7 @@ from db.models.tokenomics import (
     Tokenomics,
     TokenomicsTokenHolder,
 )
-from db.models.dao import Dao, vw_daos
+from db.models.dao import Dao, HighlightedDaos, vw_daos
 from db.models.dao_design import DaoDesign, FooterSocialLinks, DaoTheme
 from db.models.governance import Governance, GovernanceWhitelist
 from db.schemas.dao import (
@@ -440,8 +440,10 @@ def set_dao_design_footer_links(
         .all()
     )
 
+
 def get_dao_theme(db: Session, theme_id: int):
     return db.query(DaoTheme).filter(DaoTheme.id == theme_id).first()
+
 
 def get_dao_design(db: Session, dao_id: int):
     db_dao_design = db.query(DaoDesign).filter(DaoDesign.dao_id == dao_id).first()
@@ -453,6 +455,7 @@ def get_dao_design(db: Session, dao_id: int):
     return DaoDesignSchema(
         id=db_dao_design.id,
         theme_id=db_dao_design.theme_id,
+        theme_name=theme.theme_name,
         primary_color=theme.primary_color,
         secondary_color=theme.secondary_color,
         dark_primary_color = theme.dark_primary_color,
@@ -480,20 +483,11 @@ def create_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDes
     db.commit()
     db.refresh(db_dao_design)
 
-    footer_links = set_dao_design_footer_links(
+    set_dao_design_footer_links(
         db, db_dao_design.id, dao_design.footer_social_links
     )
 
-    return DaoDesignSchema(
-        id=db_dao_design.id,
-        theme_id=dao_design.theme_id,
-        logo_url=dao_design.logo_url,
-        show_banner=dao_design.show_banner,
-        banner_url=dao_design.banner_url,
-        show_footer=dao_design.show_footer,
-        footer_text=dao_design.footer_text,
-        footer_social_links=footer_links,
-    )
+    return get_dao_design(db, db_dao_design.dao_id)
 
 
 def edit_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDesign):
@@ -511,20 +505,11 @@ def edit_dao_design(db: Session, dao_id: int, dao_design: CreateOrUpdateDaoDesig
     db.commit()
     db.refresh(db_dao_design)
 
-    footer_links = set_dao_design_footer_links(
+    set_dao_design_footer_links(
         db, db_dao_design.id, dao_design.footer_social_links
     )
 
-    return DaoDesignSchema(
-        id=db_dao_design.id,
-        theme_id=db_dao_design.theme_id,
-        logo_url=db_dao_design.logo_url,
-        show_banner=db_dao_design.show_banner,
-        banner_url=db_dao_design.banner_url,
-        show_footer=db_dao_design.show_footer,
-        footer_text=db_dao_design.footer_text,
-        footer_social_links=footer_links,
-    )
+    return get_dao_design(db, dao_id)
 
 
 def delete_dao_design(db: Session, dao_id: int):
@@ -565,6 +550,8 @@ def get_dao(db: Session, id: int):
         is_published=db_dao.is_published,
         nav_stage=db_dao.nav_stage,
         is_review=db_dao.is_review,
+        category=db_dao.category,
+        created_dtz=db_dao.created_dtz,
     )
 
 
@@ -596,6 +583,7 @@ def create_dao(db: Session, dao: CreateOrUpdateDao):
         is_published=dao.is_published,
         nav_stage=dao.nav_stage,
         is_review=dao.is_review,
+        category=dao.category,
     )
     # make the entry for the dao
     # we need to add the tokenomics, design and governance id later
@@ -628,6 +616,8 @@ def create_dao(db: Session, dao: CreateOrUpdateDao):
         is_published=dao.is_published,
         nav_stage=dao.nav_stage,
         is_review=dao.is_review,
+        category=dao.category,
+        created_dtz=db_dao.created_dtz,
     )
 
 
@@ -662,6 +652,8 @@ def edit_dao(db: Session, id: int, dao: CreateOrUpdateDao):
         is_published=db_dao.is_published,
         nav_stage=db_dao.nav_stage,
         is_review=db_dao.is_review,
+        category=db_dao.category,
+        created_dtz=db_dao.created_dtz,
     )
 
 
@@ -678,3 +670,30 @@ def delete_dao(db: Session, id: int):
     db.commit()
 
     return db_dao
+
+
+##############################
+## HIGHLIGHTED PROJECTS CMS ##
+##############################
+
+
+def get_highlighted_projects(db: Session):
+    q = db.query(vw_daos, HighlightedDaos).filter(vw_daos.id == HighlightedDaos.dao_id).all()
+    return list(map(lambda x: x[0], q))
+
+
+def add_to_highlighted_projects(db: Session, dao_id: int):
+    db_highlighted_project = HighlightedDaos(dao_id=dao_id)
+    db.add(db_highlighted_project)
+    db.commit()
+    db.refresh(db_highlighted_project)
+    return db_highlighted_project
+
+
+def remove_from_highlighted_projects(db: Session, dao_id: int):
+    db_highlighted_project = db.query(HighlightedDaos).filter(HighlightedDaos.dao_id == dao_id).first()
+    if db_highlighted_project == None:
+        return db_highlighted_project
+    db.delete(db_highlighted_project)
+    db.commit()
+    return db_highlighted_project

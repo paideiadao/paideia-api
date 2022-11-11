@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+
+import datetime
 import typing as t
 
 
@@ -14,9 +16,11 @@ class DaoBasic(BaseModel):
     is_published: t.Optional[bool] = False
     nav_stage: t.Optional[int]
     is_review: t.Optional[bool] = True
+    category: t.Optional[str] = "Default"
 
     class Config:
         orm_mode = True
+
 
 class VwDao(BaseModel):
     id: int
@@ -26,6 +30,8 @@ class VwDao(BaseModel):
     logo_url: t.Optional[str]
     token_id: t.Optional[str]
     token_ticker: t.Optional[str]
+    category: t.Optional[str]
+    created_dtz: datetime.datetime
     member_count: int = 0
     proposal_count: int = 0
 
@@ -58,6 +64,7 @@ class CreateOrUpdateDaoDesign(BaseModel):
 class DaoDesign(CreateOrUpdateDaoDesign):
     id: int
     footer_social_links: t.List[FooterSocialLinks]
+    theme_name: str
     primary_color: str
     secondary_color: str
     dark_primary_color: str
@@ -144,6 +151,7 @@ class CreateOrUpdateDao(BaseModel):
     is_published: t.Optional[bool]
     nav_stage: t.Optional[int]
     is_review: t.Optional[bool]
+    category: t.Optional[str] = "Default"
 
 
 class Dao(CreateOrUpdateDao):
@@ -151,6 +159,7 @@ class Dao(CreateOrUpdateDao):
     governance: t.Optional[Governance]
     tokenomics: t.Optional[Tokenomics]
     design: t.Optional[DaoDesign]
+    created_dtz: datetime.datetime
 
     class Config:
         orm_mode = True
