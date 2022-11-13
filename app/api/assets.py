@@ -36,10 +36,14 @@ def locked_tokens(token: str, req: AddressList):
             f"{CFG.danaides_api}/token/locked",
             json={
                 "addresses": address_list,
-                "token_id": TOKEN_CONFIG[token]["token_id"],
-                "stake_tree": TOKEN_CONFIG[token]["stake_tree"],
-                "vest_tree": TOKEN_CONFIG[token]["vest_tree"],
-                "proxy_address": TOKEN_CONFIG[token]["proxy_address"],
+                "tokens": [
+                    {
+                        "token_id": TOKEN_CONFIG[token]["token_id"],
+                        "stake_tree": TOKEN_CONFIG[token]["stake_tree"],
+                        "vest_tree": TOKEN_CONFIG[token]["vest_tree"],
+                        "proxy_address": TOKEN_CONFIG[token]["proxy_address"],
+                    }
+                ]
             },
         )
         # return as json
