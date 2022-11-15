@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import datetime
 import typing as t
 
+from db.schemas import RestrictedAlphabetStr
 
 class DaoBasic(BaseModel):
     id: int
@@ -143,7 +144,7 @@ class Tokenomics(CreateOrUpdateTokenomics):
 class CreateOrUpdateDao(BaseModel):
     dao_name: str
     dao_short_description: t.Optional[str]
-    dao_url: str
+    dao_url: RestrictedAlphabetStr = Field(alphabet="QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890")
     governance: CreateOrUpdateGovernance
     tokenomics: CreateOrUpdateTokenomics
     design: CreateOrUpdateDaoDesign

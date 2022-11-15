@@ -5,6 +5,7 @@ from starlette.responses import JSONResponse
 import typing as t
 
 from db.models import users as models
+from db.models.dao import Dao
 from db.models.proposals import Proposal
 from db.schemas import users as schemas
 from core.security import get_password_hash
@@ -39,6 +40,14 @@ def get_user_details_by_id(db: Session, user_details_id: int):
 
 
 def get_user_details_by_slug(db: Session, slug: str):
+    maybe_id = slug.split("-")[-1]
+    if maybe_id.isdecimal():
+        return get_user_details_by_name_id_slug(db, slug)
+    else:
+        return get_user_details_by_dao_name_slug(db, slug)
+
+
+def get_user_details_by_name_id_slug(db: Session, slug: str):
     user_details_id = int(slug.split("-")[-1])
     user_details = get_user_details_by_id(db, user_details_id)
     if type(user_details) == JSONResponse:
@@ -49,6 +58,23 @@ def get_user_details_by_slug(db: Session, slug: str):
             status_code=status.HTTP_404_NOT_FOUND, content="user not found"
         )
     return user_details
+
+
+def get_user_details_by_dao_name_slug(db: Session, slug: str):
+    dao_url = slug.split("-")[0]
+    username = slug.split("-")[1]
+    db_query = db.query(models.UserDetails, Dao).filter(
+        Dao.id == models.UserDetails.dao_id
+    ).filter(
+        Dao.dao_url == dao_url
+    ).filter(
+        models.UserDetails.name == username
+    ).first()
+    if not db_query:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content="user not found"
+        )
+    return db_query[0]
 
 
 def get_user_by_alias(db: Session, alias: str) -> schemas.UserOut:

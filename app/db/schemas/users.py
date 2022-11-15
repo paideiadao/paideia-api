@@ -1,5 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
 import typing as t
+
+from db.schemas import RestrictedAlphabetStr
 
 
 ### SCHEMAS FOR USERS ###
@@ -52,7 +55,7 @@ class UserAddressConfig(BaseModel):
 
 
 class UpdateUserDetails(BaseModel):
-    name: t.Optional[str]
+    name: RestrictedAlphabetStr = Field(alphabet="QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890")
     profile_img_url: t.Optional[str]
     bio: t.Optional[str]
     level: int = 0
