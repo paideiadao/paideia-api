@@ -104,7 +104,7 @@ def upload_image(
     except Exception as e:
         return JSONResponse(status_code=400, content=f"ERR::S3_image_file::{str(e)}")
 
-@r.post("/upload_image_markdown", name="util:upload-image-to-S3")
+@r.post("/upload_image_markdown", name="util:upload-image-to-S3-markdown")
 def upload_image(
     fileobject: UploadFile = File(...), current_user=Depends(get_current_active_user)
 ):
