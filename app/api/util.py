@@ -118,7 +118,10 @@ def upload_image_markdown(
     """
     try:
         # l maps to 720px
-        return upload_image("l", fileobject, current_user)
+        ret = upload_image("l", fileobject, current_user)
+        if type(ret) == JSONResponse:
+            return ret
+        return {"status": ret["status"], "filePath": ret["image_url"]}
     except Exception as e:
         return JSONResponse(status_code=400, content=f"ERR::S3_image_file::{str(e)}")
 
