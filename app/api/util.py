@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
 from pydantic import BaseModel
@@ -23,17 +23,10 @@ def upload(
 ):
     """
     Upload files to s3 bucket
-
-    compression_type options (max px for long side): 
-     xs: 40px
-     s: 120px
-     m: 240px
-     l: 720px
-     original: no compression
-
-    eg: 100 x 200 image with xs compression would be resized to 20 x 40
     """
     try:
+        if len(fileobject.file.read()) >= 2097152:
+            raise HTTPException(status_code=413, detail="Your file is more than 2MB")
         filename = fileobject.filename
         current_time = datetime.datetime.now()
         # split the file name into two different path (string + extention)
@@ -74,6 +67,15 @@ def upload_image(
 ):
     """
     Upload images to s3 bucket
+
+    compression_type options (max px for long side): 
+    xs: 40px
+    s: 120px
+    m: 240px
+    l: 720px
+    original: no compression
+
+    eg: 100 x 200 image with xs compression would be resized to 20 x 40
     """
     try:
         if compression_type not in image_compression_config:
@@ -97,6 +99,40 @@ def upload_image(
         if uploads3:
             s3_url = f"https://{CFG.s3_bucket}.s3.{CFG.aws_region}.amazonaws.com/{filename_mod}"
             return {"status": "success", "image_url": s3_url}
+        else:
+            return JSONResponse(status_code=400, content="failed to upload to S3")
+    except Exception as e:
+        return JSONResponse(status_code=400, content=f"ERR::S3_image_file::{str(e)}")
+
+@r.post("/upload_image_markdown", name="util:upload-image-to-S3")
+def upload_image(
+    fileobject: UploadFile = File(...), current_user=Depends(get_current_active_user)
+):
+    """
+    Upload images to s3 bucket for markdown-based text area
+    """
+    try:
+        if len(fileobject.file.read()) >= 2097152:
+            raise HTTPException(status_code=413, detail="File size must be less than 2MB")
+        if fileobject.content_type != 'image/jpeg' or fileobject.content_type != 'image/png':
+            raise HTTPException(status_code=415, detail="Please upload a jpg or png file")
+        filename = fileobject.filename
+        current_time = datetime.datetime.now()
+        split_file_name = os.path.splitext(filename)
+        file_name_unique = (
+            split_file_name[0] + "." + str(current_time.timestamp()).replace(".", "")
+        )
+        file_extension = split_file_name[1]
+        data = pillow_image_optimizer.compress(
+            fileobject.file._file, 720
+        )
+        filename_mod = CFG.s3_key + "." + file_name_unique + file_extension
+        uploads3 = S3.Bucket(CFG.s3_bucket).put_object(
+            Key=filename_mod, Body=data, ACL="public-read"
+        )
+        if uploads3:
+            s3_url = f"https://{CFG.s3_bucket}.s3.{CFG.aws_region}.amazonaws.com/{filename_mod}"
+            return {"status": "success", "filePath": s3_url}
         else:
             return JSONResponse(status_code=400, content="failed to upload to S3")
     except Exception as e:
