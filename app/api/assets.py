@@ -5,6 +5,7 @@ from starlette.responses import JSONResponse
 
 from ergo.schemas import AddressList, TokenStats
 from config import Config, Network
+from cache.cache import cache
 
 
 CFG = Config[Network]
@@ -80,7 +81,17 @@ def dao_membership(req: AddressList):
 
 @r.get("/token_stats/{token_id}", response_model=TokenStats, name="assets:get-token-stats")
 def get_token_stats(token_id: str):
-    return JSONResponse(status_code=status.HTTP_501_NOT_IMPLEMENTED, content="Work In Progress")
+    try:
+        resp = cache.get(f"token_stats_cache_{token_id}")
+        if not resp:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST, content=f"token is not part of a dao"
+            )
+        return resp
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
 
 
 def get_token_name_from_id(token_id):

@@ -17,7 +17,7 @@ from api.blogs import blogs_router
 from api.faq import faq_router
 from api.quotes import quotes_router
 from core.async_handler import AsyncTaskRunner
-from ergo.token_data_provider import test
+from ergo.token_data_provider import update_token_data_cache
 
 from config import Config, Network
 
@@ -84,7 +84,7 @@ app.include_router(util_router, prefix="/api/util", tags=["util"])
 
 # setup background tasks
 runner = AsyncTaskRunner()
-runner.register(test)
+runner.register(update_token_data_cache)
 runner.start()
 
 
