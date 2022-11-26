@@ -8,7 +8,7 @@ def run_coroutine_in_sync(coroutine):
 
 
 class AsyncTaskRunner():
-    TIMEOUT = 120  # run crons every 2 mins
+    TIMEOUT = 300  # run crons every 5 mins
 
     def __init__(self):
         self.tasks = []
