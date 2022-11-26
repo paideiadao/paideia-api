@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 
-import datetime
 import typing as t
 
 
@@ -14,8 +13,8 @@ class TokenPriceRangeDataPoint(BaseModel):
     open: float
     close: float
     volume: t.Optional[float]
-    start_time: datetime.datetime
-    end_time: datetime.datetime
+    start_time: str = "2022-09-07T17:12:05"
+    end_time: str = "2022-09-07T17:12:05"
 
 
 class TokenPriceRangeSummaryDataPoint(TokenPriceRangeDataPoint):
