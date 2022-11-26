@@ -83,9 +83,10 @@ app.include_router(util_router, prefix="/api/util", tags=["util"])
 
 
 # setup background tasks
-runner = AsyncTaskRunner()
-runner.register(update_token_data_cache)
-runner.start()
+if not CFG.DEBUG:
+    runner = AsyncTaskRunner()
+    runner.register(update_token_data_cache)
+    runner.start()
 
 
 if __name__ == "__main__":
