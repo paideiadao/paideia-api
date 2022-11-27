@@ -3,8 +3,9 @@ import requests
 from fastapi import APIRouter, status
 from starlette.responses import JSONResponse
 
-from db.schemas.assets import AddressList
+from ergo.schemas import AddressList, TokenStats
 from config import Config, Network
+from cache.cache import cache
 
 
 CFG = Config[Network]
@@ -72,6 +73,21 @@ def dao_membership(req: AddressList):
             sanitized_ret[get_token_name_from_id(token_id)] = ret[token_id]
         return sanitized_ret
 
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
+
+
+@r.get("/token_stats/{token_id}", response_model=TokenStats, name="assets:get-token-stats")
+def get_token_stats(token_id: str):
+    try:
+        resp = cache.get(f"token_stats_cache_{token_id}")
+        if not resp:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST, content=f"token is not part of a dao"
+            )
+        return resp
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
