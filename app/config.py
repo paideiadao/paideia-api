@@ -47,7 +47,7 @@ Config = {
             "redis_host": os.getenv("REDIS_HOST"),
             "redis_port": os.getenv("REDIS_PORT"),
             "aws_access_key_id": os.getenv("AWS_ACCESS_KEY_ID"),
-            "aws_secret_acces_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+            "aws_secret_access_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
             "aws_region": os.getenv("AWS_REGION"),
             "s3_bucket": os.getenv("S3_BUCKET"),
             "s3_key": os.getenv("S3_KEY"),
