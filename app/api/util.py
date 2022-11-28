@@ -17,6 +17,18 @@ CFG = Config[Network]
 util_router = r = APIRouter()
 
 
+def upload_file_s3(key, bytes):
+    try:
+        bytes.seek(0)
+        S3.upload_fileobj(
+            bytes, CFG.s3_bucket, key,
+            ExtraArgs={'ACL': 'public-read'},
+        )
+        return True
+    except:
+        return False
+
+
 @r.post("/upload_file", name="util:upload-file-to-S3")
 def upload(
     fileobject: UploadFile = File(...), current_user=Depends(get_current_active_user)
@@ -40,9 +52,7 @@ def upload(
             fileobject.file._file
         )  # Converting tempfile.SpooledTemporaryFile to io.BytesIO
         filename_mod = CFG.s3_key + "." + file_name_unique + file_extension
-        uploads3 = S3.Bucket(CFG.s3_bucket).put_object(
-            Key=filename_mod, Body=data, ACL="public-read"
-        )
+        uploads3 = upload_file_s3(filename_mod, data)
         if uploads3:
             s3_url = f"https://{CFG.s3_bucket}.s3.{CFG.aws_region}.amazonaws.com/{filename_mod}"
             return {"status": "success", "image_url": s3_url}  # response added
@@ -97,9 +107,7 @@ def upload_image(
             fileobject.file._file, image_compression_config[compression_type]
         )
         filename_mod = CFG.s3_key + "." + file_name_unique + file_extension
-        uploads3 = S3.Bucket(CFG.s3_bucket).put_object(
-            Key=filename_mod, Body=data, ACL="public-read"
-        )
+        uploads3 = upload_file_s3(filename_mod, data)
         if uploads3:
             s3_url = f"https://{CFG.s3_bucket}.s3.{CFG.aws_region}.amazonaws.com/{filename_mod}"
             return {"status": "success", "image_url": s3_url}
