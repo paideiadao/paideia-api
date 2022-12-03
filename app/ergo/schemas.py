@@ -7,6 +7,11 @@ class AddressList(BaseModel):
     addresses: t.List[str]
 
 
+class AddressTokenList(BaseModel):
+    addresses: t.List[str]
+    tokens: t.List[str]
+
+
 class TokenPriceRangeDataPoint(BaseModel):
     high: float
     low: float

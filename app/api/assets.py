@@ -3,7 +3,7 @@ import requests
 from fastapi import APIRouter, status
 from starlette.responses import JSONResponse
 
-from ergo.schemas import AddressList, TokenStats
+from ergo.schemas import AddressList, TokenStats, AddressTokenList
 from config import Config, Network
 from cache.cache import cache
 
@@ -73,6 +73,24 @@ def dao_membership(req: AddressList):
             sanitized_ret[get_token_name_from_id(token_id)] = ret[token_id]
         return sanitized_ret
 
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
+
+
+@r.post("/token-exists", name="assets:check-token-exists")
+def token_exists(req: AddressTokenList):
+    try:
+        # call to danaides service
+        ret = requests.post(
+            f"{CFG.danaides_api}/token/exists",
+            json={
+                "addresses": req.addresses,
+                "tokens": req.tokens,
+            },
+        )
+        return ret.json()
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
