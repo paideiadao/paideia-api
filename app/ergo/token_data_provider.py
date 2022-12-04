@@ -17,6 +17,7 @@ Todo: Clean this up to a more unified way of getting data
 
 import datetime
 import requests
+import traceback
 from sqlalchemy.orm import Session
 
 from config import Config, Network
@@ -49,7 +50,7 @@ class LocalDataProvider:
             )
             return resp
         except Exception as e:
-            print(e)
+            print(f"error: method=get_dao_token_ids, message={str(e)}")
 
 
 # todo: better error handling
@@ -69,7 +70,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: message={str(e)}")
+            print(f"error: method=get_ergo_price, message={str(e)}")
 
     @staticmethod
     def get_token_price(token_id: str):
@@ -79,7 +80,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: message={str(e)}")
+            print(f"error: method=get_ergo_price, message={str(e)}")
 
     @staticmethod
     def get_token_details_by_id(token_id: str):
@@ -89,7 +90,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: message={str(e)}")
+            print(f"error: method=get_token_details_by_id, message={str(e)}")
 
     @staticmethod
     def get_spectrum_pools():
@@ -99,7 +100,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: message={str(e)}")
+            print(f"error: method=get_spectrum_pools, message={str(e)}")
 
     @staticmethod
     def get_pool_price_history(pool_id: str):
@@ -109,7 +110,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: message={str(e)}")
+            print(f"error: method=get_pool_price_history, message={str(e)}")
 
     @staticmethod
     def get_token_price_history(token_id: str):
@@ -119,7 +120,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: message={str(e)}")
+            print(f"error: method=get_token_price_history, message={str(e)}")
 
 
 class TokenDataBuilder:
@@ -163,7 +164,7 @@ class TokenDataBuilder:
         ohclv = []
         price_history = list(map(
             lambda x: (
-                1 / x["price"], TokenDataBuilder.get_utc_timestamp(x["date"])),
+                1 / x["price"], x["timestamp"] // 1000),
             price_history["market"]["dataPoints"]
         ))
         price_history.sort(key=(lambda x: x[1]))
@@ -212,7 +213,7 @@ class TokenDataBuilder:
     def summarize_last_hours(price_history, start_time, end_time):
         price_history = list(map(
             lambda x: (
-                1 / x["price"], TokenDataBuilder.get_utc_timestamp(x["date"])),
+                1 / x["price"], x["timestamp"] / 1000),
             price_history["market"]["dataPoints"]
         ))
         price_history.sort(key=(lambda x: x[1]))
@@ -240,9 +241,16 @@ class TokenDataBuilder:
         # we can fill basic details from this
         token_details = BaseDataProvider.get_token_details_by_id(token_id)
         token_price = BaseDataProvider.get_token_price(token_id)
-        # pool = TokenDataBuilder.get_max_pool_by_token_id(token_id)
-        # price_chart = BaseDataProvider.get_pool_price_history(pool["id"])
-        price_history = BaseDataProvider.get_token_price_history(token_id)
+        pool = TokenDataBuilder.get_max_pool_by_token_id(token_id)
+        price_chart = BaseDataProvider.get_pool_price_history(pool["id"])
+        # price_history = BaseDataProvider.get_token_price_history(token_id)
+        price_history = {
+            "id": token_id,
+            "price": price_chart[-1]["price"],
+            "market": {
+                "dataPoints": price_chart,
+            }
+        }
         # format price_chart data into required stuff
         # token_ohclv_1h
         token_ohclv_1h = TokenDataBuilder.build_ohclv_1h(price_history)
@@ -314,4 +322,5 @@ def update_token_data_cache():
             cache.set(f"token_stats_cache_{token_id}", token_stats)
             print(f"token_stats_cache_{token_id}_updated")
         except Exception as e:
-            print(f"error: token_id={token_id}, message={str(e)}")
+            print(traceback.format_exc())
+            print(f"error: method=update_token_data_cache, token_id={token_id}, message={str(e)}")
