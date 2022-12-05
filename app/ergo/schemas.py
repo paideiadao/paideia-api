@@ -13,28 +13,28 @@ class AddressTokenList(BaseModel):
 
 
 class TokenPriceRangeDataPoint(BaseModel):
-    high: float
-    low: float
-    open: float
-    close: float
+    high: t.Optional[float]
+    low: t.Optional[float]
+    open: t.Optional[float]
+    close: t.Optional[float]
     volume: t.Optional[float]
     start_time: str = "2022-09-07T17:12:05"
     end_time: str = "2022-09-07T17:12:05"
 
 
 class TokenPriceRangeSummaryDataPoint(TokenPriceRangeDataPoint):
-    abs_change: float
-    change_percentage: float
+    abs_change: float = 0
+    change_percentage: float = 0
 
 
 class TokenPriceHistorySummary(BaseModel):
-    hour_24: t.Optional[TokenPriceRangeSummaryDataPoint]
-    yesterday: t.Optional[TokenPriceRangeSummaryDataPoint]
-    day_7: t.Optional[TokenPriceRangeSummaryDataPoint]
-    day_30: t.Optional[TokenPriceRangeSummaryDataPoint]
-    day_90: t.Optional[TokenPriceRangeSummaryDataPoint]
-    week_52: t.Optional[TokenPriceRangeSummaryDataPoint]
-    all_time: t.Optional[TokenPriceRangeSummaryDataPoint]
+    hour_24: TokenPriceRangeSummaryDataPoint
+    yesterday: TokenPriceRangeSummaryDataPoint
+    day_7: TokenPriceRangeSummaryDataPoint
+    day_30: TokenPriceRangeSummaryDataPoint
+    day_90: TokenPriceRangeSummaryDataPoint
+    week_52: TokenPriceRangeSummaryDataPoint
+    all_time: TokenPriceRangeSummaryDataPoint
 
 
 class TokenMarketCap(BaseModel):
