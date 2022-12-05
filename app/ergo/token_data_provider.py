@@ -222,7 +222,10 @@ class TokenDataBuilder:
             if start_time <= dp[1] and dp[1] <= end_time:
                 bucket.append(dp)
         if len(bucket) == 0:
-            return None
+            return TokenPriceRangeSummaryDataPoint(
+                start_time=start_time,
+                end_time=end_time,
+            )
         summary = TokenPriceRangeSummaryDataPoint(
             high=max(bucket)[0],
             low=min(bucket)[0],
