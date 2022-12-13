@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Response, status
 from starlette.responses import JSONResponse
 from ergo_python_appkit.appkit import ErgoAppKit
 
+from api.assets import token_check
 from db.session import get_db
 from db.crud.users import (
     get_users,
@@ -23,7 +24,9 @@ from db.crud.users import (
     get_dao_users,
     get_user_details_by_id,
     get_user_details_by_slug,
+    get_ergo_addresses_by_user_id,
 )
+from db.crud.dao import get_dao_tokenomics
 from db.schemas.users import (
     UserCreate,
     UserEdit,
@@ -37,6 +40,7 @@ from db.schemas.users import (
     PrimaryAddressChangeRequest,
 )
 from db.schemas.ergoauth import LoginRequestWebResponse, ErgoAuthResponse
+from ergo.schemas import AddressTokenList
 
 from core.auth import get_current_active_user, get_current_active_superuser
 from core.security import generate_signing_message, generate_verification_id
@@ -426,7 +430,42 @@ def create_user_profile(
     Create new dao specific user profile
     """
     try:
-        return create_user_dao_profile(db, current_user.id, dao_id)
+        user_addresses = list(
+            map(lambda x: x.address, get_ergo_addresses_by_user_id(db, current_user.id))
+        )
+        tokenomics = get_dao_tokenomics(db, dao_id)
+        if not tokenomics:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content=f"could not find tokenomics config for dao"
+            )
+        token_id = tokenomics.token_id
+        user_tokens = token_check(AddressTokenList(
+            addresses=user_addresses,
+            tokens=[token_id]
+        ))
+        # user_tokens = {
+        #     "9i6UmaoJKWHgWkuq1EJUoYu2hrkRkxAYwQjDotHRHfGrBo16Rss": [
+        #         {"1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad489": 0}
+        #     ]
+        # }
+        if type(user_tokens) == JSONResponse:
+            return user_tokens
+        # dao membership check
+        is_member = False
+        for address in user_addresses:
+            if address in user_tokens:
+                address_stat = user_tokens[address]
+                for stat in address_stat:
+                    if token_id in stat and stat[token_id] > 0:
+                        is_member = True
+        if is_member:
+            return create_user_dao_profile(db, current_user.id, dao_id)
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content=f"user does not hold dao tokens"
+            )
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
