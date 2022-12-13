@@ -55,33 +55,21 @@ def locked_tokens(token: str, req: AddressList):
         )
 
 
-@r.post("/dao-membership", name="assets:check-dao-membership")
-def dao_membership(req: AddressList):
+@r.post("/token-exists", name="assets:deprecated")
+def token_check_deprecated(req: AddressTokenList):
+    """
+    DEPRECATED
+    """
+    return token_check(req)
+
+
+@r.post("/token_check", name="assets:check-token-exists")
+def token_check(req: AddressTokenList):
     try:
-        address_list = req.addresses
-        # call to danaides service
-        ret = requests.post(
-            f"{CFG.danaides_api}/token/daoMembership",
-            json={
-                "addresses": address_list,
-                "tokens": list(TOKEN_CONFIG.values()),
-            },
-        )
-        ret = ret.json()
-        sanitized_ret = {}
-        for token_id in ret:
-            sanitized_ret[get_token_name_from_id(token_id)] = ret[token_id]
-        return sanitized_ret
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
-        )
-
-
-@r.post("/token-exists", name="assets:check-token-exists")
-def token_exists(req: AddressTokenList):
-    try:
+        cache_key = "token_check_" + hash_string_list(req.tokens) +  "_" + hash_string_list(req.addresses)
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
         # call to danaides service
         ret = requests.post(
             f"{CFG.danaides_api}/token/exists",
@@ -90,6 +78,8 @@ def token_exists(req: AddressTokenList):
                 "tokens": req.tokens,
             },
         )
+        if ret.ok:
+            cache.set(cache_key, ret.json())
         return ret.json()
     except Exception as e:
         return JSONResponse(
@@ -117,3 +107,8 @@ def get_token_name_from_id(token_id):
         if TOKEN_CONFIG[token]["token_id"] == token_id:
             return token
     return "unknown"
+
+
+def hash_string_list(address_list):
+    sorted_al = tuple(sorted(address_list))
+    return str(hash(sorted_al))
