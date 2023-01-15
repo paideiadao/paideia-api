@@ -25,6 +25,7 @@ class CreateAndUpdateNotification(BaseModel):
 
 class Notification(CreateAndUpdateNotification):
     id: int
+    proposal_name: t.Optional[str]
     date: datetime.datetime
 
     class Config:
