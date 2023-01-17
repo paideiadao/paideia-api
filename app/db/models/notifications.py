@@ -21,4 +21,4 @@ class Notification(Base):
     additional_text = Column(String)
 
     date = Column(DateTime(timezone=True), server_default=func.now())
-    is_read: Column(Boolean)
+    is_read = Column(Boolean)

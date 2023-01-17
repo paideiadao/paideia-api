@@ -8,7 +8,7 @@ from db.session import get_db
 from db.crud.notifications import (
     cleanup_notifications,
     create_notification,
-    edit_notification,
+    mark_all_as_read,
     delete_notification,
     get_notifications,
     get_notification,
@@ -78,21 +78,21 @@ async def notification_create(
 
 
 @r.put(
-    "/mark_as_read/{notification_id}",
-    response_model=Notification,
+    "/mark_as_read/{last_notification_id}",
+    response_model=t.List[Notification],
     response_model_exclude_none=True,
     name="notifications:read",
 )
 def notification_edit(
-    notification_id: int,
+    last_notification_id: int,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
     """
-    Mark notification as read by user
+    Mark all notifications as read by user
     """
     try:
-        notification = get_notification(db, notification_id)
+        notification = get_notification(db, last_notification_id)
         if not notification:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND, content="notification not found"
@@ -105,11 +105,7 @@ def notification_edit(
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorizeds"
             )
-        return edit_notification(
-            db,
-            notification_id,
-            CreateAndUpdateNotification(user_details_id=user_details_id, is_read=True),
-        )
+        return mark_all_as_read(db, user_details_id)
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
