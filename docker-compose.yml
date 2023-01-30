@@ -16,10 +16,10 @@ services:
         max_attempts: 5
         window: 90s
     logging:
-        driver: "json-file"
-        options:
-            max-file: 5
-            max-size: 10m
+      driver: json-file
+      options:
+        max-file: "5"
+        max-size: "10m"
     volumes:
      - ./app:/app
     networks:
@@ -27,7 +27,5 @@ services:
     command: uvicorn main:app --reload --workers 4 --reload-dir /app --host 0.0.0.0 --port 8000 --proxy-headers --use-colors --forwarded-allow-ips '52.72.64.235'
 
 networks:
-  net:
-    driver: bridge
   p-net:
     external: true
