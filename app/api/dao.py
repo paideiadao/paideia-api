@@ -1,4 +1,5 @@
 import typing as t
+import uuid
 
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
@@ -15,7 +16,8 @@ from db.crud.dao import (
     remove_from_highlighted_projects,
 )
 from db.session import get_db
-from db.schemas.dao import CreateOrUpdateDao, Dao, VwDao
+from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrUpdateGovernance, CreateOrUpdateTokenomics, Dao, VwDao
+from paideia_state_client import dao
 
 dao_router = r = APIRouter()
 
@@ -33,6 +35,32 @@ def dao_list(
     Get all dao
     """
     try:
+        db_daos = get_all_daos(db)
+        state_daos = dao.get_all_daos()
+        for d in state_daos:
+            daoExistsInDB = False
+            for dbd in db_daos:
+                if dbd.dao_key == d:
+                    daoExistsInDB = True
+            if not daoExistsInDB:
+                dao_config = dao.get_dao_config(d)
+                create_dao(db, CreateOrUpdateDao(
+                    dao_key=d,
+                    config_height=state_daos[d][1],
+                    dao_name=state_daos[d][0],
+                    dao_short_description=dao_config.get("im.paideia.dao.description"),
+                    dao_url=state_daos[d][0],
+                    governance=CreateOrUpdateGovernance(
+                        quorum=int(dao_config.get("im.paideia.dao.quorum", 0)),
+                        vote_duration__sec=int(dao_config.get("im.paideia.dao.min.proposal.time",0))/1000
+                    ),
+                    tokenomics=CreateOrUpdateTokenomics(
+                        token_id=dao_config["im.paideia.dao.tokenid"]
+                    ),
+                    design=CreateOrUpdateDaoDesign(footer_social_links=[]),
+                    is_draft=False,
+                    is_published=True
+                ))
         return get_all_daos(db)
     except Exception as e:
         return JSONResponse(
@@ -72,8 +100,8 @@ def dao_get(
     """
     try:
         dao = None
-        if query.isnumeric():
-            dao = get_dao(db, int(query))
+        if '-' in query:
+            dao = get_dao(db, uuid.UUID(query))
         else:
             dao = get_dao_by_url(db, query)
         if not dao:

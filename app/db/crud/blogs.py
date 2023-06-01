@@ -1,3 +1,4 @@
+import uuid
 from fastapi import status
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -39,7 +40,7 @@ def get_blog(db: Session, link: str):
     return db_blog
 
 
-def get_blog_by_id(db: Session, id: int):
+def get_blog_by_id(db: Session, id: uuid.UUID):
     db_blog = db.query(Blog).filter(Blog.id == id).first()
     return db_blog
 
@@ -64,7 +65,7 @@ def create_blog(db: Session, blog: CreateOrUpdateBlog):
     return db_blog
 
 
-def edit_blog(db: Session, id: int, blog: CreateOrUpdateBlog):
+def edit_blog(db: Session, id: uuid.UUID, blog: CreateOrUpdateBlog):
     db_blog = get_blog_by_id(db, id)
     if not db_blog:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="blog not found")
@@ -81,7 +82,7 @@ def edit_blog(db: Session, id: int, blog: CreateOrUpdateBlog):
     return db_blog
 
 
-def delete_blog(db: Session, id: int):
+def delete_blog(db: Session, id: uuid.UUID):
     db_blog = get_blog_by_id(db, id)
     if not db_blog:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content="blog not found")

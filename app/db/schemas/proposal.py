@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 import typing as t
 import datetime
@@ -15,8 +16,8 @@ class CreateOrUpdateAddendum(BaseModel):
 
 
 class CreateProposal(BaseModel):
-    dao_id: int
-    user_details_id: int
+    dao_id: uuid.UUID
+    user_details_id: uuid.UUID
     name: str
     image_url: t.Optional[str]
     category: t.Optional[str]
@@ -43,8 +44,8 @@ class CreateOrUpdateProposal(CreateProposal):
 
 
 class Comment(CreateOrUpdateComment):
-    id: int
-    proposal_id: int
+    id: uuid.UUID
+    proposal_id: uuid.UUID
     date: datetime.datetime
     alias: str
     profile_img_url: t.Optional[str]
@@ -56,7 +57,7 @@ class Comment(CreateOrUpdateComment):
 
 
 class Addendum(CreateOrUpdateAddendum):
-    id: int
+    id: uuid.UUID
     date: datetime.datetime
 
     class Config:
@@ -64,7 +65,7 @@ class Addendum(CreateOrUpdateAddendum):
 
 
 class Proposal(CreateOrUpdateProposal):
-    id: int
+    id: uuid.UUID
     date: datetime.datetime
     comments: t.List[Comment]
     addendums: t.List[Addendum]
@@ -79,21 +80,21 @@ class Proposal(CreateOrUpdateProposal):
 
 
 class LikeProposalRequest(BaseModel):
-    user_details_id: int
+    user_details_id: uuid.UUID
     type: str
 
 
 class FollowProposalRequest(BaseModel):
-    user_details_id: int
+    user_details_id: uuid.UUID
     type: str
 
 
 class AddReferenceRequest(BaseModel):
-    referred_proposal_id: int
+    referred_proposal_id: uuid.UUID
 
 
 class ProposalReference(BaseModel):
-    id: int
+    id: uuid.UUID
     name: str
     likes: t.List[int]
     dislikes: t.List[int]

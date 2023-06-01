@@ -54,11 +54,12 @@ Config = {
             "jwt_secret": os.getenv("JWT_SECRET_KEY"),
             "ergoauth_seed": os.getenv("ERGOAUTH_SEED"),
             "danaides_api": os.getenv("DANAIDES_API"),
+            "paideia_state": os.getenv("PAIDEIA_STATE"),
         }
     ),
     "mainnet": dotdict(
         {
-            "DEBUG": False,
+            "DEBUG": True,
             "node": os.getenv("ERGONODE_HOST"),
             "connection_string": f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
             "redis_host": os.getenv("REDIS_HOST"),
@@ -71,6 +72,7 @@ Config = {
             "jwt_secret": os.getenv("JWT_SECRET_KEY"),
             "ergoauth_seed": os.getenv("ERGOAUTH_SEED"),
             "danaides_api": os.getenv("DANAIDES_API"),
+            "paideia_state": os.getenv("PAIDEIA_STATE"),
         }
     ),
 }

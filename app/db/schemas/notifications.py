@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 import datetime
 import typing as t
@@ -13,10 +14,10 @@ class NotificationConstants:
 
 
 class CreateAndUpdateNotification(BaseModel):
-    user_details_id: int
+    user_details_id: uuid.UUID
     img: t.Optional[str]
     action: t.Optional[str]
-    proposal_id: t.Optional[int]
+    proposal_id: t.Optional[uuid.UUID]
     transaction_id: t.Optional[str]
     href: t.Optional[str]
     additional_text: t.Optional[str]
@@ -24,7 +25,7 @@ class CreateAndUpdateNotification(BaseModel):
 
 
 class Notification(CreateAndUpdateNotification):
-    id: int
+    id: uuid.UUID
     proposal_name: t.Optional[str]
     date: datetime.datetime
 

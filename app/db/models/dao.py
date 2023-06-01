@@ -1,6 +1,7 @@
+import uuid
 from sqlalchemy import Boolean, Column, Integer, String, DateTime
 from sqlalchemy.sql import func
-
+from sqlalchemy.dialects.postgresql import UUID
 from db.session import Base
 
 # DAO MODEL
@@ -9,13 +10,12 @@ from db.session import Base
 class Dao(Base):
     __tablename__ = "daos"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    dao_key = Column(String)
+    config_height = Column(Integer)
     dao_name = Column(String)
     dao_short_description = Column(String)
     dao_url = Column(String)
-    governance_id = Column(Integer)
-    tokenomics_id = Column(Integer)
-    design_id = Column(Integer)
     is_draft = Column(Boolean)
     is_published = Column(Boolean)
     nav_stage = Column(Integer)
@@ -27,14 +27,16 @@ class Dao(Base):
 class HighlightedDaos(Base):
     __tablename__ = "project_highlights"
 
-    id = Column(Integer, primary_key=True, index=True)
-    dao_id = Column(Integer)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    dao_id = Column(UUID(as_uuid=True))
 
 
 class vw_daos(Base):
     __tablename__ = "vw_daos"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    dao_key = Column(String)
+    config_height = Column(Integer)
     dao_name = Column(String)
     dao_url = Column(String)
     dao_short_description = Column(String)

@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from fastapi import status
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -16,12 +17,12 @@ from db.schemas.notifications import (
 #########################################
 
 
-def get_notification(db: Session, id: int):
+def get_notification(db: Session, id: uuid.UUID):
     return db.query(Notification).filter(Notification.id == id).first()
 
 
 def get_notifications(
-    db: Session, user_details_id: int, skip: int = 0, limit: int = 10
+    db: Session, user_details_id: uuid.UUID, skip: int = 0, limit: int = 10
 ):
     res = (
         db.query(Notification, Proposal)
@@ -51,7 +52,7 @@ def get_notifications(
 
 
 def create_notification(
-    db: Session, user_details_id: int, notification: CreateAndUpdateNotification
+    db: Session, user_details_id: uuid.UUID, notification: CreateAndUpdateNotification
 ):
     db_notification = Notification(
         user_details_id=user_details_id,
@@ -69,7 +70,7 @@ def create_notification(
     return db_notification
 
 
-def edit_notification(db: Session, id: int, notification: CreateAndUpdateNotification):
+def edit_notification(db: Session, id: uuid.UUID, notification: CreateAndUpdateNotification):
     db_notification = get_notification(db, id)
     if not db_notification:
         return JSONResponse(
@@ -86,7 +87,7 @@ def edit_notification(db: Session, id: int, notification: CreateAndUpdateNotific
     return db_notification
 
 
-def mark_all_as_read(db: Session, user_details_id: int):
+def mark_all_as_read(db: Session, user_details_id: uuid.UUID):
     db_notifications = db.query(Notification).filter(
         Notification.user_details_id == user_details_id
     ).all()
@@ -98,7 +99,7 @@ def mark_all_as_read(db: Session, user_details_id: int):
     return get_notifications(db, user_details_id)
 
 
-def delete_notification(db: Session, id: int):
+def delete_notification(db: Session, id: uuid.UUID):
     notification = db.query(Notification).filter(Notification.id == id).first()
     if not notification:
         return JSONResponse(

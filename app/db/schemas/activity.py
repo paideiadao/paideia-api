@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-
+import uuid
 import typing as t
 import datetime
 
@@ -28,7 +28,7 @@ class ActivityConstants:
 
 
 class CreateOrUpdateActivity(BaseModel):
-    user_details_id: int
+    user_details_id: uuid.UUID
     action: t.Optional[str]
     value: t.Optional[str]
     secondary_action: t.Optional[str]
@@ -37,7 +37,7 @@ class CreateOrUpdateActivity(BaseModel):
 
 
 class Activity(CreateOrUpdateActivity):
-    id: int
+    id: uuid.UUID
     date: datetime.datetime
 
     class Config:

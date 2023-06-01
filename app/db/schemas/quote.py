@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 import typing as t
 
@@ -9,7 +10,7 @@ class CreateAndUpdateQuote(BaseModel):
 
 
 class Quote(CreateAndUpdateQuote):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True

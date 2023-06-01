@@ -1,3 +1,4 @@
+import uuid
 from fastapi import status
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
@@ -17,7 +18,7 @@ from util.util import generate_slug
 #################################
 
 
-def get_user(db: Session, user_id: int):
+def get_user(db: Session, user_id: uuid.UUID):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         return JSONResponse(
@@ -26,7 +27,7 @@ def get_user(db: Session, user_id: int):
     return user
 
 
-def get_user_details_by_id(db: Session, user_details_id: int):
+def get_user_details_by_id(db: Session, user_details_id: uuid.UUID):
     user_details = (
         db.query(models.UserDetails)
         .filter(models.UserDetails.id == user_details_id)
@@ -105,7 +106,7 @@ def get_user_by_wallet_addresses(db: Session, addresses: t.List[str]):
     return user[0]
 
 
-def get_primary_wallet_address_by_user_id(db: Session, user_id: int):
+def get_primary_wallet_address_by_user_id(db: Session, user_id: uuid.UUID):
     db_ret = (
         db.query(models.User, models.ErgoAddress)
         .filter(models.User.id == user_id)
@@ -149,7 +150,7 @@ def get_users(db: Session, skip: int = 0, limit: int = 100) -> t.List[schemas.Us
     return db.query(models.User).offset(skip).limit(limit).all()
 
 
-def get_dao_users(db: Session, dao_id: int) -> t.List[schemas.UserDetails]:
+def get_dao_users(db: Session, dao_id: uuid.UUID) -> t.List[schemas.UserDetails]:
     all_dao_users_raw = (
         db.query(models.UserDetails).filter(models.UserDetails.dao_id == dao_id).all()
     )
@@ -199,7 +200,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 
-def edit_user(db: Session, id: int, user: schemas.UserEdit) -> schemas.User:
+def edit_user(db: Session, id: uuid.UUID, user: schemas.UserEdit) -> schemas.User:
 
     db_user = get_user(db, id)
     if not db_user:
@@ -221,7 +222,7 @@ def edit_user(db: Session, id: int, user: schemas.UserEdit) -> schemas.User:
     return db_user
 
 
-def delete_user(db: Session, user_id: int):
+def delete_user(db: Session, user_id: uuid.UUID):
     user = get_user(db, user_id)
     if not user:
         return JSONResponse(
@@ -243,7 +244,7 @@ def delete_user(db: Session, user_id: int):
     return user
 
 
-def get_user_address_config(db: Session, user_id: int):
+def get_user_address_config(db: Session, user_id: uuid.UUID):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         return JSONResponse(
@@ -258,7 +259,7 @@ def get_user_address_config(db: Session, user_id: int):
     )
 
 
-def get_followers_by_user_id(db: Session, user_details_id: int):
+def get_followers_by_user_id(db: Session, user_details_id: uuid.UUID):
     followers = list(
         map(
             lambda x: x.follower_id,
@@ -278,7 +279,7 @@ def get_followers_by_user_id(db: Session, user_details_id: int):
     return {"followers": followers, "following": following}
 
 
-def get_proposals_by_user_id(db: Session, user_details_id: int):
+def get_proposals_by_user_id(db: Session, user_details_id: uuid.UUID):
     db_proposals = (
         db.query(Proposal).filter(Proposal.user_details_id == user_details_id).all()
     )
@@ -286,7 +287,7 @@ def get_proposals_by_user_id(db: Session, user_details_id: int):
     return db_proposals
 
 
-def get_user_profile(db: Session, user_id: int, dao_id: int):
+def get_user_profile(db: Session, user_id: uuid.UUID, dao_id: uuid.UUID):
     db_profile = (
         db.query(models.UserDetails)
         .filter(models.UserDetails.user_id == user_id)
@@ -316,7 +317,7 @@ def get_user_profile(db: Session, user_id: int, dao_id: int):
     )
 
 
-def get_user_profile_settings(db: Session, user_details_id: int):
+def get_user_profile_settings(db: Session, user_details_id: uuid.UUID):
     db_settings = (
         db.query(models.UserProfileSettings)
         .filter(models.UserProfileSettings.user_details_id == user_details_id)
@@ -329,7 +330,7 @@ def get_user_profile_settings(db: Session, user_details_id: int):
     return db_settings
 
 
-def create_user_dao_profile(db: Session, user_id: int, dao_id: int):
+def create_user_dao_profile(db: Session, user_id: uuid.UUID, dao_id: uuid.UUID):
     db_user = get_user(db, user_id)
     if not db_user:
         return JSONResponse(
@@ -353,7 +354,7 @@ def create_user_dao_profile(db: Session, user_id: int, dao_id: int):
 
 
 def edit_user_profile(
-    db: Session, user_details_id: int, user_details: schemas.UpdateUserDetails
+    db: Session, user_details_id: uuid.UUID, user_details: schemas.UpdateUserDetails
 ):
     db_profile = (
         db.query(models.UserDetails)
@@ -376,7 +377,7 @@ def edit_user_profile(
 
 
 def edit_user_profile_settings(
-    db: Session, user_details_id: int, user_settings: schemas.UpdateUserProfileSettings
+    db: Session, user_details_id: uuid.UUID, user_settings: schemas.UpdateUserProfileSettings
 ):
     db_settings = get_user_profile_settings(db, user_details_id)
     if not db_settings:
@@ -395,7 +396,7 @@ def edit_user_profile_settings(
 
 
 def update_user_follower(
-    db: Session, user_details_id: int, follow_request: schemas.FollowUserRequest
+    db: Session, user_details_id: uuid.UUID, follow_request: schemas.FollowUserRequest
 ):
     if follow_request.type not in ("follow", "unfollow"):
         return JSONResponse(
@@ -416,13 +417,13 @@ def update_user_follower(
     return get_followers_by_user_id(db, user_details_id)
 
 
-def get_ergo_addresses_by_user_id(db: Session, user_id: int):
+def get_ergo_addresses_by_user_id(db: Session, user_id: uuid.UUID):
     return (
         db.query(models.ErgoAddress).filter(models.ErgoAddress.user_id == user_id).all()
     )
 
 
-def set_ergo_addresses_by_user_id(db: Session, user_id: int, addresses: t.List[str]):
+def set_ergo_addresses_by_user_id(db: Session, user_id: uuid.UUID, addresses: t.List[str]):
     # get older entries if they exist
     old_addresses = list(
         map(lambda x: x.address, get_ergo_addresses_by_user_id(db, user_id))
@@ -440,7 +441,7 @@ def set_ergo_addresses_by_user_id(db: Session, user_id: int, addresses: t.List[s
     return get_ergo_addresses_by_user_id(db, user_id)
 
 
-def update_primary_address_for_user(db: Session, user_id: int, new_address: str):
+def update_primary_address_for_user(db: Session, user_id: uuid.UUID, new_address: str):
     db_user = get_user(db, user_id)
     db_addresses = get_ergo_addresses_by_user_id(db, user_id)
     addresses = list(map(lambda x: x.address, db_addresses))

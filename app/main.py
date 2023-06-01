@@ -16,6 +16,7 @@ from api.assets import assets_router
 from api.blogs import blogs_router
 from api.faq import faq_router
 from api.quotes import quotes_router
+from api.staking import staking_router
 from core.async_handler import AsyncTaskRunner
 from ergo.token_data_provider import update_token_data_cache
 
@@ -80,6 +81,7 @@ app.include_router(blogs_router, prefix="/api/blogs", tags=["blogs"])
 app.include_router(faq_router, prefix="/api/faq", tags=["faq"])
 app.include_router(quotes_router, prefix="/api/quotes", tags=["quotes"])
 app.include_router(util_router, prefix="/api/util", tags=["util"])
+app.include_router(staking_router, prefix="/api/staking", tags=["staking"])
 
 
 # setup background tasks

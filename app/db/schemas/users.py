@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, Field
 
 import typing as t
@@ -17,7 +18,7 @@ class UserBase(BaseModel):
 
 
 class UserOut(UserBase):
-    primary_wallet_address_id: t.Optional[int]
+    primary_wallet_address_id: t.Optional[uuid.UUID]
 
 
 class UserCreate(UserBase):
@@ -41,14 +42,14 @@ class UserEdit(UserBase):
 
 
 class User(UserOut):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True
 
 
 class UserAddressConfig(BaseModel):
-    id: int
+    id: uuid.UUID
     alias: str  # primary address for users
     registered_addresses: t.List[str] = []
     access_token: t.Optional[str]
@@ -64,11 +65,11 @@ class UpdateUserDetails(BaseModel):
 
 
 class UserDetails(UpdateUserDetails):
-    id: int
-    user_id: int
-    dao_id: int
-    followers: t.List[int]
-    following: t.List[int]
+    id: uuid.UUID
+    user_id: uuid.UUID
+    dao_id: uuid.UUID
+    followers: t.List[uuid.UUID]
+    following: t.List[uuid.UUID]
     address: t.Optional[str]
     created: int = 0
 
@@ -81,27 +82,27 @@ class UpdateUserProfileSettings(BaseModel):
 
 
 class UserProfileSettings(UpdateUserProfileSettings):
-    id: int
-    user_details_id: int
+    id: uuid.UUID
+    user_details_id: uuid.UUID
 
     class Config:
         orm_mode = True
 
 
 class FollowUserRequest(BaseModel):
-    current_user_details_id: int  # user_details_id for current user
-    user_details_id: int
+    current_user_details_id: uuid.UUID  # user_details_id for current user
+    user_details_id: uuid.UUID
     type: str
 
 
 class CreateErgoAddress(BaseModel):
-    user_id: int
+    user_id: uuid.UUID
     address: str
     is_smart_contract: bool
 
 
 class ErgoAddress(CreateErgoAddress):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True

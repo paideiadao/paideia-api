@@ -1,5 +1,7 @@
+import uuid
 from sqlalchemy import Column, Integer, String, DateTime, JSON
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID
 
 from db.session import Base
 
@@ -9,7 +11,7 @@ from db.session import Base
 class Blog(Base):
     __tablename__ = "blogs"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID, primary_key=True, index=True, default=uuid.uuid4)
     name = Column(String)
     link = Column(String)
     img_url = Column(String)

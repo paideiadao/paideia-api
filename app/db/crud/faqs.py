@@ -1,4 +1,5 @@
 import typing as t
+import uuid
 
 from fastapi import status
 from sqlalchemy.orm import Session
@@ -12,7 +13,7 @@ from db.schemas import faq as schemas
 ### CRUD OPERATIONS FOR FAQ SECTION ###
 #########################################
 
-def get_faq(db: Session, id: int):
+def get_faq(db: Session, id: uuid.UUID):
     return db.query(models.Faq).filter(models.Faq.id == id).first()
 
 
@@ -34,7 +35,7 @@ def create_faq(db: Session, faq: schemas.CreateAndUpdateFaq):
     return db_faq
 
 
-def delete_faq(db: Session, id: int):
+def delete_faq(db: Session, id: uuid.UUID):
     faq = get_faq(db, id)
     if not faq:
         return JSONResponse(status_code=status.HTTP_404_NOT_FOUND,
@@ -45,7 +46,7 @@ def delete_faq(db: Session, id: int):
 
 
 def edit_faq(
-    db: Session, id: int, faq: schemas.CreateAndUpdateFaq
+    db: Session, id: uuid.UUID, faq: schemas.CreateAndUpdateFaq
 ) -> schemas.Faq:
     db_faq = get_faq(db, id)
     if not db_faq:
