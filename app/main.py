@@ -28,7 +28,7 @@ DATABASE_URL = CFG.connection_string
 
 
 database = databases.Database(DATABASE_URL)
-app = FastAPI(title="paideia-api", docs_url="/api/docs", openapi_url="/api")
+app = FastAPI(title="paideia-api", docs_url="/docs", openapi_url="/")
 
 
 @app.on_event("startup")
