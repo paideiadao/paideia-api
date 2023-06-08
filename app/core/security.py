@@ -11,7 +11,7 @@ from config import Config, Network
 
 CFG = Config[Network]
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/admin/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/beta/auth/admin/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = CFG.jwt_secret
