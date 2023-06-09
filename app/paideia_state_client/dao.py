@@ -15,3 +15,10 @@ def get_dao_config(daoKey: str):
         return res.json()
     else:
         return None
+    
+def get_dao_treasury(daoKey: str):
+    res = requests.get(Config[Network].paideia_state+'/dao/'+daoKey+'/treasury')
+    if res.ok:
+        return res.json()
+    else:
+        return None

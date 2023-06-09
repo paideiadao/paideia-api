@@ -16,8 +16,9 @@ from db.crud.dao import (
     remove_from_highlighted_projects,
 )
 from db.session import get_db
-from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrUpdateGovernance, CreateOrUpdateTokenomics, Dao, VwDao
+from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrUpdateGovernance, CreateOrUpdateTokenomics, Dao, DaoTreasury, VwDao
 from paideia_state_client import dao
+from ergo import indexed_node_client
 
 dao_router = r = APIRouter()
 
@@ -82,6 +83,26 @@ def dao_list_highlights(
     """
     try:
         return get_highlighted_projects(db)
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
+    
+@r.get(
+    "/treasury/{dao_id}", response_model=DaoTreasury, response_model_exclude_none=True, name="dao:treasury"
+)
+def get_treasury(
+    dao_id: str,
+    db=Depends(get_db)
+):
+    try:
+        db_dao = get_dao(db, uuid.UUID(dao_id))
+        treasury_address = dao.get_dao_treasury(db_dao.dao_key)
+        treasury_balance = indexed_node_client.get_balance(treasury_address)
+        return DaoTreasury(
+            address=treasury_address,
+            balance=treasury_balance
+        )
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"

@@ -22,6 +22,10 @@ class DaoBasic(BaseModel):
     class Config:
         orm_mode = True
 
+class DaoTreasury(BaseModel):
+    address: str
+    balance: dict
+
 
 class VwDao(BaseModel):
     id: uuid.UUID
