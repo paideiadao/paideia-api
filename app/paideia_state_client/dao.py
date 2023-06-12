@@ -7,18 +7,18 @@ def get_all_daos():
     if res.ok:
         return res.json()
     else:
-        return None
+        raise Exception(res.text)
     
 def get_dao_config(daoKey: str):
     res = requests.get(Config[Network].paideia_state+'/dao/'+daoKey+'/config')
     if res.ok:
         return res.json()
     else:
-        return None
+        raise Exception(res.text)
     
 def get_dao_treasury(daoKey: str):
     res = requests.get(Config[Network].paideia_state+'/dao/'+daoKey+'/treasury')
     if res.ok:
         return res.json()
     else:
-        return None
+        raise Exception(res.text)

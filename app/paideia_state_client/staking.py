@@ -13,14 +13,14 @@ def stake(daoKey: str, amount: int, mainAddress: str, allAddresses: t.List[str])
     if res.ok:
         return res.json()
     else:
-        return None
+        raise Exception(res.text)
     
 def get_stake(daoKey: str, stakeKey: str):
     res = requests.get(Config[Network].paideia_state+'/stake/'+daoKey+'/'+stakeKey)
     if res.ok:
         return res.json()
     else:
-        return None
+        raise Exception(res.text)
     
 def add_stake(daoKey: str, stakeKey: str, amount: int, mainAddress: str, allAddresses: t.List[str]):
     res = requests.post(Config[Network].paideia_state+'/stake/add', json={
@@ -33,7 +33,7 @@ def add_stake(daoKey: str, stakeKey: str, amount: int, mainAddress: str, allAddr
     if res.ok:
         return res.json()
     else:
-        return None
+        raise Exception(res.text)
     
 def unstake(daoKey: str, stakeKey: str, newStakeRecord: NewStakeRecord, mainAddress: str, allAddresses: t.List[str]):
     res = requests.post(Config[Network].paideia_state+'/stake/remove', json={
@@ -46,4 +46,4 @@ def unstake(daoKey: str, stakeKey: str, newStakeRecord: NewStakeRecord, mainAddr
     if res.ok:
         return res.json()
     else:
-        return None
+        raise Exception(res.text)
