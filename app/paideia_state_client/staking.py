@@ -20,7 +20,7 @@ def get_stake(daoKey: str, stakeKey: str):
     if res.ok:
         return res.json()
     else:
-        raise Exception(res.text)
+        return None
     
 def add_stake(daoKey: str, stakeKey: str, amount: int, mainAddress: str, allAddresses: t.List[str]):
     res = requests.post(Config[Network].paideia_state+'/stake/add', json={
