@@ -9,7 +9,7 @@ from db.session import Base
 class Quote(Base):
     __tablename__ = "quotes"
 
-    id = Column(UUID, primary_key=True, index=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     quote = Column(String)
     author = Column(String)
     show = Column(Boolean)

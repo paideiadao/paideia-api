@@ -1,5 +1,7 @@
 from datetime import timedelta
 import typing as t
+import uuid
+
 from fastapi import APIRouter, Depends, Response, status
 from starlette.responses import JSONResponse
 from ergo_python_appkit.appkit import ErgoAppKit
@@ -51,7 +53,7 @@ from core import security
 users_router = r = APIRouter()
 
 
-BASE_URL = "https://api.paideia.im"
+BASE_URL = "https://api.paideia.im/beta"
 
 
 @r.get(
@@ -94,7 +96,7 @@ async def user_me(current_user=Depends(get_current_active_user)):
     name="users:user",
 )
 async def user_details(
-    user_id: int,
+    user_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
 ):
@@ -133,7 +135,7 @@ async def user_create(
     name="users:edit",
 )
 async def user_edit(
-    user_id: int,
+    user_id: uuid.UUID,
     user: UserEdit,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -156,7 +158,7 @@ async def user_edit(
     name="users:delete",
 )
 async def user_delete(
-    user_id: int,
+    user_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
 ):
@@ -183,7 +185,7 @@ async def user_delete(
     name="user:user-address-config",
 )
 def user_address_config(
-    user_id: int,
+    user_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -319,7 +321,7 @@ def user_search(
     name="users:user-dao-details",
 )
 def user_dao_details(
-    dao_id: int,
+    dao_id: uuid.UUID,
     db=Depends(get_db),
 ):
     """
@@ -340,8 +342,8 @@ def user_dao_details(
     name="users:user-details",
 )
 def user_details_all(
-    user_id: int,
-    dao_id: int,
+    user_id: uuid.UUID,
+    dao_id: uuid.UUID,
     mapping: str = "user_id",
     db=Depends(get_db),
 ):
@@ -393,7 +395,7 @@ def user_details_slug(
     name="users:user-profile-settings",
 )
 def user_profile_settings(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
 ):
@@ -422,7 +424,7 @@ def user_profile_settings(
     name="users:create-details",
 )
 def create_user_profile(
-    dao_id: int,
+    dao_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -444,11 +446,6 @@ def create_user_profile(
             addresses=user_addresses,
             tokens=[token_id]
         ))
-        # user_tokens = {
-        #     "9i6UmaoJKWHgWkuq1EJUoYu2hrkRkxAYwQjDotHRHfGrBo16Rss": [
-        #         {"1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad489": 0}
-        #     ]
-        # }
         if type(user_tokens) == JSONResponse:
             return user_tokens
         # dao membership check
@@ -479,7 +476,7 @@ def create_user_profile(
     name="users:edit-details",
 )
 def edit_user_details(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     user_details: UpdateUserDetails,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
@@ -509,7 +506,7 @@ def edit_user_details(
     name="users:edit-profile-settings",
 )
 def edit_user_settings(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     user_settings: UpdateUserProfileSettings,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),

@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, status
 import typing as t
+import uuid
+
+from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
 
 from db.session import get_db
@@ -53,7 +55,7 @@ def quote_create(
     "/{quote_id}", response_model=Quote, response_model_exclude_none=True, name="quote:edit"
 )
 def quote_edit(
-    quote_id: int,
+    quote_id: uuid.UUID,
     quote: CreateAndUpdateQuote,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -71,7 +73,7 @@ def quote_edit(
     "/{quote_id}", response_model=Quote, response_model_exclude_none=True, name="quote:delete"
 )
 def quote_delete(
-    quote_id: int,
+    quote_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
 ):

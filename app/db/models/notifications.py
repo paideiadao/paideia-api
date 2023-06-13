@@ -10,12 +10,12 @@ from db.session import Base
 class Notification(Base):
     __tablename__ = "notifications"
 
-    id = Column(UUID, primary_key=True, index=True, default=uuid.uuid4)
-    user_details_id = Column(UUID)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_details_id = Column(UUID(as_uuid=True))
     img = Column(String)
     action = Column(String)
 
-    proposal_id = Column(UUID)
+    proposal_id = Column(UUID(as_uuid=True))
     transaction_id = Column(String)
 
     href = Column(String)

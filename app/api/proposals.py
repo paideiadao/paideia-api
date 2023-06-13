@@ -1,5 +1,6 @@
 import typing as t
 import random
+import uuid
 
 from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 from starlette.responses import JSONResponse
@@ -51,7 +52,7 @@ proposal_router = r = APIRouter()
     response_model_exclude_none=True,
     name="proposals:all-proposals",
 )
-def get_proposals(dao_id: int, db=Depends(get_db)):
+def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
     try:
         return get_proposals_by_dao_id(db, dao_id)
     except Exception as e:
@@ -63,7 +64,7 @@ def get_proposals(dao_id: int, db=Depends(get_db)):
     response_model_exclude_none=True,
     name="proposals:user-proposals",
 )
-def get_user_proposals(user_details_id: int, db=Depends(get_db)):
+def get_user_proposals(user_details_id: uuid.UUID, db=Depends(get_db)):
     try:
         basic_proposals = get_proposals_by_user_id(db, user_details_id)
         return list(map(lambda x: get_proposal_by_id(db, x.id), basic_proposals))
@@ -79,8 +80,8 @@ def get_user_proposals(user_details_id: int, db=Depends(get_db)):
 )
 def get_proposal(proposal_slug: str, db=Depends(get_db)):
     try:
-        if proposal_slug.isdecimal():
-            return get_proposal_by_id(db, int(proposal_slug))
+        if '-' in proposal_slug:
+            return get_proposal_by_id(db, uuid.UUID(proposal_slug))
         else:
             return get_proposal_by_slug(db, proposal_slug)
     except Exception as e:
@@ -127,7 +128,7 @@ def create_proposal(
     name="proposals:edit-proposal",
 )
 def edit_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     proposal: UpdateProposalBasic,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -162,7 +163,7 @@ def edit_proposal(
 
 @r.put("/like/{proposal_id}", name="proposals:like-proposal")
 def like_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     req: LikeProposalRequest,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -215,7 +216,7 @@ def like_proposal(
 
 @r.put("/follow/{proposal_id}", name="proposals:follow-proposal")
 def follow_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     req: FollowProposalRequest,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -269,7 +270,7 @@ def follow_proposal(
 
 @r.put("/comment/{proposal_id}", name="proposals:comment-proposal")
 async def comment_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     comment: CreateOrUpdateComment,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -342,7 +343,7 @@ async def comment_proposal(
 
 @r.delete("/comment/{comment_id}", name="proposals:delete-comment-proposal")
 async def delete_comment_proposal(
-    comment_id: int,
+    comment_id: uuid.UUID,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
 ):
@@ -365,7 +366,7 @@ async def delete_comment_proposal(
 
 @r.put("/comment/like/{comment_id}", name="proposals:like-proposal-comment")
 def like_comment(
-    comment_id: int,
+    comment_id: uuid.UUID,
     req: LikeProposalRequest,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -420,7 +421,7 @@ def like_comment(
 
 @r.put("/addendum/{proposal_id}", name="proposals:addendum-proposal")
 def create_addendum_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     addendum: CreateOrUpdateAddendum,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -465,7 +466,7 @@ def create_addendum_proposal(
 
 @r.put("/reference/{proposal_id}", name="proposals:reference-proposal")
 def reference_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     req: AddReferenceRequest,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -496,7 +497,7 @@ def reference_proposal(
     name="proposals:delete-proposal",
 )
 def delete_proposal(
-    proposal_id: int, db=Depends(get_db), user=Depends(get_current_active_user)
+    proposal_id: uuid.UUID, db=Depends(get_db), user=Depends(get_current_active_user)
 ):
     try:
         proposal = get_proposal_by_id(db, proposal_id)
