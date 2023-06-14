@@ -24,8 +24,8 @@ class Activity(Base):
 class vw_activity_log(Base):
     __tablename__ = "vw_activity_log"
 
-    id = Column(UUID, primary_key=True, index=True, default=uuid.uuid4)
-    user_details_id = Column(UUID)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_details_id = Column(UUID(as_uuid=True))
     name = Column(String)
     img_url = Column(String)
     action = Column(String)

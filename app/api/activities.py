@@ -1,4 +1,5 @@
 import typing as t
+import uuid
 
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
@@ -24,7 +25,7 @@ activity_router = r = APIRouter()
     name="activities:all-user-activities",
 )
 def activity_list(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     db=Depends(get_db),
 ):
     """
@@ -45,7 +46,7 @@ def activity_list(
     name="activities:all-user-activities",
 )
 def activity_list(
-    dao_id: int,
+    dao_id: uuid.UUID,
     db=Depends(get_db),
 ):
     """
@@ -66,7 +67,7 @@ def activity_list(
     name="activities:create-activity",
 )
 def activity_create(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     activity: CreateOrUpdateActivity,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -89,7 +90,7 @@ def activity_create(
     name="activities:delete-activity",
 )
 def activity_delete(
-    id: int, db=Depends(get_db), current_user=Depends(get_current_active_superuser)
+    id: uuid.UUID, db=Depends(get_db), current_user=Depends(get_current_active_superuser)
 ):
     """
     delete user activity

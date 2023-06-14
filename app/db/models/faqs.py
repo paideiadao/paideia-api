@@ -9,7 +9,7 @@ from db.session import Base
 class Faq(Base):
     __tablename__ = "faqs"
 
-    id = Column(UUID, primary_key=True, index=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     question = Column(String)
     answer = Column(String)
     tags = Column(JSON)

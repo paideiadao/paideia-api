@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, status
 import typing as t
+import uuid
+
+from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
 
 from db.session import get_db
@@ -52,7 +54,7 @@ def faq_create(
     "/{faq_id}", response_model=Faq, response_model_exclude_none=True, name="faq:edit"
 )
 def faq_edit(
-    faq_id: int,
+    faq_id: uuid.UUID,
     faq: CreateAndUpdateFaq,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -70,7 +72,7 @@ def faq_edit(
     "/{faq_id}", response_model=Faq, response_model_exclude_none=True, name="faq:delete"
 )
 def faq_delete(
-    faq_id: int,
+    faq_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
 ):

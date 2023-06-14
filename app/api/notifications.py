@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 import typing as t
+import uuid
+
+from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 from starlette.responses import JSONResponse
 
 from core.auth import get_current_active_superuser, get_current_active_user
@@ -27,7 +29,7 @@ notification_router = r = APIRouter()
     name="notifications:all-notifications",
 )
 def notifications_list(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -56,7 +58,7 @@ def notifications_list(
     name="notifications:create",
 )
 async def notification_create(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     notification: CreateAndUpdateNotification,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -84,7 +86,7 @@ async def notification_create(
     name="notifications:read",
 )
 def notification_edit(
-    last_notification_id: int,
+    last_notification_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -135,7 +137,7 @@ def notification_cleanup(
     name="notifications:delete",
 )
 def notification_delete(
-    notification_id: int,
+    notification_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
 ):

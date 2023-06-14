@@ -11,7 +11,7 @@ from db.session import Base
 class Blog(Base):
     __tablename__ = "blogs"
 
-    id = Column(UUID, primary_key=True, index=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     name = Column(String)
     link = Column(String)
     img_url = Column(String)

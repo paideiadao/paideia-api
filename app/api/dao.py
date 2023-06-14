@@ -92,11 +92,11 @@ def dao_list_highlights(
     "/treasury/{dao_id}", response_model=DaoTreasury, response_model_exclude_none=True, name="dao:treasury"
 )
 def get_treasury(
-    dao_id: str,
+    dao_id: uuid.UUID,
     db=Depends(get_db)
 ):
     try:
-        db_dao = get_dao(db, uuid.UUID(dao_id))
+        db_dao = get_dao(db, dao_id)
         treasury_address = dao.get_dao_treasury(db_dao.dao_key)
         treasury_balance = indexed_node_client.get_balance(treasury_address)
         return DaoTreasury(
@@ -157,7 +157,7 @@ def dao_create(
     "/{id}", response_model=Dao, response_model_exclude_none=True, name="dao:edit-dao"
 )
 def dao_edit(
-    id: int,
+    id: uuid.UUID,
     dao: CreateOrUpdateDao,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -180,7 +180,7 @@ def dao_edit(
 
 @r.post("/highlight/{id}", name="dao:highlight")
 def dao_highlight(
-    id: int,
+    id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
 ):
@@ -199,7 +199,7 @@ def dao_highlight(
     "/{id}", response_model=Dao, response_model_exclude_none=True, name="dao:delete-dao"
 )
 def dao_delete(
-    id: int,
+    id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
 ):
@@ -221,7 +221,7 @@ def dao_delete(
 
 @r.delete("/highlight/{id}", name="dao:remove-highlight")
 def delete_highlight(
-    id: int,
+    id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
 ):

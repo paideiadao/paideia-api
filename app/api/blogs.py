@@ -1,4 +1,5 @@
 import typing as t
+import uuid
 
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
@@ -69,7 +70,7 @@ def blogs_create(
     name="blogs:edit-blog"
 )
 def blogs_edit(
-    id: int,
+    id: uuid.UUID,
     blog: CreateOrUpdateBlog,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser)
@@ -87,7 +88,7 @@ def blogs_edit(
     name="blogs:delete-blog"
 )
 def blogs_delete(
-    id: int,
+    id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser)
 ):
