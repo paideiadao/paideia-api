@@ -15,10 +15,12 @@ from db.crud.dao import (
     add_to_highlighted_projects,
     remove_from_highlighted_projects,
 )
+from db.crud.users import create_user_dao_profile
 from db.session import get_db
 from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrUpdateGovernance, CreateOrUpdateTokenomics, Dao, DaoTreasury, VwDao
 from paideia_state_client import dao
 from ergo import indexed_node_client
+from config import Config, Network
 
 dao_router = r = APIRouter()
 
@@ -45,7 +47,7 @@ def dao_list(
                     daoExistsInDB = True
             if not daoExistsInDB:
                 dao_config = dao.get_dao_config(d)
-                create_dao(db, CreateOrUpdateDao(
+                new_dao = create_dao(db, CreateOrUpdateDao(
                     dao_key=d,
                     config_height=state_daos[d][1],
                     dao_name=state_daos[d][0],
@@ -62,6 +64,7 @@ def dao_list(
                     is_draft=False,
                     is_published=True
                 ))
+                create_user_dao_profile(db, Config[Network].admin_id, new_dao.id)
         return get_all_daos(db)
     except Exception as e:
         return JSONResponse(

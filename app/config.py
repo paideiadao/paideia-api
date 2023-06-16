@@ -1,5 +1,6 @@
 import os
 import time
+import uuid
 
 
 class dotdict(dict):
@@ -55,6 +56,7 @@ Config = {
             "ergoauth_seed": os.getenv("ERGOAUTH_SEED"),
             "danaides_api": os.getenv("DANAIDES_API"),
             "paideia_state": os.getenv("PAIDEIA_STATE"),
+            "admin_id": uuid.UUID(os.getenv("ADMIN_ID"))
         }
     ),
     "mainnet": dotdict(
@@ -73,6 +75,7 @@ Config = {
             "ergoauth_seed": os.getenv("ERGOAUTH_SEED"),
             "danaides_api": os.getenv("DANAIDES_API"),
             "paideia_state": os.getenv("PAIDEIA_STATE"),
+            "admin_id": uuid.UUID(os.getenv("ADMIN_ID")),
         }
     ),
 }

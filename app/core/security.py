@@ -1,3 +1,4 @@
+import os
 import time
 import secrets
 import hashlib
@@ -11,7 +12,7 @@ from config import Config, Network
 
 CFG = Config[Network]
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/beta/auth/admin/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=str(os.getenv("ROOT_PATH_WITH_SLASH"))+"/auth/admin/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = CFG.jwt_secret

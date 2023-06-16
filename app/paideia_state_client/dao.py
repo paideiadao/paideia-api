@@ -22,3 +22,10 @@ def get_dao_treasury(daoKey: str):
         return res.json()
     else:
         raise Exception(res.text)
+    
+def get_proposals(daoKey: str):
+    res = requests.get(Config[Network].paideia_state+'/dao/'+daoKey+'/proposals')
+    if res.ok:
+        return res.json()
+    else:
+        raise Exception(res.text)
