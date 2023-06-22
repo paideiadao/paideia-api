@@ -42,6 +42,7 @@ from db.crud.users import get_user_details_by_id
 from core.async_handler import run_coroutine_in_sync
 from core.auth import get_current_active_user, get_current_active_superuser
 from websocket.connection_manager import connection_manager
+from util.util import is_uuid
 
 proposal_router = r = APIRouter()
 
@@ -80,7 +81,7 @@ def get_user_proposals(user_details_id: uuid.UUID, db=Depends(get_db)):
 )
 def get_proposal(proposal_slug: str, db=Depends(get_db)):
     try:
-        if '-' in proposal_slug:
+        if is_uuid(proposal_slug):
             return get_proposal_by_id(db, uuid.UUID(proposal_slug))
         else:
             return get_proposal_by_slug(db, proposal_slug)

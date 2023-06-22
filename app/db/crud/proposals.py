@@ -32,7 +32,8 @@ from db.schemas.proposal import (
     CreateOrUpdateAddendum,
     CreateOrUpdateComment,
 )
-from util.util import generate_slug
+
+from util.util import generate_slug, get_uuid_from_slug
 
 
 #####################################
@@ -360,7 +361,7 @@ def get_proposal_by_id(db: Session, id: uuid.UUID):
 
 
 def get_proposal_by_slug(db: Session, slug: str):
-    proposal_id = int(slug.split("-")[-1])
+    proposal_id = get_uuid_from_slug(slug)
     proposal = get_proposal_by_id(db, proposal_id)
     if type(proposal) == JSONResponse:
         return proposal

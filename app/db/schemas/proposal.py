@@ -5,9 +5,9 @@ import datetime
 
 
 class CreateOrUpdateComment(BaseModel):
-    user_details_id: int
+    user_details_id: uuid.UUID
     comment: t.Optional[str]
-    parent: t.Optional[int]
+    parent: t.Optional[uuid.UUID]
 
 
 class CreateOrUpdateAddendum(BaseModel):
@@ -23,7 +23,7 @@ class CreateProposal(BaseModel):
     category: t.Optional[str]
     content: t.Optional[str]
     voting_system: t.Optional[str]
-    references: t.List[int] = [] # list of proposal ids
+    references: t.List[uuid.UUID] = [] # list of proposal ids
     actions: t.Optional[t.List[dict]] = []
     tags: t.Optional[t.List[str]]
     attachments: t.List[str]
@@ -37,9 +37,9 @@ class UpdateProposalBasic(CreateProposal):
 
 class CreateOrUpdateProposal(CreateProposal):
     comments: t.List[CreateOrUpdateComment]
-    likes: t.List[int]  # list of user_details_ids who like
-    dislikes: t.List[int]  # list of user_details_ids who dislike
-    followers: t.List[int]  # list of user_details_ids who follow
+    likes: t.List[uuid.UUID]  # list of user_details_ids who like
+    dislikes: t.List[uuid.UUID]  # list of user_details_ids who dislike
+    followers: t.List[uuid.UUID]  # list of user_details_ids who follow
     addendums: t.List[CreateOrUpdateAddendum]
 
 
@@ -49,8 +49,8 @@ class Comment(CreateOrUpdateComment):
     date: datetime.datetime
     alias: str
     profile_img_url: t.Optional[str]
-    likes: t.List[int]  # list of user_details_ids who like
-    dislikes: t.List[int]  # list of user_details_ids who dislike
+    likes: t.List[uuid.UUID]  # list of user_details_ids who like
+    dislikes: t.List[uuid.UUID]  # list of user_details_ids who dislike
 
     class Config:
         orm_mode = True
@@ -71,7 +71,7 @@ class Proposal(CreateOrUpdateProposal):
     addendums: t.List[Addendum]
     references_meta: t.List
     profile_img_url: t.Optional[str]
-    user_followers: t.List[int]
+    user_followers: t.List[uuid.UUID]
     created: int
     alias: str
 
@@ -96,7 +96,7 @@ class AddReferenceRequest(BaseModel):
 class ProposalReference(BaseModel):
     id: uuid.UUID
     name: str
-    likes: t.List[int]
-    dislikes: t.List[int]
+    likes: t.List[uuid.UUID]
+    dislikes: t.List[uuid.UUID]
     img: str
     is_proposal: bool
