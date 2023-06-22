@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 from starlette.responses import JSONResponse
 
 from api.notifications import notification_create
+from paideia_state_client import staking, dao, proposals
+from db.schemas.util import SigningRequest
 from db.session import get_db
 from db.schemas.activity import CreateOrUpdateActivity, ActivityConstants
 from db.schemas.notifications import CreateAndUpdateNotification, NotificationConstants
@@ -18,7 +20,9 @@ from db.schemas.proposal import (
     CreateOrUpdateComment,
     CreateOrUpdateAddendum,
     AddReferenceRequest,
+    VoteRequest,
 )
+from db.crud.dao import get_dao
 from db.crud.proposals import (
     get_proposal_by_id,
     get_proposal_by_slug,
@@ -38,11 +42,14 @@ from db.crud.proposals import (
 )
 from db.crud.activity_log import create_user_activity
 from db.crud.notifications import generate_action
-from db.crud.users import get_user_details_by_id
+from db.crud.users import get_ergo_addresses_by_user_id, get_primary_wallet_address_by_user_id, get_user_details_by_id, get_user, get_user_profile
 from core.async_handler import run_coroutine_in_sync
 from core.auth import get_current_active_user, get_current_active_superuser
 from websocket.connection_manager import connection_manager
 from util.util import is_uuid
+
+from config import Config, Network
+
 
 proposal_router = r = APIRouter()
 
@@ -55,6 +62,39 @@ proposal_router = r = APIRouter()
 )
 def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
     try:
+        db_proposals = get_proposals_by_dao_id(db, dao_id)
+        db_dao = get_dao(db, dao_id)
+        state_proposals = dao.get_proposals(db_dao.dao_key)
+        for p in state_proposals:
+            db_proposal = None
+            for dbp in db_proposals:
+                if dbp.on_chain_id == p["proposalIndex"]:
+                    db_proposal = dbp
+            if db_proposal is None:
+                proposal = proposals.get_proposal(db_dao.dao_key, p["proposalIndex"])
+                create_proposal(db=db,user=get_user(db, Config[Network].admin_id), proposal=CreateProposal(
+                    dao_id=dao_id,
+                    user_details_id=get_user_profile(db, Config[Network].admin_id, dao_id).id,
+                    name=proposal["proposal"]["name"],
+                    voting_system=proposal["proposalType"],
+                    actions=proposal["proposal"]["actions"],
+                    is_proposal=True,
+                    box_height=0,
+                    on_chain_id=p["proposalIndex"],
+                    votes=proposal["proposal"]["votes"],
+                    attachments=[]
+                ))
+            elif db_proposal.box_height < p["proposalHeight"]:
+                proposal = proposals.get_proposal(db_dao.dao_key, p["proposalIndex"])
+                edit_proposal_basic_by_id(db=db,user_details_id=db_proposal.user_details_id, id=db_proposal.id, proposal=UpdateProposalBasic(
+                    box_height=p["proposalHeight"],
+                    dao_id=db_proposal.dao_id,
+                    user_details_id=db_proposal.user_details_id,
+                    name=db_proposal.name,
+                    votes=proposal["proposal"]["votes"],
+                    attachments=db_proposal.attachments
+                ))
+
         return get_proposals_by_dao_id(db, dao_id)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
@@ -118,6 +158,33 @@ def create_proposal(
             )
             create_user_activity(db, user_details_id, activity)
         return proposal
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+    
+@r.post(
+    "/vote",
+    response_model=SigningRequest,
+    response_model_exclude_none=True,
+    name="proposals:vote"
+)
+def vote(
+    voteRequest: VoteRequest, db=Depends(get_db), user=Depends(get_current_active_user)
+):
+    try:
+        db_dao = get_dao(db, voteRequest.dao_id)
+        main_address = get_primary_wallet_address_by_user_id(db, user.id)
+        all_addresses = list(map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, user.id)))
+        db_proposal = get_proposal_by_id(db, voteRequest.proposal_id)
+        stake_info = staking.get_stake(db_dao.dao_key, voteRequest.stake_key)
+        if stake_info["stakeRecord"]["stake"] < sum(voteRequest.votes):
+            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Can not vote for more than staked amount")
+        if len(db_proposal.votes) != len(voteRequest.votes):
+            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Vote array should be same size as proposal vote array")
+        unsigned_tx = proposals.cast_vote(db_dao.dao_key, voteRequest.stake_key, db_proposal.on_chain_id, voteRequest.votes, main_address, all_addresses)
+        return SigningRequest(
+            message="Sign to vote on the proposal",
+            unsigned_transaction=unsigned_tx
+        )
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 

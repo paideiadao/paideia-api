@@ -17,6 +17,7 @@ class CreateOrUpdateAddendum(BaseModel):
 
 class CreateProposal(BaseModel):
     dao_id: uuid.UUID
+    on_chain_id: t.Optional[int]
     user_details_id: uuid.UUID
     name: str
     image_url: t.Optional[str]
@@ -29,7 +30,14 @@ class CreateProposal(BaseModel):
     attachments: t.List[str]
     status: t.Optional[str] = "discussion"
     is_proposal: bool = False
-
+    box_height: t.Optional[int]
+    votes: t.Optional[t.List[int]]
+    
+class VoteRequest(BaseModel):
+    dao_id: uuid.UUID
+    stake_key: str
+    proposal_id: uuid.UUID
+    votes: t.List[int]
 
 class UpdateProposalBasic(CreateProposal):
     pass
@@ -66,6 +74,7 @@ class Addendum(CreateOrUpdateAddendum):
 
 class Proposal(CreateOrUpdateProposal):
     id: uuid.UUID
+    on_chain_id: t.Optional[int]
     date: datetime.datetime
     comments: t.List[Comment]
     addendums: t.List[Addendum]
@@ -74,6 +83,9 @@ class Proposal(CreateOrUpdateProposal):
     user_followers: t.List[uuid.UUID]
     created: int
     alias: str
+    actions: t.Optional[t.List[dict]]
+    box_height: t.Optional[int]
+    votes: t.Optional[t.List[int]]
 
     class Config:
         orm_mode = True

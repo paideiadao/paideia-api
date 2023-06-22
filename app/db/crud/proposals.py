@@ -329,9 +329,17 @@ def get_proposal_by_id(db: Session, id: uuid.UUID):
         if "actions_list" in db_proposal.actions
         else []
     )
+    votes = (
+        db_proposal.votes["votes"]
+        if "votes" in db_proposal.votes
+        else []
+    )
     user_details = get_user_details_by_id(db, db_proposal.user_details_id)
     proposal = ProposalSchema(
         id=db_proposal.id,
+        on_chain_id=db_proposal.on_chain_id,
+        box_height=db_proposal.box_height,
+        votes=votes,
         dao_id=db_proposal.dao_id,
         user_details_id=db_proposal.user_details_id,
         name=db_proposal.name,
@@ -380,6 +388,9 @@ def get_proposals_by_dao_id(db: Session, dao_id: uuid.UUID):
 def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     db_proposal = Proposal(
         dao_id=proposal.dao_id,
+        on_chain_id=proposal.on_chain_id,
+        box_height=proposal.box_height,
+        votes={"votes": proposal.votes},
         user_details_id=proposal.user_details_id,
         name=proposal.name,
         image_url=proposal.image_url,
@@ -436,6 +447,9 @@ def edit_proposal_basic_by_id(
 
     if "tags" in update_data:
         update_data["tags"] = {"tags_list": proposal.tags}
+    
+    if "votes" in update_data:
+        update_data["votes"] = {"votes": proposal.votes}
 
     if "attachments" in update_data:
         update_data["attachements"] = {"attachments_list": proposal.attachments}
