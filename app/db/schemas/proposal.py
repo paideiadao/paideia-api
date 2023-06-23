@@ -3,6 +3,20 @@ from pydantic import BaseModel
 import typing as t
 import datetime
 
+class ActionBase(BaseModel):
+    actionType: str
+    action: dict
+
+class SendFundsActionOutput(BaseModel):
+    address: str
+    nergs: int
+    tokens: t.List[t.List]
+    registers: t.List[str]
+
+class SendFundsAction(BaseModel):
+    activationTime: int
+    optionId: int
+    outputs: t.List[SendFundsActionOutput]
 
 class CreateOrUpdateComment(BaseModel):
     user_details_id: int
@@ -32,6 +46,10 @@ class CreateProposal(BaseModel):
     is_proposal: bool = False
     box_height: t.Optional[int]
     votes: t.Optional[t.List[int]]
+
+class CreateOnChainProposal(CreateProposal):
+    stake_key: str
+    end_time: int
     
 class VoteRequest(BaseModel):
     dao_id: uuid.UUID

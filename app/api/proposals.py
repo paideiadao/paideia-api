@@ -12,10 +12,12 @@ from db.session import get_db
 from db.schemas.activity import CreateOrUpdateActivity, ActivityConstants
 from db.schemas.notifications import CreateAndUpdateNotification, NotificationConstants
 from db.schemas.proposal import (
+    CreateOnChainProposal,
     Proposal,
     CreateProposal,
     LikeProposalRequest,
     FollowProposalRequest,
+    SendFundsAction,
     UpdateProposalBasic,
     CreateOrUpdateComment,
     CreateOrUpdateAddendum,
@@ -156,6 +158,69 @@ def create_proposal(
             )
             create_user_activity(db, user_details_id, activity)
         return proposal
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+    
+def validate_action(actions: t.List[dict]):
+    sendFundsActions = []
+    updateConfigActions = []
+
+    for action in actions:
+        if action["actionType"]=="SendFundsBasic":
+            SendFundsAction.validate(action["action"])
+            action["action"]["repeats"] = 0
+            action["action"]["repeatDelay"] = 0
+            sendFundsActions.append(action["action"])
+        else:
+            raise Exception("Unknown action type")
+        
+    return sendFundsActions, updateConfigActions
+    
+    
+@r.post(
+    "/on_chain_proposal",
+    response_model=SigningRequest,
+    response_model_exclude_none=True,
+    name="proposals:create-proposal",
+)
+def create_on_chain_proposal(
+    proposal: CreateOnChainProposal, db=Depends(get_db), user=Depends(get_current_active_user)
+):
+    try:
+        db_dao = get_dao(db, proposal.dao_id)
+        user_details_id = proposal.user_details_id
+        user_details = get_user_details_by_id(db, user_details_id)
+        if type(user_details) == JSONResponse:
+            return user_details
+        if user_details.user_id != user.id:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
+        sendFundsActions, updateConfigActions = validate_action(proposal.actions)
+
+        main_address = get_primary_wallet_address_by_user_id(db, user.id)
+        all_addresses = list(map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, user.id)))
+        current_proposal_list = dao.get_proposals(db_dao.dao_key)
+        new_proposal_index = len(current_proposal_list)
+        proposal.on_chain_id = new_proposal_index
+        proposal.box_height = 0
+
+        unsigned_tx = proposals.create_proposal(db_dao.dao_key, proposal.name, proposal.stake_key, main_address, all_addresses, proposal.end_time, sendFundsActions)
+
+        proposal = create_new_proposal(db, proposal)
+        # add to activities
+        if type(proposal) != JSONResponse:
+            activity = CreateOrUpdateActivity(
+                user_details_id=user_details_id,
+                action=ActivityConstants.CREATED_DISCUSSION,
+                value=proposal.name,
+                category=ActivityConstants.PROPOSAL_CATEGORY,
+            )
+            create_user_activity(db, user_details_id, activity)
+        return SigningRequest(
+            message="Sign message to create proposal",
+            unsigned_transaction=unsigned_tx
+        )
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
     
