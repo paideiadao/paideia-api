@@ -20,7 +20,10 @@ from db.session import get_db
 from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrUpdateGovernance, CreateOrUpdateTokenomics, Dao, DaoTreasury, VwDao
 from paideia_state_client import dao
 from ergo import indexed_node_client
+from util.util import is_uuid
+
 from config import Config, Network
+
 
 dao_router = r = APIRouter()
 
@@ -124,7 +127,7 @@ def dao_get(
     """
     try:
         dao = None
-        if '-' in query:
+        if is_uuid(query):
             dao = get_dao(db, uuid.UUID(query))
         else:
             dao = get_dao_by_url(db, query)
