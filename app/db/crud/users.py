@@ -10,7 +10,7 @@ from db.models.dao import Dao
 from db.models.proposals import Proposal
 from db.schemas import users as schemas
 from core.security import get_password_hash
-from util.util import generate_slug
+from util.util import generate_slug, get_uuid_from_slug, is_uuid
 
 
 #################################
@@ -41,15 +41,15 @@ def get_user_details_by_id(db: Session, user_details_id: uuid.UUID):
 
 
 def get_user_details_by_slug(db: Session, slug: str):
-    maybe_id = slug.split("-")[-1]
-    if maybe_id.isdecimal():
+    maybe_id = get_uuid_from_slug(slug)
+    if is_uuid(maybe_id):
         return get_user_details_by_name_id_slug(db, slug)
     else:
         return get_user_details_by_dao_name_slug(db, slug)
 
 
 def get_user_details_by_name_id_slug(db: Session, slug: str):
-    user_details_id = int(slug.split("-")[-1])
+    user_details_id = get_uuid_from_slug(slug)
     user_details = get_user_details_by_id(db, user_details_id)
     if type(user_details) == JSONResponse:
         return user_details
