@@ -12,7 +12,7 @@ class Activity(Base):
     __tablename__ = "activity_log"
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
-    user_details_id = Column(UUID)
+    user_details_id = Column(UUID(as_uuid=True))
     action = Column(String)
     value = Column(String)
     secondary_action = Column(String)

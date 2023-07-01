@@ -59,7 +59,7 @@ def dao_list(
                     tokenomics=CreateOrUpdateTokenomics(
                         token_id=dao_config["im.paideia.dao.tokenid"]
                     ),
-                    design=CreateOrUpdateDaoDesign(footer_social_links=[]),
+                    design=CreateOrUpdateDaoDesign(),
                     is_draft=False,
                     is_published=True
                 ))

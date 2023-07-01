@@ -59,13 +59,13 @@ class FooterSocialLinks(CreateOrUpdateFooterSocialLinks):
 
 
 class CreateOrUpdateDaoDesign(BaseModel):
-    theme_id: uuid.UUID = uuid.UUID('2cb23303-cd3b-48c6-a8cd-c57a12e2d4df')
+    theme_id: uuid.UUID = uuid.UUID("00000000-0000-0000-0000-000000000000")
     logo_url: t.Optional[str]
     show_banner: t.Optional[bool]
     banner_url: t.Optional[str]
     show_footer: t.Optional[bool]
     footer_text: t.Optional[str]
-    footer_social_links: t.List[CreateOrUpdateFooterSocialLinks]
+    footer_social_links: t.List[CreateOrUpdateFooterSocialLinks] = []
 
 
 class DaoDesign(CreateOrUpdateDaoDesign):
