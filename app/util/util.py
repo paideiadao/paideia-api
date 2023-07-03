@@ -16,7 +16,10 @@ def generate_slug(*args):
     return res
 
 def get_uuid_from_slug(slug: str):
-    return uuid.UUID("-".join(slug.split("-")[-5:]))
+    try:
+        return uuid.UUID("-".join(slug.split("-")[-5:]))
+    except:
+        return None
 
 def is_uuid(s: str):
-    return len(s.split("-")) == 5
+    return s and len(s.split("-")) == 5

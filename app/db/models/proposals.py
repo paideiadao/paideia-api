@@ -62,7 +62,7 @@ class ProposalLike(Base):
 class ProposalCommentLike(Base):
     __tablename__ = "proposal_comments_likes"
 
-    id = Column(UUID, primary_key=True, index=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     comment_id = Column(UUID(as_uuid=True))
     user_details_id = Column(UUID(as_uuid=True))
     liked = Column(Boolean)
