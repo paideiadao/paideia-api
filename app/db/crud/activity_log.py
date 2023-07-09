@@ -2,8 +2,8 @@ import uuid
 from fastapi import status
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
-from db.models.users import UserDetails
 
+from db.models.users import UserDetails
 from db.models import activity_log
 from db.schemas import activity
 
