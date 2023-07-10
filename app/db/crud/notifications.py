@@ -122,5 +122,12 @@ def cleanup_notifications(db: Session):
     return ret
 
 
+def filter_additional_text_exists(db: Session, additional_text: str):
+    db_notifcation = db.query(Notification).filter(Notification.additional_text == additional_text).first()
+    if db_notifcation:
+        return True
+    return False
+
+
 def generate_action(username: str, action: str):
     return username + " " + action

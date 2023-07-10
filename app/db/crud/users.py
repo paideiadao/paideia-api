@@ -40,6 +40,18 @@ def get_user_details_by_id(db: Session, user_details_id: uuid.UUID):
     return user_details
 
 
+def get_user_details_from_user(db: Session, user_id: uuid.UUID, dao_id: uuid.UUID):
+    user_details = (
+        db.query(models.UserDetails)
+        .filter(models.UserDetails.user_id == user_id)
+        .filter(models.UserDetails.dao_id == dao_id)
+        .first()
+    )
+    if not user_details:
+        return user_details
+    return user_details
+
+
 def get_user_details_by_slug(db: Session, slug: str):
     maybe_id = get_uuid_from_slug(slug)
     if is_uuid(maybe_id):

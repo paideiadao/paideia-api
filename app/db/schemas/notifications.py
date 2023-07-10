@@ -11,6 +11,10 @@ class NotificationConstants:
     LIKED_DISCUSSION = "liked the discussion"
     FOLLOW_DISCUSSION = "followed the discussion"
     COMMENTED_ON_DISCUSSION = "commented on the discussion"
+    ADD_STAKE_TRANSACTION_SUBMITTED = "add stake transaction submitted"
+    ADD_STAKE_TRANSACTION_CONFIRMED = "add stake transaction confirmed"
+    REMOVE_STAKE_TRANSACTION_SUBMITTED = "remove stake transaction submitted"
+    REMOVE_STAKE_TRANSACTION_CONFIRMED = "remove stake transaction confirmed"
 
 
 class CreateAndUpdateNotification(BaseModel):

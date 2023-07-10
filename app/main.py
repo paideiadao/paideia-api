@@ -19,6 +19,7 @@ from api.quotes import quotes_router
 from api.staking import staking_router
 from core.async_handler import AsyncTaskRunner
 from ergo.token_data_provider import update_token_data_cache
+from notifcations.sync_notifications import sync_notifications
 
 from config import Config, Network
 
@@ -88,6 +89,7 @@ app.include_router(staking_router, prefix="/staking", tags=["staking"])
 if not CFG.DEBUG:
     runner = AsyncTaskRunner()
     runner.register(update_token_data_cache)
+    runner.register(sync_notifications)
     runner.start()
 
 
