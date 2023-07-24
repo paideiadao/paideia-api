@@ -26,7 +26,7 @@ def get_notifications(
 ):
     res = (
         db.query(Notification, Proposal)
-        .filter(Notification.proposal_id == Proposal.id)
+        .join(Proposal, Notification.proposal_id == Proposal.id, isouter=True)
         .filter(Notification.user_details_id == user_details_id)
         .order_by(Notification.date.desc())
         .offset(skip)
@@ -39,7 +39,7 @@ def get_notifications(
             img=x[0].img,
             action=x[0].action,
             proposal_id=x[0].proposal_id,
-            proposal_name=x[1].name,
+            proposal_name=x[1].name if x[1] else None,
             transaction_id=x[0].transaction_id,
             href=x[0].href,
             additional_text=x[0].additional_text,
@@ -123,7 +123,9 @@ def cleanup_notifications(db: Session):
 
 
 def filter_additional_text_exists(db: Session, additional_text: str):
-    db_notifcation = db.query(Notification).filter(Notification.additional_text == additional_text).first()
+    db_notifcation = db.query(Notification).filter(
+        Notification.additional_text == additional_text
+    ).first()
     if db_notifcation:
         return True
     return False
