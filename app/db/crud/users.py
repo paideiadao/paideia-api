@@ -307,9 +307,7 @@ def get_user_profile(db: Session, user_id: uuid.UUID, dao_id: uuid.UUID):
         .first()
     )
     if not db_profile:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND, content="user not found"
-        )
+        db_profile = create_user_dao_profile(db, user_id, dao_id)
     follower_data = get_followers_by_user_id(db, db_profile.id)
 
     return schemas.UserDetails(
