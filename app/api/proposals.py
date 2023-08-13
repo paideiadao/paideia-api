@@ -70,7 +70,7 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
         for p in state_proposals:
             db_proposal = None
             for dbp in db_proposals:
-                if dbp.on_chain_id == p["proposalIndex"]:
+                if dbp.on_chain_id == p["proposalIndex"] and dbp.name == p["proposalName"]:
                     db_proposal = dbp
             if db_proposal is None:
                 proposal = proposals.get_proposal(db_dao.dao_key, p["proposalIndex"])
