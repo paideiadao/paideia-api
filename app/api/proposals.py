@@ -23,6 +23,7 @@ from db.schemas.proposal import (
     CreateOrUpdateAddendum,
     AddReferenceRequest,
     VoteRequest,
+    CreateOnChainProposalResponse
 )
 from db.crud.dao import get_dao
 from db.crud.proposals import (
@@ -73,10 +74,12 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
                 if dbp.on_chain_id == p["proposalIndex"] and dbp.name == p["proposalName"]:
                     db_proposal = dbp
             if db_proposal is None:
-                proposal = proposals.get_proposal(db_dao.dao_key, p["proposalIndex"])
-                create_proposal(db=db,user=get_user(db, Config[Network].admin_id), proposal=CreateProposal(
+                proposal = proposals.get_proposal(
+                    db_dao.dao_key, p["proposalIndex"])
+                create_proposal(db=db, user=get_user(db, Config[Network].admin_id), proposal=CreateProposal(
                     dao_id=dao_id,
-                    user_details_id=get_user_profile(db, Config[Network].admin_id, dao_id).id,
+                    user_details_id=get_user_profile(
+                        db, Config[Network].admin_id, dao_id).id,
                     name=proposal["proposal"]["name"],
                     voting_system=proposal["proposalType"],
                     actions=proposal["proposal"]["actions"],
@@ -87,8 +90,9 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
                     attachments=[]
                 ))
             elif db_proposal.box_height < p["proposalHeight"]:
-                proposal = proposals.get_proposal(db_dao.dao_key, p["proposalIndex"])
-                edit_proposal_basic_by_id(db=db,user_details_id=db_proposal.user_details_id, id=db_proposal.id, proposal=UpdateProposalBasic(
+                proposal = proposals.get_proposal(
+                    db_dao.dao_key, p["proposalIndex"])
+                edit_proposal_basic_by_id(db=db, user_details_id=db_proposal.user_details_id, id=db_proposal.id, proposal=UpdateProposalBasic(
                     box_height=p["proposalHeight"],
                     dao_id=db_proposal.dao_id,
                     user_details_id=db_proposal.user_details_id,
@@ -162,26 +166,27 @@ def create_proposal(
         return proposal
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
-    
+
+
 def validate_action(actions: t.List[dict]):
     sendFundsActions = []
     updateConfigActions = []
 
     for action in actions:
-        if action["actionType"]=="SendFundsBasic":
+        if action["actionType"] == "SendFundsBasic":
             SendFundsAction.validate(action["action"])
             action["action"]["repeats"] = 0
             action["action"]["repeatDelay"] = 0
             sendFundsActions.append(action["action"])
         else:
             raise Exception("Unknown action type")
-        
+
     return sendFundsActions, updateConfigActions
-    
-    
+
+
 @r.post(
     "/on_chain_proposal",
-    response_model=SigningRequest,
+    response_model=CreateOnChainProposalResponse,
     response_model_exclude_none=True,
     name="proposals:create-proposal",
 )
@@ -198,16 +203,19 @@ def create_on_chain_proposal(
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
             )
-        sendFundsActions, updateConfigActions = validate_action(proposal.actions)
+        sendFundsActions, updateConfigActions = validate_action(
+            proposal.actions)
 
         main_address = get_primary_wallet_address_by_user_id(db, user.id)
-        all_addresses = list(map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, user.id)))
+        all_addresses = list(
+            map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, user.id)))
         current_proposal_list = dao.get_proposals(db_dao.dao_key)
         new_proposal_index = len(current_proposal_list)
         proposal.on_chain_id = new_proposal_index
         proposal.box_height = 0
 
-        unsigned_tx = proposals.create_proposal(db_dao.dao_key, proposal.name, proposal.stake_key, main_address, all_addresses, proposal.end_time, sendFundsActions)
+        unsigned_tx = proposals.create_proposal(
+            db_dao.dao_key, proposal.name, proposal.stake_key, main_address, all_addresses, proposal.end_time, sendFundsActions)
 
         proposal = create_new_proposal(db, proposal)
         # add to activities
@@ -219,13 +227,15 @@ def create_on_chain_proposal(
                 category=ActivityConstants.PROPOSAL_CATEGORY,
             )
             create_user_activity(db, user_details_id, activity)
-        return SigningRequest(
+        return CreateOnChainProposalResponse(
             message="Sign message to create proposal",
-            unsigned_transaction=unsigned_tx
+            unsigned_transaction=unsigned_tx,
+            proposal=proposal
         )
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
-    
+
+
 @r.post(
     "/vote",
     response_model=SigningRequest,
@@ -238,14 +248,16 @@ def vote(
     try:
         db_dao = get_dao(db, voteRequest.dao_id)
         main_address = get_primary_wallet_address_by_user_id(db, user.id)
-        all_addresses = list(map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, user.id)))
+        all_addresses = list(
+            map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, user.id)))
         db_proposal = get_proposal_by_id(db, voteRequest.proposal_id)
         stake_info = staking.get_stake(db_dao.dao_key, voteRequest.stake_key)
         if stake_info["stakeRecord"]["stake"] < sum(voteRequest.votes):
             return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Can not vote for more than staked amount")
         if len(db_proposal.votes) != len(voteRequest.votes):
             return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Vote array should be same size as proposal vote array")
-        unsigned_tx = proposals.cast_vote(db_dao.dao_key, voteRequest.stake_key, db_proposal.on_chain_id, voteRequest.votes, main_address, all_addresses)
+        unsigned_tx = proposals.cast_vote(db_dao.dao_key, voteRequest.stake_key,
+                                          db_proposal.on_chain_id, voteRequest.votes, main_address, all_addresses)
         return SigningRequest(
             message="Sign to vote on the proposal",
             unsigned_transaction=unsigned_tx
@@ -310,7 +322,8 @@ def like_proposal(
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
             )
-        likes = set_likes_by_proposal_id(db, proposal_id, user_details_id, req.type)
+        likes = set_likes_by_proposal_id(
+            db, proposal_id, user_details_id, req.type)
         # add to activities and notifier
         if type(likes) != JSONResponse:
             proposal = get_proposal_by_id(db, proposal_id)
@@ -513,7 +526,8 @@ def like_comment(
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
             )
-        likes = set_likes_by_comment_id(db, comment_id, user_details_id, req.type)
+        likes = set_likes_by_comment_id(
+            db, comment_id, user_details_id, req.type)
         # add to activities and notifier
         if type(likes) != JSONResponse:
             comment = get_comment_by_id(db, comment_id)
@@ -648,7 +662,8 @@ def delete_proposal(
 
 @r.websocket("/ws/{proposal_id}")
 async def websocket_endpoint(websocket: WebSocket, proposal_id: str):
-    random_key = "proposal_comments_" + proposal_id + "_" + str(random.random())
+    random_key = "proposal_comments_" + \
+        proposal_id + "_" + str(random.random())
     await connection_manager.connect(random_key, websocket)
     try:
         while True:
