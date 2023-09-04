@@ -3,9 +3,13 @@ from pydantic import BaseModel
 import typing as t
 import datetime
 
+from db.schemas.util import SigningRequest
+
+
 class ActionBase(BaseModel):
     actionType: str
     action: dict
+
 
 class SendFundsActionOutput(BaseModel):
     address: str
@@ -13,10 +17,12 @@ class SendFundsActionOutput(BaseModel):
     tokens: t.List[t.List]
     registers: t.List[str]
 
+
 class SendFundsAction(BaseModel):
     activationTime: int
     optionId: int
     outputs: t.List[SendFundsActionOutput]
+
 
 class CreateOrUpdateComment(BaseModel):
     user_details_id: uuid.UUID
@@ -38,7 +44,7 @@ class CreateProposal(BaseModel):
     category: t.Optional[str]
     content: t.Optional[str]
     voting_system: t.Optional[str]
-    references: t.List[uuid.UUID] = [] # list of proposal ids
+    references: t.List[uuid.UUID] = []  # list of proposal ids
     actions: t.Optional[t.List[dict]] = []
     tags: t.Optional[t.List[str]]
     attachments: t.List[str]
@@ -47,15 +53,18 @@ class CreateProposal(BaseModel):
     box_height: t.Optional[int]
     votes: t.Optional[t.List[int]]
 
+
 class CreateOnChainProposal(CreateProposal):
     stake_key: str
     end_time: int
     
+
 class VoteRequest(BaseModel):
     dao_id: uuid.UUID
     stake_key: str
     proposal_id: uuid.UUID
     votes: t.List[int]
+
 
 class UpdateProposalBasic(CreateProposal):
     pass
@@ -107,6 +116,10 @@ class Proposal(CreateOrUpdateProposal):
 
     class Config:
         orm_mode = True
+
+
+class CreateOnChainProposalResponse(SigningRequest):
+    proposal: Proposal
 
 
 class LikeProposalRequest(BaseModel):
