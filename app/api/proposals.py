@@ -55,6 +55,18 @@ from config import Config, Network
 
 proposal_router = r = APIRouter()
 
+def proposal_status(status_code: int) -> str:
+    match status_code:
+        case -2: 
+            return "Failed - Quorum"
+        case -1:
+            return "Active"
+        case 0:
+            return "Failed - Vote"
+        case 1:
+            return "Passed"
+        case _:
+            return "Unknown"
 
 @r.get(
     "/by_dao_id/{dao_id}",
@@ -84,7 +96,8 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
                     box_height=0,
                     on_chain_id=p["proposalIndex"],
                     votes=proposal["proposal"]["votes"],
-                    attachments=[]
+                    attachments=[],
+                    status=proposal_status(proposal["proposal"]["status"]) 
                 ))
             elif db_proposal.box_height < p["proposalHeight"]:
                 proposal = proposals.get_proposal(db_dao.dao_key, p["proposalIndex"])
@@ -94,7 +107,8 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
                     user_details_id=db_proposal.user_details_id,
                     name=db_proposal.name,
                     votes=proposal["proposal"]["votes"],
-                    attachments=db_proposal.attachments
+                    attachments=db_proposal.attachments,
+                    status=proposal_status(proposal["proposal"]["status"]) 
                 ))
 
         return get_proposals_by_dao_id(db, dao_id)
