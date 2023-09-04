@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED 1
 
 # install system dependencies
 RUN  apt-get update \
-  && apt-get -y install gcc postgresql nano \
+  && apt-get -y install netcat gcc postgresql nano \
   && apt-get -y install curl openjdk-11-jdk \
   && apt-get clean
 
