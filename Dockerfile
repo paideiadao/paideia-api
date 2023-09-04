@@ -9,8 +9,9 @@ ENV PYTHONUNBUFFERED 1
 # install system dependencies
 RUN  apt-get update \
   && apt-get -y install gcc postgresql nano software-properties-common \
-  && add-apt-repository ppa:openjdk-r/ppa \
-  && apt-get update \
+  && add-apt-repository ppa:openjdk-r/ppa
+
+RUN apt-get update \
   && apt-get -y install curl openjdk-11-jdk \
   && apt-get clean
 
