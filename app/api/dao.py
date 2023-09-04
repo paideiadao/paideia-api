@@ -54,12 +54,21 @@ def dao_list(
                         dao_config = dao.get_dao_config(d)
                         edit_dao(db, dbd.id, CreateOrUpdateDao(
                             dao_name=state_daos[d][0],
+                            dao_short_description=dao_config["im.paideia.dao.description"],
+                            dao_url=state_daos[d][0],
+                            dao_key=d,
                             governance=CreateOrUpdateGovernance(
                                 quorum=int(dao_config["im.paideia.dao.quorum"]["value"]),
                                 vote_duration__sec=int(dao_config["im.paideia.dao.min.proposal.time"]["value"])/1000,
                                 support_needed=int(dao_config["im.paideia.dao.threshold"]["value"])
                             ),
-                            config_height=state_daos[d][1]
+                            tokenomics=CreateOrUpdateTokenomics(
+                                token_id=dao_config["im.paideia.dao.tokenid"]
+                            ),
+                            config_height=state_daos[d][1],
+                            design=CreateOrUpdateDaoDesign(),
+                            is_draft=False,
+                            is_published=True
                         ))
             if not daoExistsInDB:
                 dao_config = dao.get_dao_config(d)
