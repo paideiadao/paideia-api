@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED 1
 
 # install system dependencies
 RUN  apt-get update \
-  && apt-get -y install gcc postgresql nano software-properties-common \
+  && apt-get -y install gcc postgresql nano software-properties-common python3-launchpadlib \
   && add-apt-repository ppa:openjdk-r/ppa
 
 RUN apt-get update \
