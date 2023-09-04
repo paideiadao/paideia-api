@@ -53,7 +53,7 @@ def dao_list(
                     if dbd.config_height < d["configHeight"]:
                         dao_config = dao.get_dao_config(d)
                         edit_dao(db, dbd.id, CreateOrUpdateDao(
-                            dao_name=d[0],
+                            dao_name=state_daos[d][0],
                             governance=CreateOrUpdateGovernance(
                                 quorum=int(dao_config["im.paideia.dao.quorum"]["value"]),
                                 vote_duration__sec=int(dao_config["im.paideia.dao.min.proposal.time"]["value"])/1000,
