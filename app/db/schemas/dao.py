@@ -172,3 +172,7 @@ class Dao(CreateOrUpdateDao):
 
     class Config:
         orm_mode = True
+
+class DaoConfigEntry(BaseModel):
+    valueType: str
+    value: str

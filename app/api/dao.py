@@ -19,7 +19,7 @@ from db.crud.dao import (
 )
 from db.crud.users import create_user_dao_profile
 from db.session import get_db
-from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrUpdateGovernance, CreateOrUpdateTokenomics, Dao, DaoTreasury, VwDao
+from db.schemas.dao import CreateOrUpdateDao, CreateOrUpdateDaoDesign, CreateOrUpdateGovernance, CreateOrUpdateTokenomics, Dao, DaoConfigEntry, DaoTreasury, VwDao
 from paideia_state_client import dao
 from ergo import indexed_node_client
 from util.util import is_uuid
@@ -56,11 +56,12 @@ def dao_list(
                     dao_key=d,
                     config_height=state_daos[d][1],
                     dao_name=state_daos[d][0],
-                    dao_short_description=dao_config.get("im.paideia.dao.description"),
+                    dao_short_description=dao_config["im.paideia.dao.description"],
                     dao_url=state_daos[d][0],
                     governance=CreateOrUpdateGovernance(
-                        quorum=int(dao_config.get("im.paideia.dao.quorum", 0)),
-                        vote_duration__sec=int(dao_config.get("im.paideia.dao.min.proposal.time",0))/1000
+                        quorum=int(dao_config["im.paideia.dao.quorum"]["value"]),
+                        vote_duration__sec=int(dao_config["im.paideia.dao.min.proposal.time"]["value"])/1000,
+                        support_needed=int(dao_config["im.paideia.dao.threshold"]["value"])
                     ),
                     tokenomics=CreateOrUpdateTokenomics(
                         token_id=dao_config["im.paideia.dao.tokenid"]
@@ -212,6 +213,32 @@ def dao_get(
                 status_code=status.HTTP_404_NOT_FOUND, content="dao not found"
             )
         return dao
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
+    
+@r.get(
+    "/{query}/config", response_model=dict[str,DaoConfigEntry], response_model_exclude_none=True, name="dao:get-dao-config"
+)
+def dao_get(
+    query: str,
+    db=Depends(get_db),
+):
+    """
+    Get dao
+    """
+    try:
+        d = None
+        if is_uuid(query):
+            d = get_dao(db, uuid.UUID(query))
+        else:
+            d = get_dao_by_url(db, query)
+        if not d:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND, content="dao not found"
+            )
+        return dao.get_dao_config(d.dao_key)
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
