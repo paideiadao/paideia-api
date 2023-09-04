@@ -7,7 +7,8 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # install system dependencies
-RUN apt-get update \
+RUN add-apt-repository ppa:openjdk-r/ppa \
+  && apt-get update \
   && apt-get -y install gcc postgresql nano \
   && apt-get -y install curl openjdk-11-jdk \
   && apt-get clean
