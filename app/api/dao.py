@@ -54,7 +54,7 @@ def dao_list(
                         dao_config = dao.get_dao_config(d)
                         edit_dao(db, dbd.id, CreateOrUpdateDao(
                             dao_name=state_daos[d][0],
-                            dao_short_description=dao_config["im.paideia.dao.description"]["value"],
+                            dao_short_description=dao_config["im.paideia.dao.description"]["value"] if "im.paideia.dao.description" in dao_config else "",
                             dao_url=state_daos[d][0],
                             dao_key=d,
                             governance=CreateOrUpdateGovernance(
@@ -76,7 +76,7 @@ def dao_list(
                     dao_key=d,
                     config_height=state_daos[d][1],
                     dao_name=state_daos[d][0],
-                    dao_short_description=dao_config["im.paideia.dao.description"]["value"],
+                    dao_short_description=dao_config["im.paideia.dao.description"]["value"] if "im.paideia.dao.description" in dao_config else "",
                     dao_url=state_daos[d][0],
                     governance=CreateOrUpdateGovernance(
                         quorum=int(dao_config["im.paideia.dao.quorum"]["value"]),
