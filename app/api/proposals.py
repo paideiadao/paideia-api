@@ -100,7 +100,7 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
                     on_chain_id=p["proposalIndex"],
                     votes=proposal["proposal"]["votes"],
                     attachments=[],
-                    status=proposal_status(proposal["proposal"]["status"]) 
+                    status=proposal_status(proposal["proposal"]["passed"]) 
                 ))
             elif db_proposal.box_height < p["proposalHeight"]:
                 proposal = proposals.get_proposal(
@@ -112,7 +112,7 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
                     name=db_proposal.name,
                     votes=proposal["proposal"]["votes"],
                     attachments=db_proposal.attachments,
-                    status=proposal_status(proposal["proposal"]["status"]) 
+                    status=proposal_status(proposal["proposal"]["passed"]) 
                 ))
 
         return get_proposals_by_dao_id(db, dao_id)
