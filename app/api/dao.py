@@ -50,6 +50,16 @@ def dao_list(
             for dbd in db_daos:
                 if dbd.dao_key == d:
                     daoExistsInDB = True
+                    if dbd.box_height < d["configHeight"]:
+                        dao_config = dao.get_dao_config(d)
+                        edit_dao(db, dbd.id, CreateOrUpdateDao(
+                            dao_name=d[0],
+                            governance=CreateOrUpdateGovernance(
+                                quorum=int(dao_config["im.paideia.dao.quorum"]["value"]),
+                                vote_duration__sec=int(dao_config["im.paideia.dao.min.proposal.time"]["value"])/1000,
+                                support_needed=int(dao_config["im.paideia.dao.threshold"]["value"])
+                            )
+                        ))
             if not daoExistsInDB:
                 dao_config = dao.get_dao_config(d)
                 new_dao = create_dao(db, CreateOrUpdateDao(
