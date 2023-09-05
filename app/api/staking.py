@@ -1,7 +1,8 @@
 import typing as t
+import uuid
 
 from fastapi import APIRouter, Depends, status
-from db.schemas.staking import AddStakeRequest, GetStakeRequest, ParticipationInfo, ProfitInfo, StakeInfo, StakeKeyInfo, StakeKeyInfoWithParticipation, NewStakeRecord, StakeRequest, UnstakeRequest
+from db.schemas.staking import AddStakeRequest, DaoStakeInfo, GetStakeRequest, ParticipationInfo, Profit, ProfitInfo, StakeInfo, StakeKeyInfo, StakeKeyInfoWithParticipation, NewStakeRecord, StakeRequest, UnstakeRequest
 from db.schemas.util import SigningRequest
 from db.session import get_db
 from paideia_state_client import staking
@@ -92,6 +93,36 @@ def stake(
         )
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
+    
+@r.get(
+    "/dao_stake_info/{dao_id}",
+    response_model=DaoStakeInfo,
+    response_model_exclude_none=True,
+    name="staking:get_dao_stake"
+)
+def get_dao_stake(
+    dao_id: uuid.UUID,
+    db=Depends(get_db)
+):
+    try:
+        dao = get_dao(db, dao_id)
+        token_info = get_token_info(dao.tokenomics.token_id)
+        stakeInfo = staking.get_dao_stake(dao.dao_key)
+        profit = []
+        profit.append(Profit(token_info["token_name"], dao.tokenomics.token_id, stakeInfo["profit"][0]/10**token_info["decimals"]))
+        profit.append(Profit("Erg", "", stakeInfo["profit"][1]/10**9))
+                    
+        return DaoStakeInfo(
+            dao_id=dao_id,
+            total_staked=stakeInfo["totalStaked"]/10**token_info["decimals"],
+            stakers=stakeInfo["stakers"],
+            voted=stakeInfo["voted"],
+            voted_total=stakeInfo["votedTotal"],
+            next_emission=stakeInfo["nextEmission"],
+            profit=profit
+        )
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}') 
     
 @r.post(
     "/user_stake_info",

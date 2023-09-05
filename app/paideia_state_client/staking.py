@@ -15,6 +15,13 @@ def stake(daoKey: str, amount: int, mainAddress: str, allAddresses: t.List[str])
     else:
         raise Exception(res.text)
     
+def get_dao_stake(daoKey: str):
+    res = requests.get(Config[Network].paideia_state+'/stake/'+daoKey)
+    if res.ok:
+        return res.json()
+    else:
+        return None
+    
 def get_stake(daoKey: str, stakeKey: str):
     res = requests.get(Config[Network].paideia_state+'/stake/'+daoKey+'/'+stakeKey)
     if res.ok:

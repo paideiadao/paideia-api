@@ -38,6 +38,20 @@ class StakeInfo(BaseModel):
     user_id: uuid.UUID
     stake_keys: t.List[StakeKeyInfoWithParticipation]
 
+class Profit(BaseModel):
+    token_name: str
+    token_id: str
+    amount: float
+
+class DaoStakeInfo(BaseModel):
+    dao_id: uuid.UUID
+    total_staked: float
+    stakers: int
+    profit: t.List[Profit]
+    voted: int
+    voted_total: int
+    next_emission: int
+
 class UnstakeRequest(BaseModel):
     dao_id: uuid.UUID
     user_id: uuid.UUID
