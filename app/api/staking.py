@@ -1,3 +1,4 @@
+import time
 import typing as t
 import uuid
 
@@ -70,6 +71,8 @@ def stake(
     db=Depends(get_db),
 ):
     try:
+        if req.new_stake_key_info.locked_until/1000 > time.time():
+            raise Exception("Stake locked due to voting")
         dao = get_dao(db, req.dao_id)
         token_info = get_token_info(dao.tokenomics.token_id)
         main_address = get_primary_wallet_address_by_user_id(db, req.user_id)
