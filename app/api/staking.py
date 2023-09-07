@@ -73,6 +73,10 @@ def stake(
     try:
         if req.new_stake_key_info.locked_until/1000 > time.time():
             raise Exception("Stake locked due to voting")
+        current_stake = get_stake(GetStakeRequest(req.dao_id, req.user_id), db)
+        for key in current_stake.stake_keys:
+            if key.key_id == req.new_stake_key_info.key_id and key.stake > req.new_stake_key_info.stake and req.new_stake_key_info.stake > 0:
+                raise Exception("Partial staking not allowed")
         dao = get_dao(db, req.dao_id)
         token_info = get_token_info(dao.tokenomics.token_id)
         main_address = get_primary_wallet_address_by_user_id(db, req.user_id)
