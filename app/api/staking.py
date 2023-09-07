@@ -71,7 +71,7 @@ def stake(
     db=Depends(get_db),
 ):
     try:
-        if req.new_stake_key_info.locked_until/1000 > time.time():
+        if req.new_stake_key_info.locked_until/1000 > time.time() and req.new_stake_key_info.stake == 0:
             raise Exception("Stake locked due to voting")
         current_stake = get_stake(GetStakeRequest(req.dao_id, req.user_id), db)
         for key in current_stake.stake_keys:
