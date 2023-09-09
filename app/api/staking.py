@@ -118,7 +118,7 @@ def get_dao_stake(
         token_info = get_token_info(dao.tokenomics.token_id)
         stakeInfo = staking.get_dao_stake(dao.dao_key)
         profit = []
-        profit.append(Profit(token_info["token_name"], dao.tokenomics.token_id, stakeInfo["profit"][0]/10**token_info["decimals"]))
+        profit.append(Profit(token_info["name"], dao.tokenomics.token_id, stakeInfo["profit"][0]/10**token_info["decimals"]))
         profit.append(Profit("Erg", "", stakeInfo["profit"][1]/10**9))
                     
         return DaoStakeInfo(
