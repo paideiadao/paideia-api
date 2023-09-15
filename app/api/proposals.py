@@ -18,6 +18,7 @@ from db.schemas.proposal import (
     LikeProposalRequest,
     FollowProposalRequest,
     SendFundsAction,
+    UpdateConfigAction,
     UpdateProposalBasic,
     CreateOrUpdateComment,
     CreateOrUpdateAddendum,
@@ -192,6 +193,9 @@ def validate_action(actions: t.List[dict]):
             action["action"]["repeats"] = 0
             action["action"]["repeatDelay"] = 0
             sendFundsActions.append(action["action"])
+        elif action["actionType"] == "UpdateConfig":
+            UpdateConfigAction.validate(action["action"])
+            updateConfigActions.append(action["action"])
         else:
             raise Exception("Unknown action type")
 
@@ -229,7 +233,7 @@ def create_on_chain_proposal(
         proposal.box_height = 0
 
         unsigned_tx = proposals.create_proposal(
-            db_dao.dao_key, proposal.name, proposal.stake_key, main_address, all_addresses, proposal.end_time, sendFundsActions)
+            db_dao.dao_key, proposal.name, proposal.stake_key, main_address, all_addresses, proposal.end_time, sendFundsActions, updateConfigActions)
 
         proposal = create_new_proposal(db, proposal)
         # add to activities

@@ -23,7 +23,7 @@ def cast_vote(daoKey: str, stakeKey: str, proposalIndex: int, votes: t.List[int]
     else:
         raise Exception(res.text)
     
-def create_proposal(daoKey: str, name: str, stakeKey: str, mainAddress: str, allAddresses: t.List[str], endTime: int, sendFundsActions: t.List[dict]):
+def create_proposal(daoKey: str, name: str, stakeKey: str, mainAddress: str, allAddresses: t.List[str], endTime: int, sendFundsActions: t.List[dict], updateConfigActions: t.List[dict]):
     res = requests.post(Config[Network].paideia_state+'/proposal', json={
         "daoKey": daoKey,
         "name": name,
@@ -32,7 +32,7 @@ def create_proposal(daoKey: str, name: str, stakeKey: str, mainAddress: str, all
         "userAddresses": allAddresses,
         "endTime": endTime,
         "sendFundsActions": sendFundsActions,
-        "updateConfigActions": []
+        "updateConfigActions": updateConfigActions
     })
     if res.ok:
         return res.json()

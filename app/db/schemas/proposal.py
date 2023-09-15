@@ -10,6 +10,17 @@ class ActionBase(BaseModel):
     actionType: str
     action: dict
 
+class ConfigValue(BaseModel):
+    key: str
+    valueType: str
+    value: str
+
+class UpdateConfigAction(BaseModel):
+    optionId: int
+    activationTime: int
+    remove: t.List[str]
+    update: t.List[ConfigValue]
+    create: t.List[ConfigValue]
 
 class SendFundsActionOutput(BaseModel):
     address: str
