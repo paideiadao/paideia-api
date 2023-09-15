@@ -5,11 +5,6 @@ import datetime
 
 from db.schemas.util import SigningRequest
 
-
-class ActionBase(BaseModel):
-    actionType: str
-    action: dict
-
 class ConfigValue(BaseModel):
     key: str
     valueType: str
@@ -34,6 +29,9 @@ class SendFundsAction(BaseModel):
     optionId: int
     outputs: t.List[SendFundsActionOutput]
 
+class ActionBase(BaseModel):
+    actionType: str
+    action: t.Union[SendFundsAction, UpdateConfigAction]
 
 class CreateOrUpdateComment(BaseModel):
     user_details_id: uuid.UUID
@@ -121,7 +119,7 @@ class Proposal(CreateOrUpdateProposal):
     user_followers: t.List[uuid.UUID]
     created: int
     alias: str
-    actions: t.Optional[t.List[dict]]
+    actions: t.Optional[t.List[ActionBase]]
     box_height: t.Optional[int]
     votes: t.Optional[t.List[int]]
 
