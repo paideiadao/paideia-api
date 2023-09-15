@@ -56,7 +56,7 @@ class CreateProposal(BaseModel):
     content: t.Optional[str]
     voting_system: t.Optional[str]
     references: t.List[uuid.UUID] = []  # list of proposal ids
-    actions: t.Optional[t.List[dict]] = []
+    actions: t.Optional[t.List[ActionBase]] = []
     tags: t.Optional[t.List[str]]
     attachments: t.List[str]
     status: t.Optional[str] = "discussion"
