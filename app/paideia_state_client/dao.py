@@ -12,7 +12,10 @@ def get_all_daos():
 def get_dao_config(daoKey: str):
     res = requests.get(Config[Network].paideia_state+'/dao/'+daoKey+'/config')
     if res.ok:
-        return res.json()
+        resDict = {}
+        for entry in res.json():
+            resDict[entry["key"]] = {"valueType": entry["valueType"], "value": entry["value"]}
+        return resDict
     else:
         raise Exception(res.text)
     
