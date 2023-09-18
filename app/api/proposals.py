@@ -3,6 +3,7 @@ import random
 import uuid
 
 from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
+from fastapi.encoders import jsonable_encoder
 from starlette.responses import JSONResponse
 
 from api.notifications import notification_create
@@ -189,7 +190,7 @@ def validate_action(actions: t.List[ActionBase]):
     updateConfigActions = []
 
     for action in actions:
-        actionDict = action.action.__dict__
+        actionDict = jsonable_encoder(action.action)
         if action.actionType == "SendFundsBasic":
             SendFundsAction.validate(actionDict)
             actionDict["repeats"] = 0
