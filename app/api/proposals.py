@@ -189,14 +189,15 @@ def validate_action(actions: t.List[ActionBase]):
     updateConfigActions = []
 
     for action in actions:
+        actionDict = action.action.__dict__
         if action.actionType == "SendFundsBasic":
-            SendFundsAction.validate(action.action)
-            action.action["repeats"] = 0
-            action.action["repeatDelay"] = 0
-            sendFundsActions.append(action.action)
+            SendFundsAction.validate(actionDict)
+            actionDict["repeats"] = 0
+            actionDict["repeatDelay"] = 0
+            sendFundsActions.append(actionDict)
         elif action.actionType == "UpdateConfig":
-            UpdateConfigAction.validate(action.action)
-            updateConfigActions.append(action.action)
+            UpdateConfigAction.validate(actionDict)
+            updateConfigActions.append(actionDict)
         else:
             raise Exception("Unknown action type")
 
