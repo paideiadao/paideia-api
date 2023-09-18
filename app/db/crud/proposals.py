@@ -4,6 +4,7 @@ import typing as t
 import uuid
 
 from fastapi import status
+from fastapi.encoders import jsonable_encoder
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
@@ -397,7 +398,7 @@ def create_new_proposal(db: Session, proposal: CreateProposalSchema):
         category=proposal.category,
         content=proposal.content,
         voting_system=proposal.voting_system,
-        actions={"actions_list": proposal.actions},
+        actions={"actions_list": json_encoder(proposal.actions)},
         tags={"tags_list": proposal.tags},
         attachments={"attachments_list": proposal.attachments},
         status=proposal.status,
