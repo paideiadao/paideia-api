@@ -12,6 +12,7 @@ from db.session import get_db
 from db.schemas.activity import CreateOrUpdateActivity, ActivityConstants
 from db.schemas.notifications import CreateAndUpdateNotification, NotificationConstants
 from db.schemas.proposal import (
+    ActionBase,
     CreateOnChainProposal,
     Proposal,
     CreateProposal,
@@ -183,19 +184,19 @@ def create_proposal(
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
-def validate_action(actions: t.List[dict]):
+def validate_action(actions: t.List[ActionBase]):
     sendFundsActions = []
     updateConfigActions = []
 
     for action in actions:
-        if action["actionType"] == "SendFundsBasic":
-            SendFundsAction.validate(action["action"])
-            action["action"]["repeats"] = 0
-            action["action"]["repeatDelay"] = 0
-            sendFundsActions.append(action["action"])
-        elif action["actionType"] == "UpdateConfig":
-            UpdateConfigAction.validate(action["action"])
-            updateConfigActions.append(action["action"])
+        if action.actionType == "SendFundsBasic":
+            SendFundsAction.validate(action.action)
+            action.action["repeats"] = 0
+            action.action["repeatDelay"] = 0
+            sendFundsActions.append(action.action)
+        elif action.actionType == "UpdateConfig":
+            UpdateConfigAction.validate(action.action)
+            updateConfigActions.append(action.action)
         else:
             raise Exception("Unknown action type")
 
