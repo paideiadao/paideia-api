@@ -15,7 +15,7 @@ class UpdateConfigAction(BaseModel):
     activationTime: int
     remove: t.List[str]
     update: t.List[ConfigValue]
-    create: t.List[ConfigValue]
+    insert: t.List[ConfigValue]
 
 class SendFundsActionOutput(BaseModel):
     address: str
