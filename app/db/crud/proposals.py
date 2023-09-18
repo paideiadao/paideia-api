@@ -398,7 +398,7 @@ def create_new_proposal(db: Session, proposal: CreateProposalSchema):
         category=proposal.category,
         content=proposal.content,
         voting_system=proposal.voting_system,
-        actions={"actions_list": json_encoder(proposal.actions)},
+        actions={"actions_list": jsonable_encoder(proposal.actions)},
         tags={"tags_list": proposal.tags},
         attachments={"attachments_list": proposal.attachments},
         status=proposal.status,
