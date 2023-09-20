@@ -1,7 +1,6 @@
 import time
 import typing as t
 import uuid
-from app import paideia_state_client
 
 from fastapi import APIRouter, Depends, status
 from db.schemas.staking import AddStakeRequest, DaoStakeInfo, GetStakeRequest, ParticipationInfo, Profit, ProfitInfo, StakeInfo, StakeKeyInfo, StakeKeyInfoWithParticipation, NewStakeRecord, StakeRequest, UnstakeRequest
