@@ -1,6 +1,7 @@
 import time
 import typing as t
 import uuid
+from app import paideia_state_client
 
 from fastapi import APIRouter, Depends, status
 from db.schemas.staking import AddStakeRequest, DaoStakeInfo, GetStakeRequest, ParticipationInfo, Profit, ProfitInfo, StakeInfo, StakeKeyInfo, StakeKeyInfoWithParticipation, NewStakeRecord, StakeRequest, UnstakeRequest
@@ -117,9 +118,13 @@ def get_dao_stake(
         dao = get_dao(db, dao_id)
         token_info = get_token_info(dao.tokenomics.token_id)
         stakeInfo = staking.get_dao_stake(dao.dao_key)
+        stakeEmissionAndProfit = stakeInfo["emission"]+stakeInfo["profit"][0]
         profit = []
-        profit.append(Profit(token_name=token_info["name"], token_id=dao.tokenomics.token_id, amount=stakeInfo["profit"][0]/10**token_info["decimals"]))
+        profit.append(Profit(token_name=token_info["name"], token_id=dao.tokenomics.token_id, amount=stakeEmissionAndProfit/10**token_info["decimals"]))
         profit.append(Profit(token_name="Erg", token_id="", amount=stakeInfo["profit"][1]/10**9))
+
+        yearMs = 31557600000
+        emissionsPerYear = yearMs/stakeInfo["emissionDelay"]
                     
         return DaoStakeInfo(
             dao_id=dao_id,
@@ -128,7 +133,9 @@ def get_dao_stake(
             voted=stakeInfo["voted"],
             voted_total=stakeInfo["votedTotal"],
             next_emission=stakeInfo["nextEmission"],
-            profit=profit
+            profit=profit,
+            emission=stakeInfo["emission"],
+            apy=(stakeEmissionAndProfit*emissionsPerYear)/stakeInfo["totalStaked"]
         )
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}') 

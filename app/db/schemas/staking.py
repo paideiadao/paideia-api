@@ -51,6 +51,8 @@ class DaoStakeInfo(BaseModel):
     voted: int
     voted_total: int
     next_emission: int
+    emission: int
+    apy: float
 
 class UnstakeRequest(BaseModel):
     dao_id: uuid.UUID
