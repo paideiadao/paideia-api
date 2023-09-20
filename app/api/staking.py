@@ -135,6 +135,7 @@ def get_dao_stake(
             profit=profit,
             emission=stakeInfo["emission"],
             apy=(stakeEmissionAndProfit*emissionsPerYear)/stakeInfo["totalStaked"]
+            emission_delay=stakeInfo["emissionDelay"]
         )
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}') 
