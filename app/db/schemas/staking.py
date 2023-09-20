@@ -53,7 +53,7 @@ class DaoStakeInfo(BaseModel):
     next_emission: int
     emission: int
     apy: float
-    emission_delay: int
+    cycle_length: int
 
 class UnstakeRequest(BaseModel):
     dao_id: uuid.UUID

@@ -123,7 +123,7 @@ def get_dao_stake(
         profit.append(Profit(token_name="Erg", token_id="", amount=stakeInfo["profit"][1]/10**9))
 
         yearMs = 31557600000
-        emissionsPerYear = yearMs/stakeInfo["emissionDelay"]
+        emissionsPerYear = yearMs/stakeInfo["cycleLength"]
                     
         return DaoStakeInfo(
             dao_id=dao_id,
@@ -135,7 +135,7 @@ def get_dao_stake(
             profit=profit,
             emission=stakeInfo["emission"],
             apy=(stakeEmissionAndProfit*emissionsPerYear)/stakeInfo["totalStaked"],
-            emission_delay=stakeInfo["emissionDelay"]
+            cycle_length=stakeInfo["cycleLength"]
         )
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}') 
