@@ -134,7 +134,7 @@ def get_dao_stake(
             next_emission=stakeInfo["nextEmission"],
             profit=profit,
             emission=stakeInfo["emission"],
-            apy=(stakeEmissionAndProfit*emissionsPerYear)/stakeInfo["totalStaked"],
+            apy=(stakeEmissionAndProfit*emissionsPerYear)/stakeInfo["totalStaked"]*100,
             cycle_length=stakeInfo["cycleLength"]
         )
     except Exception as e:
