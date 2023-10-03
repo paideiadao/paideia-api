@@ -461,7 +461,7 @@ async def comment_proposal(
         await connection_manager.send_personal_message_by_substring_matcher(
             "proposal_comments_" + str(proposal_id),
             {
-                "proposal_id": proposal_id,
+                "proposal_id": str(proposal_id),
                 "comment": comment_dict,
             },
         )
