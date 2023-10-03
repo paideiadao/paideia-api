@@ -62,7 +62,7 @@ Config = {
     ),
     "mainnet": dotdict(
         {
-            "DEBUG": True,
+            "DEBUG": False,
             "node": os.getenv("ERGONODE_HOST"),
             "connection_string": f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DBNM')}",
             "redis_host": os.getenv("REDIS_HOST"),
