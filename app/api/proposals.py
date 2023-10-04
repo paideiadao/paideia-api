@@ -59,6 +59,7 @@ from config import Config, Network
 
 proposal_router = r = APIRouter()
 
+
 def proposal_status(status_code: int) -> str:
     match status_code:
         case -2: 
@@ -71,6 +72,7 @@ def proposal_status(status_code: int) -> str:
             return "Passed"
         case _:
             return "Unknown"
+
 
 @r.get(
     "/by_dao_id/{dao_id}",
@@ -454,7 +456,6 @@ async def comment_proposal(
 
         ret = add_commment_by_proposal_id(db, proposal_id, comment)
         comment_dict = get_comment_by_id(db, ret.id).dict()
-        comment_dict["date"] = str(comment_dict["date"])
         if type(comment_dict) == JSONResponse:
             return comment_dict
         # web sockets
@@ -462,7 +463,7 @@ async def comment_proposal(
             "proposal_comments_" + str(proposal_id),
             {
                 "proposal_id": str(proposal_id),
-                "comment": comment_dict,
+                "comment": transform_comment_dict(comment_dict),
             },
         )
         # add to activities and notifier
@@ -692,3 +693,15 @@ async def websocket_endpoint(websocket: WebSocket, proposal_id: str):
             await websocket.receive_text()
     except WebSocketDisconnect:
         connection_manager.disconnect(random_key)
+
+
+def transform_comment_dict(comment_dict):
+    comment_dict["id"] = str(comment_dict["id"])
+    comment_dict["proposal_id"] = str(comment_dict["proposal_id"])
+    comment_dict["date"] = str(comment_dict["date"])
+    comment_dict["user_details_id"] = str(comment_dict["user_details_id"])
+    if comment_dict["parent"]:
+        comment_dict["parent"] = str(comment_dict["parent"])
+    comment_dict["likes"] = list(map(str, comment_dict["likes"]))
+    comment_dict["dislikes"] = list(map(str, comment_dict["dislikes"]))
+    return comment_dict
