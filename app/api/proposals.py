@@ -19,6 +19,7 @@ from db.schemas.proposal import (
     CreateProposal,
     LikeProposalRequest,
     FollowProposalRequest,
+    ProposalVote,
     SendFundsAction,
     UpdateConfigAction,
     UpdateProposalBasic,
@@ -148,6 +149,28 @@ def get_proposal(proposal_slug: str, db=Depends(get_db)):
             return get_proposal_by_id(db, uuid.UUID(proposal_slug))
         else:
             return get_proposal_by_slug(db, proposal_slug)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+    
+@r.get(
+    "/{proposal_slug}/votes",
+    response_model=t.List[ProposalVote],
+    response_model_exclude_none=True,
+    name="proposals:proposal_votes",
+)
+def get_proposal_votes(proposal_slug: str, db=Depends(get_db)):
+    try:
+        if is_uuid(proposal_slug):
+            proposal = get_proposal_by_id(db, uuid.UUID(proposal_slug))
+        else:
+            proposal = get_proposal_by_slug(db, proposal_slug)
+        print(proposal)    
+        dao = get_dao(db, proposal.dao_id)
+        on_chain_proposal = proposals.get_proposal(dao.dao_key, proposal.on_chain_id)
+        result = []
+        for pv in on_chain_proposal["proposal"]["individual_votes"]:
+            result.append(ProposalVote(stake_key=pv["stakeKey"], vote=pv["vote"]))
+        return result
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 

@@ -126,6 +126,10 @@ class Proposal(CreateOrUpdateProposal):
     class Config:
         orm_mode = True
 
+class ProposalVote(BaseModel):
+    stake_key: str
+    vote: t.List[int]
+
 
 class CreateOnChainProposalResponse(SigningRequest):
     proposal: Proposal
