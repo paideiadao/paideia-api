@@ -221,7 +221,7 @@ def edit_user_address_config(
         verificationId = generate_verification_id()
         tokenUrl = f"{BASE_URL}/users/verify_address/{verificationId}"
         ret = {
-            "user_id": current_user.id,
+            "user_id": str(current_user.id),
             "address": req.address,
             "signingMessage": generate_signing_message(),
             "tokenUrl": tokenUrl,
@@ -252,7 +252,7 @@ def verify_user_address_change(
         signingRequest = cache.get(
             f"ergoauth_primary_address_change_request_{request_id}"
         )
-        if signingRequest["user_id"] != current_user.id:
+        if signingRequest["user_id"] != str(current_user.id):
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
             )
