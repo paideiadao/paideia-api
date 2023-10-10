@@ -15,6 +15,10 @@ class NotificationConstants:
     ADD_STAKE_TRANSACTION_CONFIRMED = "add stake transaction confirmed"
     REMOVE_STAKE_TRANSACTION_SUBMITTED = "remove stake transaction submitted"
     REMOVE_STAKE_TRANSACTION_CONFIRMED = "remove stake transaction confirmed"
+    CREATE_PROPOSAL_TRANSACTION_SUBMITTED = "create proposal transaction submitted"
+    CREATE_PROPOSAL_TRANSACTION_CONFIRMED = "create proposal transaction confirmed"
+    VOTE_TRANSACTION_SUBMITTED = "vote transaction submitted"
+    VOTE_TRANSACTION_CONFIRMED = "vote transaction confirmed"
 
 
 class CreateAndUpdateNotification(BaseModel):

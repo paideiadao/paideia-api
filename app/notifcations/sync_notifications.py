@@ -17,15 +17,24 @@ from config import Config, Network
 
 CFG = Config[Network]
 PAIDEIA_URL = "Paideia"
-PLUGIN_NAME = "PaideiaStakingPlugin"
+PLUGIN_NAMES = [
+    "PaideiaStakingPlugin",
+    "PaideiaVotingPlugin",
+    "PaideiaProposalPlugin"
+]
 
 
 def sync_notifications():
+    for plugin_name in PLUGIN_NAMES:
+        sync_notifications_for_plugin(plugin_name)
+
+
+def sync_notifications_for_plugin(plugin_name: str):
     try:
         db = next(get_db())
         dao_details = get_dao_by_url(db, PAIDEIA_URL)
         dao_id = dao_details.id
-        res = requests.get(CFG.notifications_api + "/sync_events/" + PLUGIN_NAME)
+        res = requests.get(CFG.notifications_api + "/sync_events/" + plugin_name)
         resj = res.json()
         for event in resj:
             address = event["address"]
@@ -69,11 +78,19 @@ def get_action_from_event(event):
     if body["type"] == "add_stake" and body["status"] == "submitted":
         return NotificationConstants.ADD_STAKE_TRANSACTION_SUBMITTED
     if body["type"] == "add_stake" and body["status"] == "confirmed":
-        return NotificationConstants.REMOVE_STAKE_TRANSACTION_CONFIRMED
+        return NotificationConstants.ADD_STAKE_TRANSACTION_CONFIRMED
     if body["type"] == "remove_stake" and body["status"] == "submitted":
         return NotificationConstants.REMOVE_STAKE_TRANSACTION_SUBMITTED
     if body["type"] == "remove_stake" and body["status"] == "confirmed":
         return NotificationConstants.REMOVE_STAKE_TRANSACTION_CONFIRMED
+    if body["type"] == "create_proposal" and body["status"] == "submitted":
+        return NotificationConstants.CREATE_PROPOSAL_TRANSACTION_SUBMITTED
+    if body["type"] == "create_proposal" and body["status"] == "confirmed":
+        return NotificationConstants.CREATE_PROPOSAL_TRANSACTION_CONFIRMED
+    if body["type"] == "vote" and body["status"] == "submitted":
+        return NotificationConstants.VOTE_TRANSACTION_SUBMITTED
+    if body["type"] == "vote" and body["status"] == "confirmed":
+        return NotificationConstants.VOTE_TRANSACTION_CONFIRMED
     return "default_action"
 
 
