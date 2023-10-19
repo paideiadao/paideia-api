@@ -88,7 +88,7 @@ app.include_router(staking_router, prefix="/staking", tags=["staking"])
 # setup background tasks
 if not CFG.DEBUG:
     runner = AsyncTaskRunner()
-    runner.register(update_token_data_cache)
+    # runner.register(update_token_data_cache)
     runner.register(sync_notifications)
     runner.start()
 
