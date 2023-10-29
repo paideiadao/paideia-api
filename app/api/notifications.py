@@ -70,7 +70,8 @@ async def notification_create(
         ret = create_notification(db, user_details_id, notification)
         await connection_manager.send_personal_message(
             "notification_user_details_id_" + str(user_details_id),
-            {"notifications": get_notifications(db, user_details_id)},
+            {"notifications": map_serialization(
+                get_notifications(db, user_details_id))},
         )
         return ret
     except Exception as e:
@@ -162,3 +163,22 @@ async def websocket_endpoint(websocket: WebSocket, user_details_id: str):
             await websocket.receive_text()
     except WebSocketDisconnect:
         connection_manager.disconnect(key)
+
+
+def map_serialization(notifcations):
+    return list(map(
+        lambda x: {
+            "user_details_id": str(x.user_details_id),
+            "img": x.img,
+            "action": x.action,
+            "proposal_id": str(x.proposal_id) if x.proposal_id else None,
+            "proposal_name": x.proposal_name,
+            "transaction_id": x.transaction_id,
+            "href": x.href,
+            "additional_text": x.additional_text,
+            "is_read": x.is_read,
+            "id": str(x.id),
+            "date": str(x.date),
+        },
+        notifcations
+    ))
