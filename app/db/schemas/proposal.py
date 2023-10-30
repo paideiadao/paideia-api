@@ -5,10 +5,12 @@ import datetime
 
 from db.schemas.util import SigningRequest
 
+
 class ConfigValue(BaseModel):
     key: str
     valueType: str
     value: str
+
 
 class UpdateConfigAction(BaseModel):
     optionId: int
@@ -16,6 +18,7 @@ class UpdateConfigAction(BaseModel):
     remove: t.List[str]
     update: t.List[ConfigValue]
     insert: t.List[ConfigValue]
+
 
 class SendFundsActionOutput(BaseModel):
     address: str
@@ -29,9 +32,11 @@ class SendFundsAction(BaseModel):
     optionId: int
     outputs: t.List[SendFundsActionOutput]
 
+
 class ActionBase(BaseModel):
     actionType: str
     action: t.Union[SendFundsAction, UpdateConfigAction]
+
 
 class CreateOrUpdateComment(BaseModel):
     user_details_id: uuid.UUID
@@ -66,7 +71,7 @@ class CreateProposal(BaseModel):
 class CreateOnChainProposal(CreateProposal):
     stake_key: str
     end_time: int
-    
+
 
 class VoteRequest(BaseModel):
     dao_id: uuid.UUID
@@ -108,13 +113,25 @@ class Addendum(CreateOrUpdateAddendum):
         orm_mode = True
 
 
+class ProposalReference(BaseModel):
+    id: uuid.UUID
+    name: str
+    likes: t.List[uuid.UUID]
+    dislikes: t.List[uuid.UUID]
+    img: t.Optional[str]
+    is_proposal: bool
+    status: str
+
+
 class Proposal(CreateOrUpdateProposal):
     id: uuid.UUID
     on_chain_id: t.Optional[int]
     date: datetime.datetime
     comments: t.List[Comment]
     addendums: t.List[Addendum]
-    references_meta: t.List
+    references_meta: t.List[ProposalReference] = []
+    referenced: t.List[uuid.UUID] = []
+    referenced_meta: t.List[ProposalReference] = []
     profile_img_url: t.Optional[str]
     user_followers: t.List[uuid.UUID]
     created: int
@@ -147,12 +164,3 @@ class FollowProposalRequest(BaseModel):
 
 class AddReferenceRequest(BaseModel):
     referred_proposal_id: uuid.UUID
-
-
-class ProposalReference(BaseModel):
-    id: uuid.UUID
-    name: str
-    likes: t.List[uuid.UUID]
-    dislikes: t.List[uuid.UUID]
-    img: str
-    is_proposal: bool

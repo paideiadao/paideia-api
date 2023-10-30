@@ -157,8 +157,32 @@ def get_references_by_proposal_id(db: Session, proposal_id: uuid.UUID):
         .all()
     )
     references = list(map(lambda x: x.referred_proposal_id, db_references))
+    references_meta = expand_references(db, references)
+    return {
+        "proposal_id": proposal_id,
+        "references": references,
+        "references_meta": references_meta,
+    }
+
+
+def get_referenced_by_proposal_id(db: Session, proposal_id: uuid.UUID):
+    db_referenced = (
+        db.query(ProposalReference)
+        .filter(ProposalReference.referred_proposal_id == proposal_id)
+        .all()
+    )
+    referenced = list(map(lambda x: x.referring_proposal_id, db_referenced))
+    referenced_meta = expand_references(db, referenced)
+    return {
+        "proposal_id": proposal_id,
+        "referenced": referenced,
+        "referenced_meta": referenced_meta,
+    }
+
+
+def expand_references(db: Session, reference_ids: t.List[uuid.UUID]):
     references_meta = []
-    for reference in references:
+    for reference in reference_ids:
         db_proposal: Proposal = (
             db.query(Proposal).filter(Proposal.id == reference).first()
         )
@@ -174,12 +198,7 @@ def get_references_by_proposal_id(db: Session, proposal_id: uuid.UUID):
                 is_proposal=db_proposal.is_proposal,
             )
         )
-
-    return {
-        "proposal_id": proposal_id,
-        "references": references,
-        "references_meta": references_meta,
-    }
+    return references_meta
 
 
 def add_reference_by_proposal_id(
@@ -317,6 +336,7 @@ def get_proposal_by_id(db: Session, id: uuid.UUID):
     likes = get_likes_by_proposal_id(db, id)
     followers = get_followers_by_proposal_id(db, id)
     references = get_references_by_proposal_id(db, id)
+    referenced = get_referenced_by_proposal_id(db, id)
     comments = get_comments_by_proposal_id(db, id)
     addendums = get_addendums_by_proposal_id(db, id)
     tags = db_proposal.tags["tags_list"] if "tags_list" in db_proposal.tags else []
@@ -350,6 +370,8 @@ def get_proposal_by_id(db: Session, id: uuid.UUID):
         voting_system=db_proposal.voting_system,
         references=references["references"],
         references_meta=references["references_meta"],
+        referenced=referenced["referenced"],
+        referenced_meta=referenced["referenced_meta"],
         actions=actions,
         comments=comments,
         likes=likes["likes"],
