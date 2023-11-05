@@ -1,6 +1,7 @@
 import typing as t
 import uuid
 
+from cache.cache import cache
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
 from paideia_state_client import util
@@ -147,6 +148,9 @@ def get_treasury_transactions(
     db=Depends(get_db)
 ):
     try:
+        cached = cache.get("get_treasury_transactions_" + str(dao_id))
+        if cached:
+            return cached
         db_dao = get_dao(db, dao_id)
         treasury_address = dao.get_dao_treasury(db_dao.dao_key)
         treasury_transactions = indexed_node_client.get_transactions(treasury_address, offset, limit)
@@ -202,10 +206,9 @@ def get_treasury_transactions(
                     time=transaction["timestamp"]
                 )
             )
-
-        return TransactionHistory(
-            transactions=labeled_transactions
-        )
+        res = TransactionHistory(transactions=labeled_transactions).dict()
+        cache.set("get_treasury_transactions_" + str(dao_id), res)
+        return res
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
