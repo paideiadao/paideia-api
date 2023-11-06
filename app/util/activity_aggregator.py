@@ -95,9 +95,9 @@ def get_tresuary_activites_by_dao_id(dao_id: uuid.UUID):
         return []
     transactions = transactions_response["transactions"]
     return list(map(lambda x:  {
-        "id": uuid.uuid4(),
+        "id": str(uuid.uuid4()),
         "name": x["label"],
-        "user_details_id": uuid.uuid4(),
+        "user_details_id": str(uuid.uuid4()),
         "action": "transaction was executed with id",
         "value": x["transaction_id"],
         "date": str(datetime.utcfromtimestamp(x["time"] / 1000)) + "+00:00",
