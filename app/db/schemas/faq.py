@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 import typing as t
 
@@ -9,7 +10,7 @@ class CreateAndUpdateFaq(BaseModel):
 
 
 class Faq(CreateAndUpdateFaq):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True

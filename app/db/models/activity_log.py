@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, String, DateTime
 from sqlalchemy.sql import func
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 
 from db.session import Base
 
@@ -9,8 +11,8 @@ from db.session import Base
 class Activity(Base):
     __tablename__ = "activity_log"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_details_id = Column(Integer)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_details_id = Column(UUID(as_uuid=True))
     action = Column(String)
     value = Column(String)
     secondary_action = Column(String)
@@ -22,8 +24,8 @@ class Activity(Base):
 class vw_activity_log(Base):
     __tablename__ = "vw_activity_log"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_details_id = Column(Integer)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_details_id = Column(UUID(as_uuid=True))
     name = Column(String)
     img_url = Column(String)
     action = Column(String)

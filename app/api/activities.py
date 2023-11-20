@@ -1,7 +1,10 @@
 import typing as t
+import uuid
 
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
+
+from util.activity_aggregator import get_aggregated_activities
 
 from core.auth import get_current_active_user, get_current_active_superuser
 from db.crud.activity_log import (
@@ -24,7 +27,7 @@ activity_router = r = APIRouter()
     name="activities:all-user-activities",
 )
 def activity_list(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     db=Depends(get_db),
 ):
     """
@@ -45,14 +48,14 @@ def activity_list(
     name="activities:all-user-activities",
 )
 def activity_list(
-    dao_id: int,
+    dao_id: uuid.UUID,
     db=Depends(get_db),
 ):
     """
     Get all user activities
     """
     try:
-        return get_dao_activities(db, dao_id)
+        return get_aggregated_activities(db, dao_id)
     except Exception as e:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
@@ -66,7 +69,7 @@ def activity_list(
     name="activities:create-activity",
 )
 def activity_create(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     activity: CreateOrUpdateActivity,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -89,7 +92,7 @@ def activity_create(
     name="activities:delete-activity",
 )
 def activity_delete(
-    id: int, db=Depends(get_db), current_user=Depends(get_current_active_superuser)
+    id: uuid.UUID, db=Depends(get_db), current_user=Depends(get_current_active_superuser)
 ):
     """
     delete user activity

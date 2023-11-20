@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, Field
 
 import datetime
@@ -6,13 +7,12 @@ import typing as t
 from db.schemas import RestrictedAlphabetStr
 
 class DaoBasic(BaseModel):
-    id: int
+    id: uuid.UUID
+    dao_key: t.Optional[str]
+    config_height: t.Optional[int]
     dao_name: t.Optional[str]
     dao_short_description: t.Optional[str]
     dao_url: str
-    governance_id: t.Optional[int]
-    tokenomics_id: t.Optional[int]
-    design_id: t.Optional[int]
     is_draft: t.Optional[bool] = True
     is_published: t.Optional[bool] = False
     nav_stage: t.Optional[int]
@@ -22,9 +22,15 @@ class DaoBasic(BaseModel):
     class Config:
         orm_mode = True
 
+class DaoTreasury(BaseModel):
+    address: str
+    balance: dict
+
 
 class VwDao(BaseModel):
-    id: int
+    id: uuid.UUID
+    dao_key: t.Optional[str]
+    config_height: t.Optional[int]
     dao_name: str
     dao_url: str
     dao_short_description: t.Optional[str]
@@ -46,24 +52,24 @@ class CreateOrUpdateFooterSocialLinks(BaseModel):
 
 
 class FooterSocialLinks(CreateOrUpdateFooterSocialLinks):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True
 
 
 class CreateOrUpdateDaoDesign(BaseModel):
-    theme_id: int = 0
+    theme_id: uuid.UUID = uuid.UUID("00000000-0000-0000-0000-000000000000")
     logo_url: t.Optional[str]
     show_banner: t.Optional[bool]
     banner_url: t.Optional[str]
     show_footer: t.Optional[bool]
     footer_text: t.Optional[str]
-    footer_social_links: t.List[CreateOrUpdateFooterSocialLinks]
+    footer_social_links: t.List[CreateOrUpdateFooterSocialLinks] = []
 
 
 class DaoDesign(CreateOrUpdateDaoDesign):
-    id: int
+    id: uuid.UUID
     footer_social_links: t.List[FooterSocialLinks]
     theme_name: str
     primary_color: str
@@ -88,20 +94,20 @@ class CreateOrUpdateGovernance(BaseModel):
 
 
 class Governance(CreateOrUpdateGovernance):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True
 
 
 class CreateOrUpdateTokenHolder(BaseModel):
-    ergo_address_id: int
+    ergo_address_id: uuid.UUID
     percentage: t.Optional[float]
     balance: t.Optional[float]
 
 
 class TokenHolder(CreateOrUpdateTokenHolder):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True
@@ -116,7 +122,7 @@ class CreateOrUpdateDistribution(BaseModel):
 
 
 class Distribution(CreateOrUpdateDistribution):
-    id: int
+    id: uuid.UUID
 
     class Config:
         orm_mode = True
@@ -136,12 +142,14 @@ class CreateOrUpdateTokenomics(BaseModel):
 
 
 class Tokenomics(CreateOrUpdateTokenomics):
-    id: int
+    id: uuid.UUID
     token_holders: t.List[TokenHolder] = []
     distributions: t.List[Distribution] = []
 
 
 class CreateOrUpdateDao(BaseModel):
+    dao_key: t.Optional[str]
+    config_height: t.Optional[int]
     dao_name: str
     dao_short_description: t.Optional[str]
     dao_url: RestrictedAlphabetStr = Field(alphabet="QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890")
@@ -156,7 +164,7 @@ class CreateOrUpdateDao(BaseModel):
 
 
 class Dao(CreateOrUpdateDao):
-    id: int
+    id: uuid.UUID
     governance: t.Optional[Governance]
     tokenomics: t.Optional[Tokenomics]
     design: t.Optional[DaoDesign]
@@ -164,3 +172,7 @@ class Dao(CreateOrUpdateDao):
 
     class Config:
         orm_mode = True
+
+class DaoConfigEntry(BaseModel):
+    valueType: str
+    value: str

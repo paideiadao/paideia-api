@@ -1,6 +1,7 @@
 from sqlalchemy import JSON, Boolean, Column, Integer, String, DateTime
 from sqlalchemy.sql import func
-
+import uuid
+from sqlalchemy.dialects.postgresql import UUID
 from db.session import Base
 
 # USER MODEL
@@ -9,7 +10,7 @@ from db.session import Base
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     alias = Column(String, unique=True, index=True, nullable=False)
     primary_wallet_address_id = Column(Integer)
     hashed_password = Column(String, nullable=False)
@@ -20,9 +21,9 @@ class User(Base):
 class UserDetails(Base):
     __tablename__ = "user_details"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer)
-    dao_id = Column(Integer)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True))
+    dao_id = Column(UUID(as_uuid=True))
     name = Column(String)
     profile_img_url = Column(String)
     bio = Column(String)
@@ -34,24 +35,24 @@ class UserDetails(Base):
 class UserFollower(Base):
     __tablename__ = "user_followers"
 
-    id = Column(Integer, primary_key=True, index=True)
-    follower_id = Column(Integer)
-    followee_id = Column(Integer)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    follower_id = Column(UUID(as_uuid=True))
+    followee_id = Column(UUID(as_uuid=True))
 
 
 class UserProfileSettings(Base):
     __tablename__ = "user_profile_settings"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_details_id = Column(Integer)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_details_id = Column(UUID(as_uuid=True))
     settings = Column(JSON)
 
 
 class ErgoAddress(Base):
     __tablename__ = "ergo_addresses"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True))
     address = Column(String)
     is_smart_contract = Column(Boolean)
 
@@ -59,6 +60,6 @@ class ErgoAddress(Base):
 class JWTBlackList(Base):
     __tablename__ = "jwt_blacklist"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     token = Column(String, index=True, nullable=False)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())

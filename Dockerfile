@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.10.13-slim-bullseye
 
 COPY ./app /app
 WORKDIR /app
@@ -7,8 +7,8 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 # install system dependencies
-RUN apt-get update \
-  && apt-get -y install netcat gcc postgresql nano \
+RUN  apt-get update \
+  && apt-get -y install netcat-traditional gcc postgresql nano libpq-dev \
   && apt-get -y install curl openjdk-11-jdk \
   && apt-get clean
 

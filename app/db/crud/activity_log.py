@@ -1,8 +1,9 @@
+import uuid
 from fastapi import status
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
-from db.models.users import UserDetails
 
+from db.models.users import UserDetails
 from db.models import activity_log
 from db.schemas import activity
 
@@ -11,7 +12,7 @@ from db.schemas import activity
 ########################################
 
 
-def get_user_activities(db: Session, user_details_id: int, limit: int = 100):
+def get_user_activities(db: Session, user_details_id: uuid.UUID, limit: int = 100):
     return (
         db.query(activity_log.vw_activity_log)
         .filter(activity_log.vw_activity_log.user_details_id == user_details_id)
@@ -21,7 +22,7 @@ def get_user_activities(db: Session, user_details_id: int, limit: int = 100):
     )
 
 
-def get_dao_activities(db: Session, dao_id: int, limit: int = 100):
+def get_dao_activities(db: Session, dao_id: uuid.UUID, limit: int = 100):
     dao_activities = (
         db.query(activity_log.vw_activity_log, UserDetails)
         .filter(UserDetails.id == activity_log.vw_activity_log.user_details_id)
@@ -34,7 +35,7 @@ def get_dao_activities(db: Session, dao_id: int, limit: int = 100):
 
 
 def create_user_activity(
-    db: Session, user_details_id: int, activity: activity.CreateOrUpdateActivity
+    db: Session, user_details_id: uuid.UUID, activity: activity.CreateOrUpdateActivity
 ):
     db_activity = activity_log.Activity(
         user_details_id=user_details_id,
@@ -50,7 +51,7 @@ def create_user_activity(
     return db_activity
 
 
-def delete_activity(db: Session, id: int):
+def delete_activity(db: Session, id: uuid.UUID):
     activity = (
         db.query(activity_log.Activity).filter(activity_log.Activity.id == id).first()
     )

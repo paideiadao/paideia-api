@@ -3,7 +3,7 @@ fastapi
 websockets
 python-multipart
 python-dotenv
-pydantic
+pydantic<2
 requests
 psycopg2==2.9.3
 databases[postgresql]
@@ -18,4 +18,4 @@ pytest-asyncio
 pytest-mock
 colorlog
 Pillow
-git+https://github.com/ergo-pad/ergo-python-appkit@main
+ergo-python-appkit==0.2.1

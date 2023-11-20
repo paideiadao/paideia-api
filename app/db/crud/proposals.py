@@ -1,8 +1,10 @@
 ## proposals.py (crud)
 
 import typing as t
+import uuid
 
 from fastapi import status
+from fastapi.encoders import jsonable_encoder
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import or_
@@ -31,7 +33,8 @@ from db.schemas.proposal import (
     CreateOrUpdateAddendum,
     CreateOrUpdateComment,
 )
-from util.util import generate_slug
+
+from util.util import generate_slug, get_uuid_from_slug
 
 
 #####################################
@@ -39,11 +42,11 @@ from util.util import generate_slug
 #####################################
 
 
-def get_basic_proposal_by_id(db: Session, id: int):
+def get_basic_proposal_by_id(db: Session, id: uuid.UUID):
     return db.query(Proposal).filter(Proposal.id == id).first()
 
 
-def get_likes_by_proposal_id(db: Session, proposal_id: int):
+def get_likes_by_proposal_id(db: Session, proposal_id: uuid.UUID):
     db_likes = (
         db.query(ProposalLike).filter(ProposalLike.proposal_id == proposal_id).all()
     )
@@ -54,7 +57,7 @@ def get_likes_by_proposal_id(db: Session, proposal_id: int):
     return {"proposal_id": proposal_id, "likes": likes, "dislikes": dislikes}
 
 
-def get_likes_by_comment_id(db: Session, comment_id: int):
+def get_likes_by_comment_id(db: Session, comment_id: uuid.UUID):
     db_likes = db.query(ProposalCommentLike).filter(
         ProposalCommentLike.comment_id == comment_id
     )
@@ -66,7 +69,7 @@ def get_likes_by_comment_id(db: Session, comment_id: int):
 
 
 def set_likes_by_proposal_id(
-    db: Session, proposal_id: int, user_details_id: int, type: str
+    db: Session, proposal_id: uuid.UUID, user_details_id: uuid.UUID, type: str
 ):
     if type not in ("like", "dislike", "remove"):
         return JSONResponse(
@@ -91,7 +94,7 @@ def set_likes_by_proposal_id(
 
 
 def set_likes_by_comment_id(
-    db: Session, comment_id: int, user_details_id: int, type: str
+    db: Session, comment_id: uuid.UUID, user_details_id: uuid.UUID, type: str
 ):
     if type not in ("like", "dislike", "remove"):
         return JSONResponse(
@@ -115,7 +118,7 @@ def set_likes_by_comment_id(
     return get_likes_by_comment_id(db, comment_id)
 
 
-def get_followers_by_proposal_id(db: Session, proposal_id: int):
+def get_followers_by_proposal_id(db: Session, proposal_id: uuid.UUID):
     db_followers = (
         db.query(ProposalFollower)
         .filter(ProposalFollower.proposal_id == proposal_id)
@@ -126,7 +129,7 @@ def get_followers_by_proposal_id(db: Session, proposal_id: int):
 
 
 def set_followers_by_proposal_id(
-    db: Session, proposal_id: int, user_details_id: int, type: str
+    db: Session, proposal_id: uuid.UUID, user_details_id: uuid.UUID, type: str
 ):
     if type not in ("follow", "unfollow"):
         return JSONResponse(
@@ -147,15 +150,39 @@ def set_followers_by_proposal_id(
     return get_followers_by_proposal_id(db, proposal_id)
 
 
-def get_references_by_proposal_id(db: Session, proposal_id: int):
+def get_references_by_proposal_id(db: Session, proposal_id: uuid.UUID):
     db_references = (
         db.query(ProposalReference)
         .filter(ProposalReference.referring_proposal_id == proposal_id)
         .all()
     )
     references = list(map(lambda x: x.referred_proposal_id, db_references))
+    references_meta = expand_references(db, references)
+    return {
+        "proposal_id": proposal_id,
+        "references": references,
+        "references_meta": references_meta,
+    }
+
+
+def get_referenced_by_proposal_id(db: Session, proposal_id: uuid.UUID):
+    db_referenced = (
+        db.query(ProposalReference)
+        .filter(ProposalReference.referred_proposal_id == proposal_id)
+        .all()
+    )
+    referenced = list(map(lambda x: x.referring_proposal_id, db_referenced))
+    referenced_meta = expand_references(db, referenced)
+    return {
+        "proposal_id": proposal_id,
+        "referenced": referenced,
+        "referenced_meta": referenced_meta,
+    }
+
+
+def expand_references(db: Session, reference_ids: t.List[uuid.UUID]):
     references_meta = []
-    for reference in references:
+    for reference in reference_ids:
         db_proposal: Proposal = (
             db.query(Proposal).filter(Proposal.id == reference).first()
         )
@@ -171,16 +198,11 @@ def get_references_by_proposal_id(db: Session, proposal_id: int):
                 is_proposal=db_proposal.is_proposal,
             )
         )
-
-    return {
-        "proposal_id": proposal_id,
-        "references": references,
-        "references_meta": references_meta,
-    }
+    return references_meta
 
 
 def add_reference_by_proposal_id(
-    db: Session, user_details_id: int, proposal_id: int, referred_proposal_id: int
+    db: Session, user_details_id: uuid.UUID, proposal_id: uuid.UUID, referred_proposal_id: uuid.UUID
 ):
     db_proposal = get_basic_proposal_by_id(db, proposal_id)
     if not db_proposal or db_proposal.user_details_id != user_details_id:
@@ -196,7 +218,7 @@ def add_reference_by_proposal_id(
     return db_reference
 
 
-def get_comments_by_proposal_id(db: Session, proposal_id: int):
+def get_comments_by_proposal_id(db: Session, proposal_id: uuid.UUID):
     db_comments = (
         db.query(Comment, UserDetails.name, UserDetails.profile_img_url)
         .filter(Comment.proposal_id == proposal_id)
@@ -224,7 +246,7 @@ def get_comments_by_proposal_id(db: Session, proposal_id: int):
     return comments
 
 
-def get_comment_by_id(db: Session, id: int):
+def get_comment_by_id(db: Session, id: uuid.UUID):
     db_comment = (
         db.query(Comment, UserDetails.name, UserDetails.profile_img_url)
         .filter(Comment.id == id)
@@ -252,7 +274,7 @@ def get_comment_by_id(db: Session, id: int):
 
 
 def add_commment_by_proposal_id(
-    db: Session, proposal_id: int, comment: CreateOrUpdateComment
+    db: Session, proposal_id: uuid.UUID, comment: CreateOrUpdateComment
 ):
     db_comment = Comment(
         proposal_id=proposal_id,
@@ -267,7 +289,7 @@ def add_commment_by_proposal_id(
 
 
 def delete_comment_by_comment_id(
-    db: Session, comment_id: int,
+    db: Session, comment_id: uuid.UUID,
 ):
     db_comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not db_comment:
@@ -280,15 +302,15 @@ def delete_comment_by_comment_id(
     return comment
 
 
-def get_addendums_by_proposal_id(db: Session, proposal_id: int):
+def get_addendums_by_proposal_id(db: Session, proposal_id: uuid.UUID):
     db_addendums = db.query(Addendum).filter(Addendum.proposal_id == proposal_id).all()
     return db_addendums
 
 
 def add_addendum_by_proposal_id(
     db: Session,
-    user_details_id: int,
-    proposal_id: int,
+    user_details_id: uuid.UUID,
+    proposal_id: uuid.UUID,
     addendum: CreateOrUpdateAddendum,
 ):
     db_proposal = get_basic_proposal_by_id(db, proposal_id)
@@ -305,7 +327,7 @@ def add_addendum_by_proposal_id(
     return db_addendum
 
 
-def get_proposal_by_id(db: Session, id: int):
+def get_proposal_by_id(db: Session, id: uuid.UUID):
     db_proposal = db.query(Proposal).filter(Proposal.id == id).first()
     if not db_proposal:
         return JSONResponse(
@@ -314,6 +336,7 @@ def get_proposal_by_id(db: Session, id: int):
     likes = get_likes_by_proposal_id(db, id)
     followers = get_followers_by_proposal_id(db, id)
     references = get_references_by_proposal_id(db, id)
+    referenced = get_referenced_by_proposal_id(db, id)
     comments = get_comments_by_proposal_id(db, id)
     addendums = get_addendums_by_proposal_id(db, id)
     tags = db_proposal.tags["tags_list"] if "tags_list" in db_proposal.tags else []
@@ -327,9 +350,17 @@ def get_proposal_by_id(db: Session, id: int):
         if "actions_list" in db_proposal.actions
         else []
     )
+    votes = (
+        db_proposal.votes["votes"]
+        if "votes" in db_proposal.votes
+        else []
+    )
     user_details = get_user_details_by_id(db, db_proposal.user_details_id)
     proposal = ProposalSchema(
         id=db_proposal.id,
+        on_chain_id=db_proposal.on_chain_id,
+        box_height=db_proposal.box_height,
+        votes=votes,
         dao_id=db_proposal.dao_id,
         user_details_id=db_proposal.user_details_id,
         name=db_proposal.name,
@@ -339,6 +370,8 @@ def get_proposal_by_id(db: Session, id: int):
         voting_system=db_proposal.voting_system,
         references=references["references"],
         references_meta=references["references_meta"],
+        referenced=referenced["referenced"],
+        referenced_meta=referenced["referenced_meta"],
         actions=actions,
         comments=comments,
         likes=likes["likes"],
@@ -359,7 +392,7 @@ def get_proposal_by_id(db: Session, id: int):
 
 
 def get_proposal_by_slug(db: Session, slug: str):
-    proposal_id = int(slug.split("-")[-1])
+    proposal_id = get_uuid_from_slug(slug)
     proposal = get_proposal_by_id(db, proposal_id)
     if type(proposal) == JSONResponse:
         return proposal
@@ -369,7 +402,7 @@ def get_proposal_by_slug(db: Session, slug: str):
     return proposal
 
 
-def get_proposals_by_dao_id(db: Session, dao_id: int):
+def get_proposals_by_dao_id(db: Session, dao_id: uuid.UUID):
     db_proposals = db.query(Proposal).filter(Proposal.dao_id == dao_id).all()
     proposals = list(map(lambda x: get_proposal_by_id(db, x.id), db_proposals))
     return proposals
@@ -378,13 +411,16 @@ def get_proposals_by_dao_id(db: Session, dao_id: int):
 def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     db_proposal = Proposal(
         dao_id=proposal.dao_id,
+        on_chain_id=proposal.on_chain_id,
+        box_height=proposal.box_height,
+        votes={"votes": proposal.votes},
         user_details_id=proposal.user_details_id,
         name=proposal.name,
         image_url=proposal.image_url,
         category=proposal.category,
         content=proposal.content,
         voting_system=proposal.voting_system,
-        actions={"actions_list": proposal.actions},
+        actions={"actions_list": jsonable_encoder(proposal.actions)},
         tags={"tags_list": proposal.tags},
         attachments={"attachments_list": proposal.attachments},
         status=proposal.status,
@@ -397,7 +433,7 @@ def create_new_proposal(db: Session, proposal: CreateProposalSchema):
     return get_proposal_by_id(db, db_proposal.id)
 
 
-def create_proposal_references(db: Session, id: int, references: t.List[int]):
+def create_proposal_references(db: Session, id: uuid.UUID, references: t.List[uuid.UUID]):
     for reference in references:
         temp_proposal = get_proposal_by_id(db, reference)
         if type(temp_proposal) != JSONResponse and id != reference:
@@ -410,7 +446,7 @@ def create_proposal_references(db: Session, id: int, references: t.List[int]):
 
 
 def edit_proposal_basic_by_id(
-    db: Session, user_details_id: int, id: int, proposal: UpdateProposalBasicSchema
+    db: Session, user_details_id: uuid.UUID, id: uuid.UUID, proposal: UpdateProposalBasicSchema
 ):
     db_proposal = db.query(Proposal).filter(Proposal.id == id).first()
     if not db_proposal:
@@ -434,6 +470,9 @@ def edit_proposal_basic_by_id(
 
     if "tags" in update_data:
         update_data["tags"] = {"tags_list": proposal.tags}
+    
+    if "votes" in update_data:
+        update_data["votes"] = {"votes": proposal.votes}
 
     if "attachments" in update_data:
         update_data["attachements"] = {"attachments_list": proposal.attachments}
@@ -446,7 +485,7 @@ def edit_proposal_basic_by_id(
     return get_proposal_by_id(db, id)
 
 
-def delete_proposal_by_id(db: Session, id: int):
+def delete_proposal_by_id(db: Session, id: uuid.UUID):
     proposal = get_proposal_by_id(db, id)
     if not proposal:
         return JSONResponse(

@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 import typing as t
+import uuid
+
+from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 from starlette.responses import JSONResponse
 
 from core.auth import get_current_active_superuser, get_current_active_user
@@ -27,7 +29,7 @@ notification_router = r = APIRouter()
     name="notifications:all-notifications",
 )
 def notifications_list(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -56,7 +58,7 @@ def notifications_list(
     name="notifications:create",
 )
 async def notification_create(
-    user_details_id: int,
+    user_details_id: uuid.UUID,
     notification: CreateAndUpdateNotification,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
@@ -68,7 +70,8 @@ async def notification_create(
         ret = create_notification(db, user_details_id, notification)
         await connection_manager.send_personal_message(
             "notification_user_details_id_" + str(user_details_id),
-            {"notifications": get_notifications(db, user_details_id)},
+            {"notifications": map_serialization(
+                get_notifications(db, user_details_id))},
         )
         return ret
     except Exception as e:
@@ -84,7 +87,7 @@ async def notification_create(
     name="notifications:read",
 )
 def notification_edit(
-    last_notification_id: int,
+    last_notification_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_user),
 ):
@@ -135,7 +138,7 @@ def notification_cleanup(
     name="notifications:delete",
 )
 def notification_delete(
-    notification_id: int,
+    notification_id: uuid.UUID,
     db=Depends(get_db),
     current_user=Depends(get_current_active_superuser),
 ):
@@ -160,3 +163,22 @@ async def websocket_endpoint(websocket: WebSocket, user_details_id: str):
             await websocket.receive_text()
     except WebSocketDisconnect:
         connection_manager.disconnect(key)
+
+
+def map_serialization(notifcations):
+    return list(map(
+        lambda x: {
+            "user_details_id": str(x.user_details_id),
+            "img": x.img,
+            "action": x.action,
+            "proposal_id": str(x.proposal_id) if x.proposal_id else None,
+            "proposal_name": x.proposal_name,
+            "transaction_id": x.transaction_id,
+            "href": x.href,
+            "additional_text": x.additional_text,
+            "is_read": x.is_read,
+            "id": str(x.id),
+            "date": str(x.date),
+        },
+        notifcations
+    ))

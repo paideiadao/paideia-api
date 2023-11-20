@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 
 import typing as t
@@ -21,7 +22,7 @@ class CreateOrUpdateBlog(BaseModel):
 
 
 class Blog(CreateOrUpdateBlog):
-    id: int
+    id: uuid.UUID
     link: str
     date: datetime.datetime
 

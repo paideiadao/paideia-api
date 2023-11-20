@@ -1,23 +1,35 @@
 import typing as t
 import random
+import uuid
 
 from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
+from fastapi.encoders import jsonable_encoder
 from starlette.responses import JSONResponse
 
 from api.notifications import notification_create
+from paideia_state_client import staking, dao, proposals
+from db.schemas.util import SigningRequest
 from db.session import get_db
 from db.schemas.activity import CreateOrUpdateActivity, ActivityConstants
 from db.schemas.notifications import CreateAndUpdateNotification, NotificationConstants
 from db.schemas.proposal import (
+    ActionBase,
+    CreateOnChainProposal,
     Proposal,
     CreateProposal,
     LikeProposalRequest,
     FollowProposalRequest,
+    ProposalVote,
+    SendFundsAction,
+    UpdateConfigAction,
     UpdateProposalBasic,
     CreateOrUpdateComment,
     CreateOrUpdateAddendum,
     AddReferenceRequest,
+    VoteRequest,
+    CreateOnChainProposalResponse
 )
+from db.crud.dao import get_dao
 from db.crud.proposals import (
     get_proposal_by_id,
     get_proposal_by_slug,
@@ -37,12 +49,30 @@ from db.crud.proposals import (
 )
 from db.crud.activity_log import create_user_activity
 from db.crud.notifications import generate_action
-from db.crud.users import get_user_details_by_id
+from db.crud.users import get_ergo_addresses_by_user_id, get_primary_wallet_address_by_user_id, get_user_details_by_id, get_user, get_user_profile
 from core.async_handler import run_coroutine_in_sync
 from core.auth import get_current_active_user, get_current_active_superuser
 from websocket.connection_manager import connection_manager
+from util.util import is_uuid
+
+from config import Config, Network
+
 
 proposal_router = r = APIRouter()
+
+
+def proposal_status(status_code: int) -> str:
+    match status_code:
+        case -2: 
+            return "Failed - Quorum"
+        case -1:
+            return "Active"
+        case 0:
+            return "Failed - Vote"
+        case 1:
+            return "Passed"
+        case _:
+            return "Unknown"
 
 
 @r.get(
@@ -51,8 +81,50 @@ proposal_router = r = APIRouter()
     response_model_exclude_none=True,
     name="proposals:all-proposals",
 )
-def get_proposals(dao_id: int, db=Depends(get_db)):
+def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
     try:
+        db_proposals = get_proposals_by_dao_id(db, dao_id)
+        db_dao = get_dao(db, dao_id)
+        state_proposals = dao.get_proposals(db_dao.dao_key)
+        for p in state_proposals:
+            db_proposal = None
+            for dbp in db_proposals:
+                if dbp.on_chain_id == p["proposalIndex"]:
+                    if dbp.name == p["proposalName"]:
+                        db_proposal = dbp
+                    else:
+                        if dbp.status == "Draft":
+                            delete_proposal_by_id(db, dbp.id)
+            if db_proposal is None:
+                proposal = proposals.get_proposal(
+                    db_dao.dao_key, p["proposalIndex"])
+                create_proposal(db=db, user=get_user(db, Config[Network].admin_id), proposal=CreateProposal(
+                    dao_id=dao_id,
+                    user_details_id=get_user_profile(
+                        db, Config[Network].admin_id, dao_id).id,
+                    name=proposal["proposal"]["name"],
+                    voting_system=proposal["proposalType"],
+                    actions=proposal["proposal"]["actions"],
+                    is_proposal=True,
+                    box_height=0,
+                    on_chain_id=p["proposalIndex"],
+                    votes=proposal["proposal"]["votes"],
+                    attachments=[],
+                    status=proposal_status(proposal["proposal"]["passed"]) 
+                ))
+            elif db_proposal.box_height < p["proposalHeight"]:
+                proposal = proposals.get_proposal(
+                    db_dao.dao_key, p["proposalIndex"])
+                edit_proposal_basic_by_id(db=db, user_details_id=db_proposal.user_details_id, id=db_proposal.id, proposal=UpdateProposalBasic(
+                    box_height=p["proposalHeight"],
+                    dao_id=db_proposal.dao_id,
+                    user_details_id=db_proposal.user_details_id,
+                    name=db_proposal.name,
+                    votes=proposal["proposal"]["votes"],
+                    attachments=db_proposal.attachments,
+                    status=proposal_status(proposal["proposal"]["passed"]) 
+                ))
+
         return get_proposals_by_dao_id(db, dao_id)
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
@@ -63,7 +135,7 @@ def get_proposals(dao_id: int, db=Depends(get_db)):
     response_model_exclude_none=True,
     name="proposals:user-proposals",
 )
-def get_user_proposals(user_details_id: int, db=Depends(get_db)):
+def get_user_proposals(user_details_id: uuid.UUID, db=Depends(get_db)):
     try:
         basic_proposals = get_proposals_by_user_id(db, user_details_id)
         return list(map(lambda x: get_proposal_by_id(db, x.id), basic_proposals))
@@ -79,10 +151,32 @@ def get_user_proposals(user_details_id: int, db=Depends(get_db)):
 )
 def get_proposal(proposal_slug: str, db=Depends(get_db)):
     try:
-        if proposal_slug.isdecimal():
-            return get_proposal_by_id(db, int(proposal_slug))
+        if is_uuid(proposal_slug):
+            return get_proposal_by_id(db, uuid.UUID(proposal_slug))
         else:
             return get_proposal_by_slug(db, proposal_slug)
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+    
+@r.get(
+    "/{proposal_slug}/votes",
+    response_model=t.List[ProposalVote],
+    response_model_exclude_none=True,
+    name="proposals:proposal_votes",
+)
+def get_proposal_votes(proposal_slug: str, db=Depends(get_db)):
+    try:
+        if is_uuid(proposal_slug):
+            proposal = get_proposal_by_id(db, uuid.UUID(proposal_slug))
+        else:
+            proposal = get_proposal_by_slug(db, proposal_slug)
+        print(proposal)    
+        dao = get_dao(db, proposal.dao_id)
+        on_chain_proposal = proposals.get_proposal(dao.dao_key, proposal.on_chain_id)
+        result = []
+        for pv in on_chain_proposal["proposal"]["individual_votes"]:
+            result.append(ProposalVote(stake_key=pv["stakeKey"], vote=pv["vote"]))
+        return result
     except Exception as e:
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
@@ -120,6 +214,108 @@ def create_proposal(
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
+def validate_action(actions: t.List[ActionBase]):
+    sendFundsActions = []
+    updateConfigActions = []
+
+    for action in actions:
+        actionDict = jsonable_encoder(action.action)
+        if action.actionType == "SendFundsBasic":
+            SendFundsAction.validate(actionDict)
+            actionDict["repeats"] = 0
+            actionDict["repeatDelay"] = 0
+            sendFundsActions.append(actionDict)
+        elif action.actionType == "UpdateConfig":
+            UpdateConfigAction.validate(actionDict)
+            updateConfigActions.append(actionDict)
+        else:
+            raise Exception("Unknown action type")
+
+    return sendFundsActions, updateConfigActions
+
+
+@r.post(
+    "/on_chain_proposal",
+    response_model=CreateOnChainProposalResponse,
+    response_model_exclude_none=True,
+    name="proposals:create-proposal",
+)
+def create_on_chain_proposal(
+    proposal: CreateOnChainProposal, db=Depends(get_db), user=Depends(get_current_active_user)
+):
+    try:
+        db_dao = get_dao(db, proposal.dao_id)
+        user_details_id = proposal.user_details_id
+        user_details = get_user_details_by_id(db, user_details_id)
+        if type(user_details) == JSONResponse:
+            return user_details
+        if user_details.user_id != user.id:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
+            )
+        sendFundsActions, updateConfigActions = validate_action(
+            proposal.actions)
+
+        main_address = get_primary_wallet_address_by_user_id(db, user.id)
+        all_addresses = list(
+            map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, user.id)))
+        current_proposal_list = dao.get_proposals(db_dao.dao_key)
+        new_proposal_index = len(current_proposal_list)
+        proposal.on_chain_id = new_proposal_index
+        proposal.box_height = 0
+
+        unsigned_tx = proposals.create_proposal(
+            db_dao.dao_key, proposal.name, proposal.stake_key, main_address, all_addresses, proposal.end_time, sendFundsActions, updateConfigActions)
+
+        proposal = create_new_proposal(db, proposal)
+        # add to activities
+        if type(proposal) != JSONResponse:
+            activity = CreateOrUpdateActivity(
+                user_details_id=user_details_id,
+                action=ActivityConstants.CREATED_DISCUSSION,
+                value=proposal.name,
+                category=ActivityConstants.PROPOSAL_CATEGORY,
+            )
+            create_user_activity(db, user_details_id, activity)
+        return CreateOnChainProposalResponse(
+            message="Sign message to create proposal",
+            unsigned_transaction=unsigned_tx,
+            proposal=proposal
+        )
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+
+
+@r.post(
+    "/vote",
+    response_model=SigningRequest,
+    response_model_exclude_none=True,
+    name="proposals:vote"
+)
+def vote(
+    voteRequest: VoteRequest, db=Depends(get_db), user=Depends(get_current_active_user)
+):
+    try:
+        db_dao = get_dao(db, voteRequest.dao_id)
+        main_address = get_primary_wallet_address_by_user_id(db, user.id)
+        all_addresses = list(
+            map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, user.id)))
+        db_proposal = get_proposal_by_id(db, voteRequest.proposal_id)
+        stake_info = staking.get_stake(db_dao.dao_key, voteRequest.stake_key)
+        if stake_info["stakeRecord"]["stake"] < sum(voteRequest.votes):
+            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Can not vote for more than staked amount")
+        if len(db_proposal.votes) != len(voteRequest.votes):
+            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Vote array should be same size as proposal vote array")
+        unsigned_tx = proposals.cast_vote(db_dao.dao_key, voteRequest.stake_key,
+                                          db_proposal.on_chain_id, voteRequest.votes, main_address, all_addresses)
+        return SigningRequest(
+            message="Sign to vote on the proposal",
+            unsigned_transaction=unsigned_tx
+        )
+    except Exception as e:
+        return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
+
+
 @r.put(
     "/{proposal_id}",
     response_model=Proposal,
@@ -127,7 +323,7 @@ def create_proposal(
     name="proposals:edit-proposal",
 )
 def edit_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     proposal: UpdateProposalBasic,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -162,7 +358,7 @@ def edit_proposal(
 
 @r.put("/like/{proposal_id}", name="proposals:like-proposal")
 def like_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     req: LikeProposalRequest,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -176,7 +372,8 @@ def like_proposal(
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
             )
-        likes = set_likes_by_proposal_id(db, proposal_id, user_details_id, req.type)
+        likes = set_likes_by_proposal_id(
+            db, proposal_id, user_details_id, req.type)
         # add to activities and notifier
         if type(likes) != JSONResponse:
             proposal = get_proposal_by_id(db, proposal_id)
@@ -215,7 +412,7 @@ def like_proposal(
 
 @r.put("/follow/{proposal_id}", name="proposals:follow-proposal")
 def follow_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     req: FollowProposalRequest,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -269,7 +466,7 @@ def follow_proposal(
 
 @r.put("/comment/{proposal_id}", name="proposals:comment-proposal")
 async def comment_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     comment: CreateOrUpdateComment,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -286,15 +483,14 @@ async def comment_proposal(
 
         ret = add_commment_by_proposal_id(db, proposal_id, comment)
         comment_dict = get_comment_by_id(db, ret.id).dict()
-        comment_dict["date"] = str(comment_dict["date"])
         if type(comment_dict) == JSONResponse:
             return comment_dict
         # web sockets
         await connection_manager.send_personal_message_by_substring_matcher(
             "proposal_comments_" + str(proposal_id),
             {
-                "proposal_id": proposal_id,
-                "comment": comment_dict,
+                "proposal_id": str(proposal_id),
+                "comment": transform_comment_dict(comment_dict),
             },
         )
         # add to activities and notifier
@@ -342,7 +538,7 @@ async def comment_proposal(
 
 @r.delete("/comment/{comment_id}", name="proposals:delete-comment-proposal")
 async def delete_comment_proposal(
-    comment_id: int,
+    comment_id: uuid.UUID,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
 ):
@@ -365,7 +561,7 @@ async def delete_comment_proposal(
 
 @r.put("/comment/like/{comment_id}", name="proposals:like-proposal-comment")
 def like_comment(
-    comment_id: int,
+    comment_id: uuid.UUID,
     req: LikeProposalRequest,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -379,7 +575,8 @@ def like_comment(
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED, content="user not authorized"
             )
-        likes = set_likes_by_comment_id(db, comment_id, user_details_id, req.type)
+        likes = set_likes_by_comment_id(
+            db, comment_id, user_details_id, req.type)
         # add to activities and notifier
         if type(likes) != JSONResponse:
             comment = get_comment_by_id(db, comment_id)
@@ -420,7 +617,7 @@ def like_comment(
 
 @r.put("/addendum/{proposal_id}", name="proposals:addendum-proposal")
 def create_addendum_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     addendum: CreateOrUpdateAddendum,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -465,7 +662,7 @@ def create_addendum_proposal(
 
 @r.put("/reference/{proposal_id}", name="proposals:reference-proposal")
 def reference_proposal(
-    proposal_id: int,
+    proposal_id: uuid.UUID,
     req: AddReferenceRequest,
     db=Depends(get_db),
     user=Depends(get_current_active_user),
@@ -496,7 +693,7 @@ def reference_proposal(
     name="proposals:delete-proposal",
 )
 def delete_proposal(
-    proposal_id: int, db=Depends(get_db), user=Depends(get_current_active_user)
+    proposal_id: uuid.UUID, db=Depends(get_db), user=Depends(get_current_active_user)
 ):
     try:
         proposal = get_proposal_by_id(db, proposal_id)
@@ -514,7 +711,8 @@ def delete_proposal(
 
 @r.websocket("/ws/{proposal_id}")
 async def websocket_endpoint(websocket: WebSocket, proposal_id: str):
-    random_key = "proposal_comments_" + proposal_id + "_" + str(random.random())
+    random_key = "proposal_comments_" + \
+        proposal_id + "_" + str(random.random())
     await connection_manager.connect(random_key, websocket)
     try:
         while True:
@@ -522,3 +720,15 @@ async def websocket_endpoint(websocket: WebSocket, proposal_id: str):
             await websocket.receive_text()
     except WebSocketDisconnect:
         connection_manager.disconnect(random_key)
+
+
+def transform_comment_dict(comment_dict):
+    comment_dict["id"] = str(comment_dict["id"])
+    comment_dict["proposal_id"] = str(comment_dict["proposal_id"])
+    comment_dict["date"] = str(comment_dict["date"])
+    comment_dict["user_details_id"] = str(comment_dict["user_details_id"])
+    if comment_dict["parent"]:
+        comment_dict["parent"] = str(comment_dict["parent"])
+    comment_dict["likes"] = list(map(str, comment_dict["likes"]))
+    comment_dict["dislikes"] = list(map(str, comment_dict["dislikes"]))
+    return comment_dict

@@ -21,10 +21,10 @@ services:
         max-file: "5"
         max-size: "10m"
     volumes:
-     - ./app:/app
+      - ./app:/app
     networks:
       - p-net
-    command: uvicorn main:app --reload --workers 4 --reload-dir /app --host 0.0.0.0 --port 8000 --proxy-headers --use-colors --forwarded-allow-ips '52.72.64.235'
+    command: uvicorn main:app --reload --workers 4 --reload-dir /app --host 0.0.0.0 --port 8000 --proxy-headers --use-colors --forwarded-allow-ips '52.72.64.235' --root-path /${ROOT_PATH}
 
 networks:
   p-net:

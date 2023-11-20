@@ -1,5 +1,6 @@
 import os
 import time
+import uuid
 
 
 class dotdict(dict):
@@ -54,6 +55,9 @@ Config = {
             "jwt_secret": os.getenv("JWT_SECRET_KEY"),
             "ergoauth_seed": os.getenv("ERGOAUTH_SEED"),
             "danaides_api": os.getenv("DANAIDES_API"),
+            "paideia_state": os.getenv("PAIDEIA_STATE"),
+            "admin_id": uuid.UUID(os.getenv("ADMIN_ID")),
+            "notifications_api": os.getenv("NOTIFICATIONS_API"),
         }
     ),
     "mainnet": dotdict(
@@ -71,6 +75,9 @@ Config = {
             "jwt_secret": os.getenv("JWT_SECRET_KEY"),
             "ergoauth_seed": os.getenv("ERGOAUTH_SEED"),
             "danaides_api": os.getenv("DANAIDES_API"),
+            "paideia_state": os.getenv("PAIDEIA_STATE"),
+            "admin_id": uuid.UUID(os.getenv("ADMIN_ID")),
+            "notifications_api": os.getenv("NOTIFICATIONS_API"),
         }
     ),
 }
