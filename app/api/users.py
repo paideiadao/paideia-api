@@ -53,7 +53,7 @@ from core import security
 users_router = r = APIRouter()
 
 
-BASE_URL = "https://api.paideia.im/beta"
+BASE_URL = "https://api.paideia.im"
 
 
 @r.get(
@@ -439,13 +439,12 @@ def create_user_profile(
         if not tokenomics:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content=f"could not find tokenomics config for dao"
+                content=f"could not find tokenomics config for dao",
             )
         token_id = tokenomics.token_id
-        user_tokens = token_check(AddressTokenList(
-            addresses=user_addresses,
-            tokens=[token_id]
-        ))
+        user_tokens = token_check(
+            AddressTokenList(addresses=user_addresses, tokens=[token_id])
+        )
         if type(user_tokens) == JSONResponse:
             return user_tokens
         # dao membership check
@@ -461,7 +460,7 @@ def create_user_profile(
         else:
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content=f"user does not hold dao tokens"
+                content=f"user does not hold dao tokens",
             )
     except Exception as e:
         return JSONResponse(
