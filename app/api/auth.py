@@ -190,7 +190,7 @@ async def ergoauth_verify(
                 "access_token": access_token,
                 "token_type": "bearer",
                 "permissions": permissions,
-                "id": user.id,
+                "id": str(user.id),
                 "alias": user.alias,
             }
             # use websockets to notify the frontend
