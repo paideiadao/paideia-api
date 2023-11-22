@@ -1,11 +1,19 @@
 import requests
 
+from cache.cache import cache
 from config import Config, Network
 
 def get_token_info(token_id: str):
+    cached = cache.get("get_token_info_" + token_id)
+    if cached:
+        return cached
     res = requests.get(Config[Network].node+":9053/blockchain/token/byId/"+token_id)
     if res.ok:
-        return res.json()
+        token_info = res.json()
+        if "name" not in token_info:
+            token_info["name"] = ""
+        cache.set("get_token_info_" + token_id, token_info)
+        return token_info
     else:
         return None
     
