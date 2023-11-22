@@ -1,3 +1,4 @@
+import traceback
 import typing as t
 import uuid
 
@@ -184,7 +185,7 @@ def get_treasury(dao_id: uuid.UUID, db=Depends(get_db)):
     name="dao:treasury-transactions",
 )
 def get_treasury_transactions(
-    dao_id: uuid.UUID, offset: int = 0, limit: int = 100, db=Depends(get_db)
+    dao_id: uuid.UUID, offset: int = 0, limit: int = 10, db=Depends(get_db)
 ):
     try:
         # cached = cache.get("get_treasury_transactions_" + str(dao_id))
@@ -261,6 +262,7 @@ def get_treasury_transactions(
         cache.set("get_treasury_transactions_" + str(dao_id), res)
         return res
     except Exception as e:
+        print(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
