@@ -1,5 +1,7 @@
 import typing as t
 import uuid
+import logging
+import traceback
 
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
@@ -33,6 +35,7 @@ def quotes_list(
     try:
         return get_quotes(db, show_hidden)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
 
@@ -48,6 +51,7 @@ def quote_create(
     try:
         return create_quote(db, quote)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
 
@@ -66,6 +70,7 @@ def quote_edit(
     try:
         return edit_quote(db, quote_id, quote)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
 
@@ -83,4 +88,5 @@ def quote_delete(
     try:
         return delete_quote(db, quote_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')

@@ -1,5 +1,7 @@
 import datetime
 import os
+import logging
+import traceback
 
 from fastapi import APIRouter, Depends
 from fastapi.datastructures import UploadFile
@@ -11,6 +13,7 @@ from core.auth import get_current_active_user, get_current_active_superuser
 from cache.cache import cache
 from aws.s3 import S3
 from util.image_optimizer import pillow_image_optimizer
+from util.util import generate_slug
 
 CFG = Config[Network]
 
@@ -43,8 +46,8 @@ def upload(
         current_time = datetime.datetime.now()
         # split the file name into two different path (string + extention)
         split_file_name = os.path.splitext(filename)
-        # for realtime application you must have genertae unique name for the file
-        file_name_unique = (
+        # for realtime application you must have generate unique name for the file
+        file_name_unique = generate_slug(
             split_file_name[0] + "." + str(current_time.timestamp()).replace(".", "")
         )
         file_extension = split_file_name[1]  # file extention
@@ -59,6 +62,7 @@ def upload(
         else:
             return JSONResponse(status_code=400, content="failed to upload to S3")
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::S3_upload_file::{str(e)}")
 
 
@@ -97,7 +101,7 @@ def upload_image(
         filename = fileobject.filename
         current_time = datetime.datetime.now()
         split_file_name = os.path.splitext(filename)
-        file_name_unique = (
+        file_name_unique = generate_slug(
             split_file_name[0] + "." + str(current_time.timestamp()).replace(".", "") + "." + compression_type
         )
         file_extension = split_file_name[1]
@@ -114,6 +118,7 @@ def upload_image(
         else:
             return JSONResponse(status_code=400, content="failed to upload to S3")
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::S3_image_file::{str(e)}")
 
 
@@ -131,6 +136,7 @@ def upload_image_markdown(
             return ret
         return {"status": ret["status"], "filePath": ret["image_url"]}
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::S3_image_file::{str(e)}")
 
 
@@ -145,4 +151,5 @@ def forceInvalidateCache(
     try:
         return {"status": "success", "detail": cache.invalidate(req.key)}
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::invalidate_cache::{str(e)}")

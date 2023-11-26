@@ -1,5 +1,7 @@
 import typing as t
 import uuid
+import logging
+import traceback
 
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
@@ -27,6 +29,7 @@ def blogs_get_all(
     try:
         return get_blogs(db, search_string, highlights_only, education_only)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -43,6 +46,7 @@ def blogs_get(
     try:
         return get_blog(db, link)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -60,6 +64,7 @@ def blogs_create(
     try:
         return create_blog(db, blog)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -78,6 +83,7 @@ def blogs_edit(
     try:
         return edit_blog(db, id, blog)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -95,4 +101,5 @@ def blogs_delete(
     try:
         return delete_blog(db, id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))

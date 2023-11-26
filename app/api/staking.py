@@ -1,6 +1,8 @@
 import time
 import typing as t
 import uuid
+import logging
+import traceback
 
 from fastapi import APIRouter, Depends, status
 from db.schemas.staking import AddStakeRequest, DaoStakeInfo, GetStakeRequest, ParticipationInfo, Profit, ProfitInfo, StakeInfo, StakeKeyInfo, StakeKeyInfoWithParticipation, NewStakeRecord, StakeRequest, UnstakeRequest
@@ -35,6 +37,7 @@ def stake(
             unsigned_transaction=unsignedTransaction
         )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
     
 @r.post(
@@ -58,6 +61,7 @@ def stake(
             unsigned_transaction=unsignedTransaction
         )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
     
 @r.put(
@@ -101,6 +105,7 @@ def stake(
             unsigned_transaction=unsignedTransaction
         )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
     
 @r.get(
@@ -138,6 +143,7 @@ def get_dao_stake(
             cycle_length=stakeInfo["cycleLength"]
         )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}') 
     
 @r.post(
@@ -193,4 +199,5 @@ def get_stake(
             stake_keys=stake_keys
         )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}') 

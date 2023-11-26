@@ -1,5 +1,7 @@
 import typing as t
 import uuid
+import logging
+import traceback
 
 from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 from starlette.responses import JSONResponse
@@ -46,6 +48,7 @@ def notifications_list(
             )
         return get_notifications(db, user_details_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -75,6 +78,7 @@ async def notification_create(
         )
         return ret
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -110,6 +114,7 @@ def notification_edit(
             )
         return mark_all_as_read(db, user_details_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -126,6 +131,7 @@ def notification_cleanup(
     try:
         return cleanup_notifications(db)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -148,6 +154,7 @@ def notification_delete(
     try:
         return delete_notification(db, notification_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )

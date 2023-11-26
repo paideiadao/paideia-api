@@ -53,7 +53,7 @@ from core import security
 users_router = r = APIRouter()
 
 
-BASE_URL = "https://api.paideia.im/beta"
+BASE_URL = "http://localhost:8000"
 
 
 @r.get(

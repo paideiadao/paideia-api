@@ -1,5 +1,7 @@
 import typing as t
 import uuid
+import logging
+import traceback
 
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
@@ -36,6 +38,7 @@ def activity_list(
     try:
         return get_user_activities(db, user_details_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -57,6 +60,7 @@ def activity_list(
     try:
         return get_aggregated_activities(db, dao_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -80,6 +84,7 @@ def activity_create(
     try:
         return create_user_activity(db, user_details_id, activity)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -100,6 +105,7 @@ def activity_delete(
     try:
         return delete_activity(db, id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )

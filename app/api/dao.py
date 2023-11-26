@@ -1,4 +1,5 @@
 import traceback
+import logging
 import typing as t
 import uuid
 
@@ -95,6 +96,7 @@ def dao_list(
                 create_user_dao_profile(db, Config[Network].admin_id, new_dao.id)
         return get_all_daos(db)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -135,9 +137,11 @@ def get_treasury(
             balance=treasury_balance
         )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
+
 
 @r.get(
     "/treasury/{dao_id}/transactions", response_model=TransactionHistory, response_model_exclude_none=True, name="dao:treasury-transactions"
@@ -211,7 +215,7 @@ def get_treasury_transactions(
         cache.set("get_treasury_transactions_" + str(dao_id), res)
         return res
     except Exception as e:
-        print(traceback.format_exc())
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -239,6 +243,7 @@ def dao_get(
             )
         return dao
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -265,6 +270,7 @@ def dao_get(
             )
         return dao.get_dao_config(d.dao_key)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -282,6 +288,7 @@ def dao_create(
     try:
         return create_dao(db, dao)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -307,6 +314,7 @@ def dao_edit(
             )
         return dao
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -324,6 +332,7 @@ def dao_highlight(
     try:
         return add_to_highlighted_projects(db, id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -348,6 +357,7 @@ def dao_delete(
             )
         return dao
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -370,6 +380,7 @@ def delete_highlight(
             )
         return ret
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )

@@ -1,5 +1,6 @@
 import requests
 import traceback
+import logging
 import uuid
 
 from sqlalchemy.orm import Session
@@ -58,8 +59,7 @@ def sync_notifications_for_plugin(plugin_name: str):
                 )
             )
     except Exception as e:
-        print(traceback.format_exc())
-        print(f"error: method=sync_notifacations, message={str(e)}")
+        logging.error(traceback.format_exc())
 
 
 def get_user_details_id(address: str, dao_id: uuid.UUID, db: Session):

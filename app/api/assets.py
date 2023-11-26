@@ -1,4 +1,6 @@
 import requests
+import logging
+import traceback
 
 from fastapi import APIRouter, status
 from starlette.responses import JSONResponse
@@ -50,6 +52,7 @@ def locked_tokens(token: str, req: AddressList):
         # return as json
         return ret.json()
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -82,6 +85,7 @@ def token_check(req: AddressTokenList):
             cache.set(cache_key, ret.json())
         return ret.json()
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -97,6 +101,7 @@ def get_token_stats(token_id: str):
             )
         return resp
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )

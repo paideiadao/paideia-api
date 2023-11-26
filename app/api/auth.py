@@ -1,4 +1,6 @@
 from datetime import timedelta
+import logging
+import traceback
 
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import (
@@ -68,6 +70,7 @@ async def ergoauth_login_web(addresses: LoginRequest, db=Depends(get_db)):
         cache.set(f"ergoauth_signing_request_{verificationId}", ret.dict())
         return ret
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
@@ -113,6 +116,7 @@ async def ergoauth_token(
     except HTTPException as e:
         raise e
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
@@ -141,6 +145,7 @@ async def ergoauth_login_mobile(addresses: LoginRequest):
             signingRequestUrl=signingRequestUrl,
         )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
@@ -158,6 +163,7 @@ async def ergoauth_login_mobile(request_id: str):
             )
         return ret
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
@@ -208,6 +214,7 @@ async def ergoauth_verify(
             )
             return {"status": "failed"}
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
@@ -286,6 +293,7 @@ async def admin_login(
     except HTTPException as e:
         raise e
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
@@ -320,6 +328,7 @@ async def admin_signup(
     except HTTPException as e:
         raise e
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=400, content=f"ERR::signup::{str(e)}")
 
 
@@ -332,4 +341,5 @@ async def logout(
     try:
         return blacklist_token(db, token)
     except Exception as e:
+        logging.error(traceback.format_exc())
         JSONResponse(status_code=400, content=f"ERR::logout::{str(e)}")

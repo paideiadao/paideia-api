@@ -1,6 +1,8 @@
 import typing as t
 import random
 import uuid
+import logging
+import traceback
 
 from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
@@ -122,6 +124,7 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
 
         return get_proposals_by_dao_id(db, dao_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -135,6 +138,7 @@ def get_user_proposals(user_details_id: uuid.UUID, db=Depends(get_db)):
         basic_proposals = get_proposals_by_user_id(db, user_details_id)
         return list(map(lambda x: get_proposal_by_id(db, x.id), basic_proposals))
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -151,6 +155,7 @@ def get_proposal(proposal_slug: str, db=Depends(get_db)):
         else:
             return get_proposal_by_slug(db, proposal_slug)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -184,6 +189,7 @@ def create_proposal(
             create_user_activity(db, user_details_id, activity)
         return proposal
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -256,6 +262,7 @@ def create_on_chain_proposal(
             proposal=proposal
         )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -286,6 +293,7 @@ def vote(
             unsigned_transaction=unsigned_tx
         )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -326,6 +334,7 @@ def edit_proposal(
             create_user_activity(db, _proposal.user_details_id, activity)
         return proposal
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -380,6 +389,7 @@ def like_proposal(
                 )
         return likes
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -434,6 +444,7 @@ def follow_proposal(
                 )
         return followers
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -506,6 +517,7 @@ async def comment_proposal(
                 )
         return comment_dict
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -529,6 +541,7 @@ async def delete_comment_proposal(
             )
         return delete_comment_by_comment_id(db, comment_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -585,6 +598,7 @@ def like_comment(
                 )
             return likes
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -630,6 +644,7 @@ def create_addendum_proposal(
         create_user_activity(db, proposal.user_details_id, activity)
         return addendum_dict
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -656,6 +671,7 @@ def reference_proposal(
         )
         return reference
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
@@ -679,6 +695,7 @@ def delete_proposal(
             )
         return delete_proposal_by_id(db, proposal_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
 
 
