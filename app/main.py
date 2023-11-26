@@ -1,7 +1,6 @@
 import uvicorn
 import databases
 import logging
-import traceback
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
