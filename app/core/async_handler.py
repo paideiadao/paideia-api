@@ -1,6 +1,8 @@
 import asyncio
 import time
 import threading
+import logging
+import traceback
 
 
 def run_coroutine_in_sync(coroutine):
@@ -19,7 +21,7 @@ class AsyncTaskRunner():
             try:
                 func()
             except Exception as e:
-                print(str(e))
+                logging.error(traceback.format_exc())
             time.sleep(AsyncTaskRunner.TIMEOUT)
 
     def register(self, func):
