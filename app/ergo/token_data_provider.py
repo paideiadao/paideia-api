@@ -17,6 +17,7 @@ Todo: Clean this up to a more unified way of getting data
 
 import datetime
 import requests
+import logging
 import traceback
 from sqlalchemy.orm import Session
 
@@ -50,7 +51,7 @@ class LocalDataProvider:
             )
             return resp
         except Exception as e:
-            print(f"error: method=get_dao_token_ids, message={str(e)}")
+            logging.error(traceback.format_exc())
 
 
 # todo: better error handling
@@ -70,7 +71,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: method=get_ergo_price, message={str(e)}")
+            logging.error(traceback.format_exc())
 
     @staticmethod
     def get_token_price(token_id: str):
@@ -80,7 +81,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: method=get_ergo_price, message={str(e)}")
+            logging.error(traceback.format_exc())
 
     @staticmethod
     def get_token_details_by_id(token_id: str):
@@ -90,7 +91,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: method=get_token_details_by_id, message={str(e)}")
+            logging.error(traceback.format_exc())
 
     @staticmethod
     def get_spectrum_pools():
@@ -100,7 +101,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: method=get_spectrum_pools, message={str(e)}")
+            logging.error(traceback.format_exc())
 
     @staticmethod
     def get_pool_price_history(pool_id: str):
@@ -110,7 +111,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: method=get_pool_price_history, message={str(e)}")
+            logging.error(traceback.format_exc())
 
     @staticmethod
     def get_token_price_history(token_id: str):
@@ -120,7 +121,7 @@ class BaseDataProvider:
             ).json()
             return resp
         except Exception as e:
-            print(f"error: method=get_token_price_history, message={str(e)}")
+            logging.error(traceback.format_exc())
 
 
 class TokenDataBuilder:
@@ -323,7 +324,6 @@ def update_token_data_cache():
                 token_id
             ).dict()
             cache.set(f"token_stats_cache_{token_id}", token_stats)
-            print(f"token_stats_cache_{token_id}_updated")
+            logging.info(f"token_stats_cache_{token_id}_updated")
         except Exception as e:
-            print(traceback.format_exc())
-            print(f"error: method=update_token_data_cache, token_id={token_id}, message={str(e)}")
+            logging.error(traceback.format_exc())

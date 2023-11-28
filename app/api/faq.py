@@ -1,5 +1,7 @@
 import typing as t
 import uuid
+import logging
+import traceback
 
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
@@ -32,6 +34,7 @@ def faqs_list(
     try:
         return get_faqs(db)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
 
@@ -47,6 +50,7 @@ def faq_create(
     try:
         return create_faq(db, faq)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
 
@@ -65,6 +69,7 @@ def faq_edit(
     try:
         return edit_faq(db, faq_id, faq)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')
 
 
@@ -82,4 +87,5 @@ def faq_delete(
     try:
         return delete_faq(db, faq_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=f'{str(e)}')

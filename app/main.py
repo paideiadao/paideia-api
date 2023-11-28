@@ -1,5 +1,6 @@
 import uvicorn
 import databases
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,6 +31,13 @@ DATABASE_URL = CFG.connection_string
 
 database = databases.Database(DATABASE_URL)
 app = FastAPI(title="paideia-api", docs_url="/docs", openapi_url="/")
+
+
+logging.basicConfig(
+    format='{asctime}:{name:>8s}:{levelname:<8s}::{message}',
+    style='{',
+    level=logging.INFO,
+)
 
 
 @app.on_event("startup")

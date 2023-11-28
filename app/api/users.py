@@ -1,6 +1,8 @@
 from datetime import timedelta
 import typing as t
 import uuid
+import logging
+import traceback
 
 from fastapi import APIRouter, Depends, Response, status
 from starlette.responses import JSONResponse
@@ -76,6 +78,7 @@ async def users_list(
         response.headers["Content-Range"] = f"0-9/{len(users)}"
         return users
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -106,6 +109,7 @@ async def user_details(
     try:
         return get_user(db, user_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -123,6 +127,7 @@ async def user_create(
     try:
         return create_user(db, user)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -146,6 +151,7 @@ async def user_edit(
     try:
         return edit_user(db, user_id, user)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -168,6 +174,7 @@ async def user_delete(
     try:
         return delete_user(db, user_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -199,6 +206,7 @@ def user_address_config(
             status_code=status.HTTP_401_UNAUTHORIZED, content="not authorized to read"
         )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -229,6 +237,7 @@ def edit_user_address_config(
         cache.set(f"ergoauth_primary_address_change_request_{verificationId}", ret)
         return ret
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -288,6 +297,7 @@ def verify_user_address_change(
             )
 
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -309,6 +319,7 @@ def user_search(
     try:
         return search_users(db, search_string)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -330,6 +341,7 @@ def user_dao_details(
     try:
         return get_dao_users(db, dao_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -359,6 +371,7 @@ def user_details_all(
         else:
             return get_user_profile(db, user_id, dao_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -383,6 +396,7 @@ def user_details_slug(
             return user_details
         return get_user_profile(db, user_details.user_id, user_details.dao_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -412,6 +426,7 @@ def user_profile_settings(
             )
         return get_user_profile_settings(db, user_details_id)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -463,6 +478,7 @@ def create_user_profile(
                 content=f"user does not hold dao tokens",
             )
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -493,6 +509,7 @@ def edit_user_details(
             )
         return edit_user_profile(db, user_details_id, user_details)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -523,6 +540,7 @@ def edit_user_settings(
             )
         return edit_user_profile_settings(db, user_details_id, user_settings)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
@@ -552,6 +570,7 @@ def user_profile_follow(
             )
         return update_user_follower(db, user_details_id, req)
     except Exception as e:
+        logging.error(traceback.format_exc())
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
         )
