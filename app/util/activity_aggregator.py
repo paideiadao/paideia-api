@@ -17,7 +17,7 @@ def get_aggregated_activities(db: Session, dao_id: uuid.UUID):
         return cached
     db_activities = get_activities_by_dao_id(db, dao_id)
     notification_activites = get_notification_activities_by_dao_id(db, dao_id)
-    treasury_activities = get_tresuary_activites_by_dao_id(dao_id)
+    treasury_activities = get_tresuary_activites_by_dao_id(db, dao_id)
     db_activities.extend(notification_activites)
     db_activities.extend(treasury_activities)
     activities = []
@@ -89,8 +89,8 @@ def get_activities_by_dao_id(db: Session, dao_id: uuid.UUID):
     return res
 
 
-def get_tresuary_activites_by_dao_id(dao_id: uuid.UUID):
-    transactions_response = get_treasury_transactions(dao_id)
+def get_tresuary_activites_by_dao_id(db: Session, dao_id: uuid.UUID):
+    transactions_response = get_treasury_transactions(dao_id, 0, 100, db)
     if type(transactions_response) == JSONResponse:
         return []
     transactions = transactions_response["transactions"]
