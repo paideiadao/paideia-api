@@ -51,7 +51,7 @@ def get_notification_activities_by_dao_id(db: Session, dao_id: uuid.UUID):
             "id": str(x[0].id),
             "name": x[1].name,
             "user_details_id": str(x[0].user_details_id),
-            "img_url": x[0].img,
+            "img_url": x[1].profile_img_url,
             "action": x[0].action,
             "value": x[0].transaction_id,
             "date": str(x[0].date),
