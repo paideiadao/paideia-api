@@ -44,6 +44,7 @@ def create_user_activity(
         secondary_action=activity.secondary_action,
         secondary_value=activity.secondary_value,
         category=activity.category,
+        link=activity.link,
     )
     db.add(db_activity)
     db.commit()

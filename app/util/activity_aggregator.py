@@ -55,9 +55,10 @@ def get_notification_activities_by_dao_id(db: Session, dao_id: uuid.UUID):
             "action": x[0].action,
             "value": x[0].transaction_id,
             "date": str(x[0].date),
-            "category": "Transactions",
+            "category": "Staking" if "stake" in x[0].action else "Transactions",
             "secondary_action": None,
-            "secondary_value": None
+            "secondary_value": None,
+            "link": x[0].transaction_id,
         },
         db_notifications
     )))
@@ -81,7 +82,8 @@ def get_activities_by_dao_id(db: Session, dao_id: uuid.UUID):
             "date": str(x.date),
             "category": x.category,
             "secondary_action": x.secondary_action,
-            "secondary_value": x.secondary_value
+            "secondary_value": x.secondary_value,
+            "link": x.link
         },
         db_activities
     ))
@@ -102,6 +104,7 @@ def get_tresuary_activites_by_dao_id(db: Session, dao_id: uuid.UUID):
         "value": x["transaction_id"],
         "date": str(datetime.utcfromtimestamp(x["time"] / 1000)) + "+00:00",
         "category": "Transactions",
+        "link": x["transaction_id"],
     }, transactions))
 
 
