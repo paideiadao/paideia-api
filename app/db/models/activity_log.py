@@ -19,6 +19,7 @@ class Activity(Base):
     secondary_value = Column(String)
     date = Column(DateTime(timezone=True), server_default=func.now())
     category = Column(String)
+    link = Column(String)
 
 
 class vw_activity_log(Base):
@@ -34,3 +35,4 @@ class vw_activity_log(Base):
     secondary_value = Column(String)
     date = Column(DateTime(timezone=True))
     category = Column(String)
+    link = Column(String)

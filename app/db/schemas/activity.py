@@ -11,17 +11,17 @@ class ActivityConstants:
     PROPOSAL_CATEGORY = "Proposals"
     COMMENT_CATEGORY = "Comments"
     # actions
-    CREATED_DISCUSSION = "created the discussion"
-    EDITED_DISCUSSION = "edited the disccussion"
-    LIKED_DISCUSSION = "liked the discussion"
-    DISLIKED_DISCUSSION = "disliked the discussion"
-    REMOVED_LIKE_DISCUSSION = "removed like from the discussion"
-    FOLLOWED_DISCUSSION = "followed the discussion"
-    UNFOLLOWED_DISCUSSION = "unfollowed the discussion"
-    COMMENT = "made a comment on the proposal"
-    LIKED_COMMENT = "liked a comment on the proposal"
-    DISLIKE_COMMENT = "disliked a comment on the proposal"
-    REMOVED_LIKE_COMMENT = "removed a like from a comment on the proposal"
+    CREATED_DISCUSSION = "created"
+    EDITED_DISCUSSION = "edited"
+    LIKED_DISCUSSION = "liked"
+    DISLIKED_DISCUSSION = "disliked"
+    REMOVED_LIKE_DISCUSSION = "removed a like from"
+    FOLLOWED_DISCUSSION = "followed"
+    UNFOLLOWED_DISCUSSION = "unfollowed"
+    COMMENT = "made a comment on"
+    LIKED_COMMENT = "liked a comment on"
+    DISLIKE_COMMENT = "disliked a comment on"
+    REMOVED_LIKE_COMMENT = "removed a like from a comment on"
     ADDED_ADDENDUM = "added an addendum"
     # secondary
     ADDENDUM_PR = "to the proposal"
@@ -34,6 +34,7 @@ class CreateOrUpdateActivity(BaseModel):
     secondary_action: t.Optional[str]
     secondary_value: t.Optional[str]
     category: t.Optional[str]
+    link: t.Optional[str]
 
 
 class Activity(CreateOrUpdateActivity):

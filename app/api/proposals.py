@@ -212,6 +212,7 @@ def create_proposal(
                 action=ActivityConstants.CREATED_DISCUSSION,
                 value=proposal.name,
                 category=ActivityConstants.PROPOSAL_CATEGORY,
+                link=str(proposal.id),
             )
             create_user_activity(db, user_details_id, activity)
         return proposal
@@ -281,6 +282,7 @@ def create_on_chain_proposal(
                 action=ActivityConstants.CREATED_DISCUSSION,
                 value=proposal.name,
                 category=ActivityConstants.PROPOSAL_CATEGORY,
+                link=str(proposal.id),
             )
             create_user_activity(db, user_details_id, activity)
         return CreateOnChainProposalResponse(
@@ -357,6 +359,7 @@ def edit_proposal(
                 action=ActivityConstants.EDITED_DISCUSSION,
                 value=proposal.name,
                 category=ActivityConstants.PROPOSAL_CATEGORY,
+                link=str(proposal.id),
             )
             create_user_activity(db, _proposal.user_details_id, activity)
         return proposal
@@ -397,6 +400,7 @@ def like_proposal(
                 action=action[req.type],
                 value=proposal.name,
                 category=ActivityConstants.PROPOSAL_CATEGORY,
+                link=str(proposal.id),
             )
             create_user_activity(db, user_details_id, activity)
             # notifications
@@ -452,6 +456,7 @@ def follow_proposal(
                 action=action[req.type],
                 value=proposal.name,
                 category=ActivityConstants.PROPOSAL_CATEGORY,
+                link=str(proposal.id),
             )
             create_user_activity(db, user_details_id, activity)
             # notifications
@@ -512,6 +517,7 @@ async def comment_proposal(
             action=ActivityConstants.COMMENT,
             value=proposal.name,
             category=ActivityConstants.COMMENT_CATEGORY,
+            link=str(proposal.id),
         )
         create_user_activity(db, user_details_id, activity)
         # notifications
@@ -606,6 +612,7 @@ def like_comment(
                     action=action[req.type],
                     value=proposal.name,
                     category=ActivityConstants.COMMENT_CATEGORY,
+                    link=str(proposal.id),
                 )
                 create_user_activity(db, user_details_id, activity)
             # notifications
@@ -667,6 +674,7 @@ def create_addendum_proposal(
             secondary_action=ActivityConstants.ADDENDUM_PR,
             secondary_value=proposal.name,
             category=ActivityConstants.PROPOSAL_CATEGORY,
+            link=str(proposal.id),
         )
         create_user_activity(db, proposal.user_details_id, activity)
         return addendum_dict

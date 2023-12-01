@@ -6,11 +6,11 @@ import typing as t
 
 class NotificationConstants:
     # actions
-    COMMENT_REPLY = "replied to your comment on the discussion"
-    COMMENT_LIKE = "liked your comoment on the discussion"
-    LIKED_DISCUSSION = "liked the discussion"
-    FOLLOW_DISCUSSION = "followed the discussion"
-    COMMENTED_ON_DISCUSSION = "commented on the discussion"
+    COMMENT_REPLY = "replied to your comment on"
+    COMMENT_LIKE = "liked your comment on"
+    LIKED_DISCUSSION = "liked"
+    FOLLOW_DISCUSSION = "followed"
+    COMMENTED_ON_DISCUSSION = "commented on"
     ADD_STAKE_TRANSACTION_SUBMITTED = "add stake transaction submitted"
     ADD_STAKE_TRANSACTION_CONFIRMED = "add stake transaction confirmed"
     REMOVE_STAKE_TRANSACTION_SUBMITTED = "remove stake transaction submitted"
