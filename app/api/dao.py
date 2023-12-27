@@ -99,9 +99,9 @@ def dao_list(
                                 design=CreateOrUpdateDaoDesign(
                                     logo_url=dao_config["im.paideia.dao.logo"]["value"] if "im.paideia.dao.logo" in dao_config else None,
                                     show_banner=dao_config["im.paideia.dao.banner.enabled"]["value"] if "im.paideia.dao.banner.enabled" in dao_config else False,
-                                    banner_url =dao_config["im.paideia.dao.banner"]["value"] if "im.paideia.dao.banner" in dao_config else None,
-                                    show_footer= dao_config["im.paideia.dao.footer.enabled"]["value"] if "im.paideia.dao.footer.enabled" in dao_config else False,
-                                    footer_text= dao_config["im.paideia.dao.footer"]["value"] if "im.paideia.dao.footer" in dao_config else None
+                                    banner_url=dao_config["im.paideia.dao.banner"]["value"] if "im.paideia.dao.banner" in dao_config else None,
+                                    show_footer=dao_config["im.paideia.dao.footer.enabled"]["value"] if "im.paideia.dao.footer.enabled" in dao_config else False,
+                                    footer_text=dao_config["im.paideia.dao.footer"]["value"] if "im.paideia.dao.footer" in dao_config else None
                                 ),
                                 is_draft=False,
                                 is_published=True,
@@ -137,9 +137,9 @@ def dao_list(
                         design=CreateOrUpdateDaoDesign(
                             logo_url=dao_config["im.paideia.dao.logo"]["value"] if "im.paideia.dao.logo" in dao_config else None,
                             show_banner=dao_config["im.paideia.dao.banner.enabled"]["value"] if "im.paideia.dao.banner.enabled" in dao_config else False,
-                            banner_url =dao_config["im.paideia.dao.banner"]["value"] if "im.paideia.dao.banner" in dao_config else None,
-                            show_footer= dao_config["im.paideia.dao.footer.enabled"]["value"] if "im.paideia.dao.footer.enabled" in dao_config else False,
-                            footer_text= dao_config["im.paideia.dao.footer"]["value"] if "im.paideia.dao.footer" in dao_config else None
+                            banner_url=dao_config["im.paideia.dao.banner"]["value"] if "im.paideia.dao.banner" in dao_config else None,
+                            show_footer=dao_config["im.paideia.dao.footer.enabled"]["value"] if "im.paideia.dao.footer.enabled" in dao_config else False,
+                            footer_text=dao_config["im.paideia.dao.footer"]["value"] if "im.paideia.dao.footer" in dao_config else None
                         ),
                         is_draft=False,
                         is_published=True,
