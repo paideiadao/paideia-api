@@ -82,18 +82,14 @@ def stake(
             return current_stake
         for key in current_stake.stake_keys:
             if key.key_id == req.new_stake_key_info.key_id and key.stake > req.new_stake_key_info.stake and req.new_stake_key_info.stake > 0:
-                raise Exception("Partial staking not allowed")
+                raise Exception("Partial unstaking not allowed")
         dao = get_dao(db, req.dao_id)
         token_info = get_token_info(dao.tokenomics.token_id)
         main_address = get_primary_wallet_address_by_user_id(db, req.user_id)
         all_addresses = list(map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, req.user_id)))
         rewards = []
         for profit in req.new_stake_key_info.profit:
-            if len(profit.token_id)>0:
-                profit_token_info = get_token_info(profit.token_id)
-                rewards.append(int(profit.amount*(10**profit_token_info["decimals"])))
-            else:
-                rewards.append(int(profit.amount*(10**9)))
+            rewards.append(0)
         newStakeRecord = NewStakeRecord(
             stake=int(req.new_stake_key_info.stake*(10**token_info["decimals"])),
             lockedUntil=req.new_stake_key_info.locked_until,
