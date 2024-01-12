@@ -18,6 +18,7 @@ class Tokenomics(Base):
     token_amount = Column(Float)
     token_image_url = Column(String)
     token_remaining = Column(Float)
+    token_decimals = Column(Integer)
     is_activated = Column(Boolean)
 
 

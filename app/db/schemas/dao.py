@@ -133,6 +133,7 @@ class CreateOrUpdateTokenomics(BaseModel):
     token_id: t.Optional[str]
     token_name: t.Optional[str]
     token_ticker: t.Optional[str]
+    token_decimals: t.Optional[int]
     token_amount: t.Optional[float]
     token_image_url: t.Optional[str]
     token_remaining: t.Optional[float]
