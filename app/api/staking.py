@@ -31,7 +31,7 @@ def stake(
         token_info = get_token_info(dao.tokenomics.token_id)
         main_address = get_primary_wallet_address_by_user_id(db, req.user_id)
         all_addresses = list(map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, req.user_id)))
-        unsignedTransaction = staking.stake(dao.dao_key, int(req.amount*(10**token_info["decimals"])), main_address, all_addresses)
+        unsignedTransaction = staking.stake(dao.dao_key, round(req.amount*(10**token_info["decimals"])), main_address, all_addresses)
         return SigningRequest(
             message="Stake tokens to this dao",
             unsigned_transaction=unsignedTransaction
