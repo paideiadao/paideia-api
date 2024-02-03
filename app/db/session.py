@@ -6,7 +6,7 @@ from config import Config, Network  # api specific config
 
 CFG = Config[Network]
 
-engine = create_engine(CFG.connection_string, pool_size=20)
+engine = create_engine(CFG.connection_string, pool_size=20, max_overflow=-1)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
