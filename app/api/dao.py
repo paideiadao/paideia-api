@@ -74,7 +74,11 @@ def dao_list(
                                 ]
                                 if "im.paideia.dao.desc" in dao_config
                                 else "",
-                                dao_url=state_daos[d][0],
+                                dao_url=dao_config["im.paideia.dao.url"][
+                                    "value"
+                                ]
+                                if "im.paideia.dao.url" in dao_config
+                                else state_daos[d][0],
                                 dao_key=d,
                                 governance=CreateOrUpdateGovernance(
                                     quorum=int(
@@ -120,7 +124,11 @@ def dao_list(
                         ]
                         if "im.paideia.dao.description" in dao_config
                         else "",
-                        dao_url=state_daos[d][0],
+                        dao_url=dao_config["im.paideia.dao.url"][
+                                    "value"
+                                ]
+                                if "im.paideia.dao.url" in dao_config
+                                else state_daos[d][0],
                         governance=CreateOrUpdateGovernance(
                             quorum=int(dao_config["im.paideia.dao.quorum"]["value"]),
                             vote_duration__sec=int(
