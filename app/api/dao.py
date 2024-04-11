@@ -64,53 +64,57 @@ def dao_list(
                     daoExistsInDB = True
                     if dbd.config_height < state_daos[d][1]:
                         dao_config = dao.get_dao_config(d)
-                        edit_dao(
-                            db,
-                            dbd.id,
-                            CreateOrUpdateDao(
-                                dao_name=state_daos[d][0],
-                                dao_short_description=dao_config["im.paideia.dao.desc"][
-                                    "value"
-                                ]
-                                if "im.paideia.dao.desc" in dao_config
-                                else "",
-                                dao_url=dao_config["im.paideia.dao.url"][
-                                    "value"
-                                ]
-                                if "im.paideia.dao.url" in dao_config
-                                else state_daos[d][0],
-                                dao_key=d,
-                                governance=CreateOrUpdateGovernance(
-                                    quorum=int(
-                                        dao_config["im.paideia.dao.quorum"]["value"]
-                                    ),
-                                    vote_duration__sec=int(
-                                        dao_config["im.paideia.dao.min.proposal.time"][
-                                            "value"
-                                        ]
-                                    )
-                                    / 1000,
-                                    support_needed=int(
-                                        dao_config["im.paideia.dao.threshold"]["value"]
-                                    ),
-                                ),
-                                tokenomics=CreateOrUpdateTokenomics(
-                                    token_id=dao_config["im.paideia.dao.tokenid"][
+                        try:
+                            edit_dao(
+                                db,
+                                dbd.id,
+                                CreateOrUpdateDao(
+                                    dao_name=state_daos[d][0],
+                                    dao_short_description=dao_config["im.paideia.dao.desc"][
                                         "value"
                                     ]
+                                    if "im.paideia.dao.desc" in dao_config
+                                    else "",
+                                    dao_url=dao_config["im.paideia.dao.url"][
+                                        "value"
+                                    ]
+                                    if "im.paideia.dao.url" in dao_config
+                                    else state_daos[d][0],
+                                    dao_key=d,
+                                    governance=CreateOrUpdateGovernance(
+                                        quorum=int(
+                                            dao_config["im.paideia.dao.quorum"]["value"]
+                                        ),
+                                        vote_duration__sec=int(
+                                            dao_config["im.paideia.dao.min.proposal.time"][
+                                                "value"
+                                            ]
+                                        )
+                                        / 1000,
+                                        support_needed=int(
+                                            dao_config["im.paideia.dao.threshold"]["value"]
+                                        ),
+                                    ),
+                                    tokenomics=CreateOrUpdateTokenomics(
+                                        token_id=dao_config["im.paideia.dao.tokenid"][
+                                            "value"
+                                        ]
+                                    ),
+                                    config_height=state_daos[d][1],
+                                    design=CreateOrUpdateDaoDesign(
+                                        logo_url=dao_config["im.paideia.dao.logo"]["value"] if "im.paideia.dao.logo" in dao_config else None,
+                                        show_banner=dao_config["im.paideia.dao.banner.enabled"]["value"] if "im.paideia.dao.banner.enabled" in dao_config else False,
+                                        banner_url=dao_config["im.paideia.dao.banner"]["value"] if "im.paideia.dao.banner" in dao_config else None,
+                                        show_footer=dao_config["im.paideia.dao.footer.enabled"]["value"] if "im.paideia.dao.footer.enabled" in dao_config else False,
+                                        footer_text=dao_config["im.paideia.dao.footer"]["value"] if "im.paideia.dao.footer" in dao_config else None
+                                    ),
+                                    is_draft=False,
+                                    is_published=True,
                                 ),
-                                config_height=state_daos[d][1],
-                                design=CreateOrUpdateDaoDesign(
-                                    logo_url=dao_config["im.paideia.dao.logo"]["value"] if "im.paideia.dao.logo" in dao_config else None,
-                                    show_banner=dao_config["im.paideia.dao.banner.enabled"]["value"] if "im.paideia.dao.banner.enabled" in dao_config else False,
-                                    banner_url=dao_config["im.paideia.dao.banner"]["value"] if "im.paideia.dao.banner" in dao_config else None,
-                                    show_footer=dao_config["im.paideia.dao.footer.enabled"]["value"] if "im.paideia.dao.footer.enabled" in dao_config else False,
-                                    footer_text=dao_config["im.paideia.dao.footer"]["value"] if "im.paideia.dao.footer" in dao_config else None
-                                ),
-                                is_draft=False,
-                                is_published=True,
-                            ),
-                        )
+                            )
+                        except Exception as e:
+                            logging.error(e)
+
             if not daoExistsInDB:
                 dao_config = dao.get_dao_config(d)
                 new_dao = create_dao(
