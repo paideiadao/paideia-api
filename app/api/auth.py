@@ -1,6 +1,7 @@
 from datetime import timedelta
 import logging
 import traceback
+import jwt
 
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import (
@@ -11,6 +12,7 @@ from fastapi import (
     WebSocketDisconnect,
     status,
 )
+from jwt import PyJWTError
 from starlette.responses import JSONResponse
 from sqlalchemy.orm import Session
 from ergo_python_appkit.appkit import ErgoAppKit
@@ -21,6 +23,7 @@ from db.crud.users import (
     get_user_by_wallet_addresses,
     get_primary_wallet_address_by_user_id,
 )
+from db.schemas.users import User
 from db.schemas.ergoauth import (
     LoginRequestWebResponse,
     LoginRequest,
@@ -219,6 +222,34 @@ async def ergoauth_verify(
         return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
 
 
+@r.post("/initiate_user", name="auth:initiate_user", response_model=User)
+async def inititate_user(
+    token: str = Depends(security.oauth2_scheme),
+    db=Depends(get_db),
+):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            token, security.SECRET_KEY, algorithms=[security.ALGORITHM]
+        )
+        alias: str = payload.get("sub")
+        if alias is None:
+            raise credentials_exception
+        user = create_and_get_user_by_primary_wallet_address(
+            db, alias
+        )
+        return user
+    except PyJWTError:
+        raise credentials_exception
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
+
+
 @r.websocket("/ws/{request_id}")
 async def websocket_endpoint(websocket: WebSocket, request_id: str):
     await connection_manager.connect("ergoauth_" + request_id, websocket)
@@ -250,11 +281,23 @@ def create_and_get_user_by_primary_wallet_address(
 ):
     user = get_user_by_wallet_address(db, primary_wallet_address)
     if user:
-        return user
+        return User(
+            id=user.id,
+            alias=user.alias,
+            primary_wallet_address_id=user.primary_wallet_address_id,
+            is_active=user.is_active,
+            is_superuser=user.is_superuser,
+        )
     user = sign_up_new_user(
         db, primary_wallet_address, "__ergoauth_default", primary_wallet_address
     )
-    return user
+    return User(
+        id=user.id,
+        alias=user.alias,
+        primary_wallet_address_id=user.primary_wallet_address_id,
+        is_active=user.is_active,
+        is_superuser=user.is_superuser,
+    )
 
 
 ##################################
