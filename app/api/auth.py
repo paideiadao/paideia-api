@@ -19,11 +19,13 @@ from ergo_python_appkit.appkit import ErgoAppKit
 
 from db.crud.users import (
     blacklist_token,
+    get_user_by_alias,
     get_user_by_wallet_address,
     get_user_by_wallet_addresses,
     get_primary_wallet_address_by_user_id,
+    update_primary_address_for_user,
 )
-from db.schemas.users import User
+from db.schemas.users import User, UserAddressConfig
 from db.schemas.ergoauth import (
     LoginRequestWebResponse,
     LoginRequest,
@@ -243,6 +245,47 @@ async def inititate_user(
             db, alias
         )
         return user
+    except PyJWTError:
+        raise credentials_exception
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return JSONResponse(status_code=400, content=f"ERR::login::{str(e)}")
+
+
+@r.post(
+    "/change_primary_address",
+    name="auth:change_primary_address",
+    response_model=UserAddressConfig
+)
+async def change_primary_address(
+    token: str = Depends(security.oauth2_scheme),
+    db=Depends(get_db),
+):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            token, security.SECRET_KEY, algorithms=[security.ALGORITHM]
+        )
+        alias: str = payload.get("sub")
+        update: str = payload.get("update_sub")
+        if alias is None or update is None:
+            raise credentials_exception
+        user = get_user_by_alias(db, alias)
+        if not user:
+            raise credentials_exception
+        ret = update_primary_address_for_user(
+            db, user.id, update
+        )
+        return UserAddressConfig(
+            id=ret.id,
+            alias=ret.alias,
+            registered_addresses=ret.registered_addresses,
+            access_token=token,
+        )
     except PyJWTError:
         raise credentials_exception
     except Exception as e:
