@@ -174,6 +174,65 @@ class Dao(CreateOrUpdateDao):
     class Config:
         orm_mode = True
 
+
 class DaoConfigEntry(BaseModel):
     valueType: str
     value: str
+
+
+class CreateOnChainTokenomicsStakingConfig(BaseModel):
+    stake_pool_size: int
+    staking_emission_amount: int
+    staking_emission_delay: int
+    staking_cycle_length: int
+    staking_profit_share_pct: int
+
+    class Config:
+        orm_mode = True
+
+
+class CreateOnChainTokenomics(BaseModel):
+    token_id: str
+    token_name: str
+    token_ticker: str
+    staking_config: CreateOnChainTokenomicsStakingConfig
+
+    class Config:
+        orm_mode = True
+
+
+class CreateOnChainDaoGovernance(BaseModel):
+    governance_type: str = "DEFAULT"
+    quorum: int
+    threshold: int
+    min_proposal_time: int
+    participation_weight: int
+    pure_participation_weight: int
+
+    class Config:
+        orm_mode = True
+
+
+class CreateOnChainDaoDesign(BaseModel):
+    theme: str = "default"
+    logo: str
+    banner_enabled: bool
+    banner: t.Optional[str]
+    footer_enabled: bool
+    footer: t.Optional[str]
+
+    class Config:
+        orm_mode = True
+
+
+class CreateOnChainDao(BaseModel):
+    name: str
+    url: str
+    description: str
+    tokenomics: CreateOnChainTokenomics
+    governance: CreateOnChainDaoGovernance
+    design: CreateOnChainDaoDesign
+    user_addresses: t.List[str]
+
+    class Config:
+        orm_mode = True
