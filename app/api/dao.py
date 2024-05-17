@@ -7,8 +7,8 @@ from cache.cache import cache
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
 from paideia_state_client import util
-from db.schemas.util import TokenAmount, Transaction, TransactionHistory
-from core.auth import get_current_active_user, get_current_active_superuser
+from db.schemas.util import SigningRequest, TokenAmount, Transaction, TransactionHistory
+from core.auth import get_current_active_superuser
 from db.crud.dao import (
     create_dao,
     edit_dao,
@@ -31,6 +31,7 @@ from db.schemas.dao import (
     DaoConfigEntry,
     DaoTreasury,
     VwDao,
+    CreateOnChainDao,
 )
 from paideia_state_client import dao
 from ergo import indexed_node_client
@@ -365,6 +366,26 @@ def dao_create(
     """
     try:
         return create_dao(db, dao)
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
+
+
+@r.post("/on_chain_dao", response_model=SigningRequest, response_model_exclude_none=True, name="dao:create")
+def dao_create_on_chain(
+    create_dao_request: CreateOnChainDao,
+):
+    """
+    Create a new dao
+    """
+    try:
+        unsigned_tx = dao.create_dao(create_dao_request)
+        return SigningRequest(
+            message="Create DAO transaction",
+            unsigned_transaction=unsigned_tx
+        )
     except Exception as e:
         logging.error(traceback.format_exc())
         return JSONResponse(
