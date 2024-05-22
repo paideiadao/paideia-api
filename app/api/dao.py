@@ -376,11 +376,22 @@ def dao_create(
 @r.post("/on_chain_dao", response_model=SigningRequest, response_model_exclude_none=True, name="dao:create")
 def dao_create_on_chain(
     create_dao_request: CreateOnChainDao,
+    db=Depends(get_db),
 ):
     """
     Create a new dao
     """
     try:
+        dao_url = create_dao_request.url
+        if dao_url == "creation":
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST, content=f"Invalid DAO url: {dao_url}"
+            )
+        dao_exists = get_dao_by_url(db, dao_url)
+        if dao_exists != None:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST, content=f"DAO url must be unique: {dao_url}"
+            )
         unsigned_tx = dao.create_dao(create_dao_request)
         return SigningRequest(
             message="Create DAO transaction",
