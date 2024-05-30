@@ -4,7 +4,7 @@ import logging
 import typing as t
 import uuid
 
-from app.db.schemas import RestrictedAlphabetStr
+from db.schemas import RestrictedAlphabetStr
 from cache.cache import cache
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
