@@ -82,7 +82,7 @@ def dao_list(
                                         "value"
                                     ]
                                     if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890" for c in dao_config["im.paideia.dao.url"])
-                                    else state_daos[d][0],
+                                    else dbd.dao_url,
                                     dao_key=d,
                                     governance=CreateOrUpdateGovernance(
                                         quorum=int(
