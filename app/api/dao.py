@@ -1,8 +1,10 @@
+from dataclasses import Field
 import traceback
 import logging
 import typing as t
 import uuid
 
+from app.db.schemas import RestrictedAlphabetStr
 from cache.cache import cache
 from fastapi import APIRouter, Depends, status
 from starlette.responses import JSONResponse
@@ -79,7 +81,7 @@ def dao_list(
                                     dao_url=dao_config["im.paideia.dao.url"][
                                         "value"
                                     ]
-                                    if "im.paideia.dao.url" in dao_config
+                                    if "im.paideia.dao.url" in dao_config and RestrictedAlphabetStr.validate(dao_config["im.paideia.dao.url"],Field(alphabet="QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890"))
                                     else state_daos[d][0],
                                     dao_key=d,
                                     governance=CreateOrUpdateGovernance(
