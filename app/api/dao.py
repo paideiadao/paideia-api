@@ -81,7 +81,7 @@ def dao_list(
                                     dao_url=dao_config["im.paideia.dao.url"][
                                         "value"
                                     ]
-                                    if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890" for c in dao_config["im.paideia.dao.url"])
+                                    if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890" for c in dao_config["im.paideia.dao.url"]["value"])
                                     else dbd.dao_url,
                                     dao_key=d,
                                     governance=CreateOrUpdateGovernance(
@@ -134,7 +134,7 @@ def dao_list(
                         dao_url=dao_config["im.paideia.dao.url"][
                                     "value"
                                 ]
-                                if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890" for c in dao_config["im.paideia.dao.url"])
+                                if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890" for c in dao_config["im.paideia.dao.url"]["value"])
                                 else state_daos[d][0],
                         governance=CreateOrUpdateGovernance(
                             quorum=int(dao_config["im.paideia.dao.quorum"]["value"]),
