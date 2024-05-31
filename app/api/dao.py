@@ -126,10 +126,10 @@ def dao_list(
                         dao_key=d,
                         config_height=state_daos[d][1],
                         dao_name=state_daos[d][0],
-                        dao_short_description=dao_config["im.paideia.dao.description"][
+                        dao_short_description=dao_config["im.paideia.dao.desc"][
                             "value"
                         ]
-                        if "im.paideia.dao.description" in dao_config
+                        if "im.paideia.dao.desc" in dao_config
                         else "",
                         dao_url=dao_config["im.paideia.dao.url"][
                                     "value"
