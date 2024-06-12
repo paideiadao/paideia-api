@@ -3,6 +3,7 @@ import random
 import uuid
 import logging
 import traceback
+import datetime
 
 from fastapi import APIRouter, Depends, status, WebSocket, WebSocketDisconnect
 from fastapi.encoders import jsonable_encoder
@@ -112,7 +113,8 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
                     on_chain_id=p["proposalIndex"],
                     votes=proposal["proposal"]["votes"],
                     attachments=[],
-                    status=proposal_status(proposal["proposal"]["passed"]) 
+                    status=proposal_status(proposal["proposal"]["passed"]),
+                    end_date=datetime.datetime.fromtimestamp(proposal["proposal"]["endTime"] // 1000)
                 ))
             elif db_proposal.box_height < p["proposalHeight"]:
                 proposal = proposals.get_proposal(
@@ -124,9 +126,9 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
                     name=db_proposal.name,
                     votes=proposal["proposal"]["votes"],
                     attachments=db_proposal.attachments,
-                    status=proposal_status(proposal["proposal"]["passed"]) 
+                    status=proposal_status(proposal["proposal"]["passed"]),
+                    end_date=datetime.datetime.fromtimestamp(proposal["proposal"]["endTime"] // 1000)
                 ))
-
         return get_proposals_by_dao_id(db, dao_id)
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -270,6 +272,7 @@ def create_on_chain_proposal(
         new_proposal_index = len(current_proposal_list)
         proposal.on_chain_id = new_proposal_index
         proposal.box_height = 0
+        proposal.end_date = datetime.datetime.fromtimestamp(proposal.end_time // 1000)
 
         unsigned_tx = proposals.create_proposal(
             db_dao.dao_key, proposal.name, proposal.stake_key, main_address, all_addresses, proposal.end_time, sendFundsActions, updateConfigActions)

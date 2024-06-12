@@ -23,6 +23,7 @@ class Proposal(Base):
     tags = Column(JSON)
     attachments = Column(JSON)
     date = Column(DateTime(timezone=True), server_default=func.now())
+    end_date = Column(DateTime(timezone=True))
     status = Column(String)
     is_proposal = Column(Boolean)
     box_height = Column(Integer)

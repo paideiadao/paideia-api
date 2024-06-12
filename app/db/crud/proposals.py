@@ -381,6 +381,7 @@ def get_proposal_by_id(db: Session, id: uuid.UUID):
         attachments=attachments,
         addendums=addendums,
         date=db_proposal.date,
+        end_date=db_proposal.end_date,
         status=db_proposal.status,
         is_proposal=db_proposal.is_proposal,
         profile_img_url=user_details.profile_img_url,
@@ -425,6 +426,7 @@ def create_new_proposal(db: Session, proposal: CreateProposalSchema):
         attachments={"attachments_list": proposal.attachments},
         status=proposal.status,
         is_proposal=proposal.is_proposal,
+        end_date=proposal.end_date
     )
     db.add(db_proposal)
     db.commit()
