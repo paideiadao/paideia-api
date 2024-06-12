@@ -66,6 +66,7 @@ class CreateProposal(BaseModel):
     is_proposal: bool = False
     box_height: t.Optional[int]
     votes: t.Optional[t.List[int]]
+    end_date: t.Optional[datetime.datetime]
 
 
 class CreateOnChainProposal(CreateProposal):
@@ -127,6 +128,7 @@ class Proposal(CreateOrUpdateProposal):
     id: uuid.UUID
     on_chain_id: t.Optional[int]
     date: datetime.datetime
+    end_date: t.Optional[datetime.datetime]
     comments: t.List[Comment]
     addendums: t.List[Addendum]
     references_meta: t.List[ProposalReference] = []
