@@ -95,8 +95,7 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
                     if dbp.name == p["proposalName"]:
                         db_proposal = dbp
                     else:
-                        if dbp.status == "Draft":
-                            delete_proposal_by_id(db, dbp.id)
+                        delete_proposal_by_id(db, dbp.id)
             if db_proposal is None:
                 proposal = proposals.get_proposal(
                     db_dao.dao_key, p["proposalIndex"])
