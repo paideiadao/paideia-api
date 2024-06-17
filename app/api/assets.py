@@ -82,7 +82,7 @@ def token_check(req: AddressTokenList):
             },
         )
         if ret.ok:
-            cache.set(cache_key, ret.json())
+            cache.set(cache_key, ret.json(), 300)
         return ret.json()
     except Exception as e:
         logging.error(traceback.format_exc())
