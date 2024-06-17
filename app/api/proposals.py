@@ -175,8 +175,7 @@ def get_proposal_votes(proposal_slug: str, db=Depends(get_db)):
         if is_uuid(proposal_slug):
             proposal = get_proposal_by_id(db, uuid.UUID(proposal_slug))
         else:
-            proposal = get_proposal_by_slug(db, proposal_slug)
-        print(proposal)    
+            proposal = get_proposal_by_slug(db, proposal_slug)  
         dao = get_dao(db, proposal.dao_id)
         on_chain_proposal = proposals.get_proposal(dao.dao_key, proposal.on_chain_id)
         result = []
