@@ -26,6 +26,7 @@ from db.schemas.dao import (
     TokenHolder as TokenHolderSchema,
     Distribution as DistributionSchema,
 )
+from ergo import crux_client
 
 ################################
 ### CRUD OPERATIONS FOR DAOS ###
@@ -291,6 +292,20 @@ def set_dao_tokenomics_distributions(
         )
     )
 
+# allow overrides
+TOKEN_TICKER_OVERRIDES = {
+    "RosenGuard": "RSG", # example override
+}
+
+# return token ticker if overriden or generate from token name
+def get_token_ticker(token_name: str):
+    if token_name in TOKEN_TICKER_OVERRIDES:
+        return TOKEN_TICKER_OVERRIDES[token_name]
+    token_name = token_name.upper()
+    if token_name[:3] == "ERG": # let's not confuse with erg
+        return token_name.split()[0]
+    return token_name[:3]
+
 
 def get_dao_tokenomics(db: Session, dao_id: uuid.UUID):
     db_tokenomics = db.query(Tokenomics).filter(Tokenomics.dao_id == dao_id).first()
@@ -299,6 +314,20 @@ def get_dao_tokenomics(db: Session, dao_id: uuid.UUID):
 
     token_holders = get_dao_tokenomics_tokenholders(db, db_tokenomics.id)
     distributions = get_dao_tokenomics_distributions(db, db_tokenomics.id)
+
+    if db_tokenomics.token_name == None:
+        token_info = crux_client.get_token_info(db_tokenomics.token_id)
+        if token_info:
+            return edit_dao_tokenomics(db, dao_id,
+                                CreateOrUpdateTokenomics(
+                                    token_id=db_tokenomics.token_id,
+                                    token_name=token_info["token_name"],
+                                    token_ticker=get_token_ticker(token_info["token_name"]),
+                                    token_decimals=token_info["decimals"],
+                                    token_holders=token_holders,
+                                    distributions=distributions
+                                )
+                            )
 
     return TokenomicsSchema(
         id=db_tokenomics.id,

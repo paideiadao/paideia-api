@@ -58,6 +58,7 @@ Config = {
             "paideia_state": os.getenv("PAIDEIA_STATE"),
             "admin_id": uuid.UUID(os.getenv("ADMIN_ID")),
             "notifications_api": os.getenv("NOTIFICATIONS_API"),
+            "crux_api": os.getenv("CRUX_API"),
         }
     ),
     "mainnet": dotdict(
@@ -78,6 +79,7 @@ Config = {
             "paideia_state": os.getenv("PAIDEIA_STATE"),
             "admin_id": uuid.UUID(os.getenv("ADMIN_ID")),
             "notifications_api": os.getenv("NOTIFICATIONS_API"),
+            "crux_api": os.getenv("CRUX_API"),
         }
     ),
 }
