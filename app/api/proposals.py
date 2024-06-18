@@ -311,7 +311,7 @@ def vote(
         all_addresses = list(
             map(lambda ea: ea.address, get_ergo_addresses_by_user_id(db, user.id)))
         db_proposal = get_proposal_by_id(db, voteRequest.proposal_id)
-        stake_info = staking.get_stake(db_dao.dao_key, voteRequest.stake_key)
+        stake_info = staking.get_stake(db_dao.dao_key, {voteRequest.stake_key})[0]
         if stake_info["stakeRecord"]["stake"] < sum(voteRequest.votes):
             return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content="Can not vote for more than staked amount")
         if len(db_proposal.votes) != len(voteRequest.votes):

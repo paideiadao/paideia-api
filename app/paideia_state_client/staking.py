@@ -22,8 +22,8 @@ def get_dao_stake(daoKey: str):
     else:
         return None
     
-def get_stake(daoKey: str, stakeKey: str):
-    res = requests.get(Config[Network].paideia_state+'/stake/'+daoKey+'/'+stakeKey)
+def get_stake(daoKey: str, stakeKeys: t.Set[str]):
+    res = requests.post(Config[Network].paideia_state+'/stake/'+daoKey, json = {"potentialKeys": stakeKeys})
     if res.ok:
         return res.json()
     else:
