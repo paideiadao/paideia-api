@@ -187,7 +187,7 @@ def get_stake(
                         amount=tokenProfit[i]/(10**profit_token_info["decimals"])
                     ))
                 stake_keys.append(StakeKeyInfoWithParticipation(
-                    key_id=token["tokenId"],
+                    key_id=stakeKeyInfo["stakeKey"],
                     locked_until=stakeKeyInfo["stakeRecord"]["lockedUntil"],
                     participation_info=participation_info,
                     stake=stakeKeyInfo["stakeRecord"]["stake"]/(10**token_info["decimals"]),
