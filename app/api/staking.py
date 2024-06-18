@@ -159,7 +159,7 @@ def get_stake(
         stake_keys = []
         for addr in all_addresses:
             user_balance = get_balance(addr)
-            potential_keys = {}
+            potential_keys = set()
             for token in user_balance["confirmed"]["tokens"]:
                 potential_keys.add(token["tokenId"])
             for token in user_balance["unconfirmed"]["tokens"]:
