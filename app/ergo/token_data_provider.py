@@ -41,7 +41,6 @@ class BuilderException(Exception):
     pass
 
 
-# todo: better error handling
 class LocalDataProvider:
     @staticmethod
     def get_dao_token_ids(db: Session = next(get_db())):
@@ -54,30 +53,15 @@ class LocalDataProvider:
             logging.error(traceback.format_exc())
 
 
-# todo: better error handling
 class BaseDataProvider:
-    # temp dependencies config
-    ERGOPAD_API = "https://api.ergopad.io"
-    EXPLORER_API = "https://api.ergoplatform.com/api/v1"
     SPECTRUM_API = "https://api.spectrum.fi/v1"
-    # dependecies
-    DANAIDES_API = CFG.danaides_api
+    CRUX_API = "https://api.cruxfinance.io"
 
     @staticmethod
     def get_ergo_price():
         try:
             resp = requests.get(
-                f"{BaseDataProvider.ERGOPAD_API}/asset/price/ergo"
-            ).json()
-            return resp
-        except Exception as e:
-            logging.error(traceback.format_exc())
-
-    @staticmethod
-    def get_token_price(token_id: str):
-        try:
-            resp = requests.get(
-                f"{BaseDataProvider.DANAIDES_API}/token/price/{token_id}"
+                f"{BaseDataProvider.CRUX_API}/coingecko/erg_price"
             ).json()
             return resp
         except Exception as e:
@@ -87,7 +71,7 @@ class BaseDataProvider:
     def get_token_details_by_id(token_id: str):
         try:
             resp = requests.get(
-                f"{BaseDataProvider.EXPLORER_API}/tokens/{token_id}"
+                f"{BaseDataProvider.CRUX_API}/crux/token_info/{token_id}"
             ).json()
             return resp
         except Exception as e:
@@ -108,16 +92,6 @@ class BaseDataProvider:
         try:
             resp = requests.get(
                 f"{BaseDataProvider.SPECTRUM_API}/amm/pool/{pool_id}/chart"
-            ).json()
-            return resp
-        except Exception as e:
-            logging.error(traceback.format_exc())
-
-    @staticmethod
-    def get_token_price_history(token_id: str):
-        try:
-            resp = requests.get(
-                f"{BaseDataProvider.DANAIDES_API}/token/candles/{token_id}"
             ).json()
             return resp
         except Exception as e:
@@ -145,70 +119,6 @@ class TokenDataBuilder:
             if pool["lockedX"]["amount"] > max_pool["lockedX"]["amount"]:
                 max_pool = pool
         return max_pool
-
-    @staticmethod
-    def get_utc_timestamp(date):
-        dt = None
-        try:
-            dt = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S.%f")
-        except:
-            dt = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
-        return dt.timestamp()
-
-    @staticmethod
-    def get_last_hour(timestamp):
-        timestamp = int(timestamp) // 3600
-        return timestamp * 3600
-
-    @staticmethod
-    def build_ohclv_1h(price_history):
-        ohclv = []
-        price_history = list(map(
-            lambda x: (
-                1 / x["price"], x["timestamp"] // 1000),
-            price_history["market"]["dataPoints"]
-        ))
-        price_history.sort(key=(lambda x: x[1]))
-        if len(price_history) == 0:
-            return ohclv
-        # make 1h buckets
-        buckets = {}
-        index_range = (10000000000, 0)
-        for dp in price_history:
-            bucket_index = TokenDataBuilder.get_last_hour(dp[1])
-            index_range = (min(index_range[0], bucket_index), max(
-                index_range[1], bucket_index))
-            if bucket_index not in buckets:
-                buckets[bucket_index] = []
-            buckets[bucket_index].append(dp)
-        # # fixup empty hours
-        # for index in range(index_range[0], index_range[1]):
-        #     if index not in buckets:
-        #         buckets[index] = []
-        # sort buckets
-        sorted_buckets = []
-        for bucket_index in buckets:
-            sorted_buckets.append((bucket_index, buckets[bucket_index]))
-        sorted_buckets.sort()
-        # merge last elem in buckets
-        for bucket_index in range(1, len(sorted_buckets)):
-            last_bucket = sorted_buckets[bucket_index - 1]
-            sorted_buckets[bucket_index][1].insert(0, last_bucket[1][-1])
-        for bucket in sorted_buckets:
-            data = bucket[1]
-            ohclv.append(
-                TokenPriceRangeDataPoint(
-                    open=data[0][0],
-                    high=max(data)[0],
-                    close=data[-1][0],
-                    low=min(data)[0],
-                    start_time=datetime.datetime.fromtimestamp(
-                        bucket[0]).isoformat(),
-                    end_time=datetime.datetime.fromtimestamp(
-                        bucket[0] + 3600).isoformat()
-                )
-            )
-        return ohclv
 
     @staticmethod
     def summarize_last_hours(price_history, start_time, end_time):
@@ -241,23 +151,22 @@ class TokenDataBuilder:
 
     @staticmethod
     def build_stats_for_token_id(token_id: str):
-        # erg_usd = BaseDataProvider.get_ergo_price()
+        erg_usd = BaseDataProvider.get_ergo_price()["price"]
         # we can fill basic details from this
         token_details = BaseDataProvider.get_token_details_by_id(token_id)
-        token_price = BaseDataProvider.get_token_price(token_id)
+        token_price_in_erg = token_details["value_in_erg"]
+        token_price = token_price_in_erg * erg_usd
+
+        # TODO: get price performance summary from crux instead
         pool = TokenDataBuilder.get_max_pool_by_token_id(token_id)
         price_chart = BaseDataProvider.get_pool_price_history(pool["id"])
-        # price_history = BaseDataProvider.get_token_price_history(token_id)
         price_history = {
             "id": token_id,
-            "price": price_chart[-1]["price"],
+            "price": token_price_in_erg,
             "market": {
                 "dataPoints": price_chart,
             }
         }
-        # format price_chart data into required stuff
-        # token_ohclv_1h
-        token_ohclv_1h = TokenDataBuilder.build_ohclv_1h(price_history)
         # token_price_history_summary
         now = datetime.datetime.now().timestamp()
         hr = 60 * 60
@@ -286,31 +195,31 @@ class TokenDataBuilder:
                 price_history, 0, now
             )
         )
+
         # market_cap
         market_cap = TokenMarketCap(
-            diluted_market_cap=token_price["price"] * (
-                token_details["emissionAmount"] / 10**token_details["decimals"]
-            )
+            market_cap=token_price * token_details["liquid_supply"],
+            diluted_market_cap=token_price * token_details["minted"]
         )
         # token_supply
         token_supply = TokenSupplyStats(
-            max_supply=(
-                token_details["emissionAmount"] / 10**token_details["decimals"]
-            )
+            total_supply=token_details["liquid_supply"],
+            max_supply=token_details["minted"]
         )
+
         return TokenStats(
             token_id=token_id,
-            token_name=token_details["name"],
-            price=token_price["price"],
-            token_ohclv_1h=token_ohclv_1h,
+            token_name=token_details["token_name"],
+            price=token_price,
+            token_ohclv_1h=[],
             token_price_history_summary=token_price_history_summary,
             market_cap=market_cap,
             token_supply=token_supply,
             token_markets=[
                 TokenMarketSpecificStats(
                     source="spectrum.fi",
-                    pair=token_details["name"] + "/ERG",
-                    price=1 / price_history["price"],
+                    pair=token_details["token_name"] + "_ERG",
+                    price=token_price_in_erg,
                 )
             ]
         )
