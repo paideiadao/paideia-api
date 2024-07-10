@@ -54,8 +54,8 @@ class LocalDataProvider:
 
 
 class BaseDataProvider:
-    SPECTRUM_API = "https://api.spectrum.fi/v1"
-    CRUX_API = "https://api.cruxfinance.io"
+    SPECTRUM_API = "https://api.spectrum.fi/v1" # TODO: remove spectrum
+    CRUX_API = CFG.crux_api
 
     @staticmethod
     def get_ergo_price():
