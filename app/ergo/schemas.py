@@ -59,7 +59,6 @@ class TokenStats(BaseModel):
     token_id: str = "1fd6e032e8476c4aa54c18c1a308dce83940e8f4a28f576440513ed7326ad489"
     token_name: str = "Paideia"
     price: float
-    token_ohclv_1h: t.List[TokenPriceRangeDataPoint] = []
     token_price_history_summary: TokenPriceHistorySummary
     market_cap: TokenMarketCap
     token_supply: TokenSupplyStats

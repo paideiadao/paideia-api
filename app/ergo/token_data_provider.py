@@ -141,7 +141,6 @@ class TokenDataBuilder:
             token_id=token_id,
             token_name=token_details["token_name"],
             price=token_price,
-            token_ohclv_1h=[],
             token_price_history_summary=token_price_history_summary,
             market_cap=market_cap,
             token_supply=token_supply,
