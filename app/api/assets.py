@@ -5,6 +5,7 @@ import traceback
 from fastapi import APIRouter, status
 from starlette.responses import JSONResponse
 
+from ergo.token_data_provider import TokenDataBuilder
 from ergo.schemas import AddressList, TokenStats, AddressTokenList
 from config import Config, Network
 from cache.cache import cache
@@ -25,7 +26,7 @@ TOKEN_CONFIG = {
 }
 
 
-@r.post("/locked/{token}", name="assets:locked-token")
+@r.post("/locked/{token}", name="assets:deprecated")
 def locked_tokens(token: str, req: AddressList):
     try:
         token = token.lower()
@@ -96,9 +97,8 @@ def get_token_stats(token_id: str):
     try:
         resp = cache.get(f"token_stats_cache_{token_id}")
         if not resp:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST, content=f"token is not part of a dao"
-            )
+            resp = TokenDataBuilder.build_stats_for_token_id(token_id).dict()
+            cache.set(f"token_stats_cache_{token_id}", resp)
         return resp
     except Exception as e:
         logging.error(traceback.format_exc())
