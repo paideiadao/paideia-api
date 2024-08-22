@@ -17,7 +17,6 @@ from config import Config, Network
 
 
 CFG = Config[Network]
-PAIDEIA_URL = "Paideia"
 PLUGIN_NAMES = [
     "PaideiaStakingPlugin",
     "PaideiaVotingPlugin",
@@ -33,18 +32,23 @@ def sync_notifications():
 def sync_notifications_for_plugin(plugin_name: str):
     try:
         db = next(get_db())
-        dao_details = get_dao_by_url(db, PAIDEIA_URL)
-        dao_id = dao_details.id
         res = requests.get(CFG.notifications_api + "/sync_events/" + plugin_name)
         resj = res.json()
         for event in resj:
             address = event["address"]
+            dao_url = event["body"]["dao"]
+            dao_details = get_dao_by_url(db, dao_url)
+            if not dao_details:
+                logging.error("dao_details not found for dao: " + dao_url)
+                # this should never happen
+                continue
+            dao_id = dao_details.id
             if filter_additional_text_exists(db, get_additional_text(event)):
-                # do not add duplicates
+                logging.info("Ignoring duplicate event: " + event["id"])
                 continue
             user_details_id = get_user_details_id(address, dao_id, db)
             if not user_details_id:
-                # event does not have a coresponding user profile
+                logging.info("Event does not have a coresponding user profile: " + event["id"])
                 continue
             notification = CreateAndUpdateNotification(
                     user_details_id=user_details_id,
