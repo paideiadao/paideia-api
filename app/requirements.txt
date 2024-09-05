@@ -19,3 +19,4 @@ pytest-mock
 colorlog
 Pillow
 ergo-python-appkit==0.2.1
+pyunycode
