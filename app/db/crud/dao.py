@@ -1,6 +1,6 @@
 import typing as t
 import uuid
-
+import urllib
 from sqlalchemy.orm import Session
 from db.models.tokenomics import (
     Distribution,
@@ -597,7 +597,7 @@ def get_dao_by_url(db: Session, name: str):
     if name in ("dao",):
         return None
     
-    print(name)
+    name = urllib.parse.quote(name)
 
     dao_list = list(
         filter(
