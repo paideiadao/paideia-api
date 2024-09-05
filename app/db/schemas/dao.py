@@ -153,7 +153,7 @@ class CreateOrUpdateDao(BaseModel):
     config_height: t.Optional[int]
     dao_name: str
     dao_short_description: t.Optional[str]
-    dao_url: RestrictedAlphabetStr = Field(alphabet="QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890")
+    dao_url: RestrictedAlphabetStr = Field(alphabet="QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-.")
     governance: CreateOrUpdateGovernance
     tokenomics: CreateOrUpdateTokenomics
     design: CreateOrUpdateDaoDesign
