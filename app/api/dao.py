@@ -3,7 +3,6 @@ import traceback
 import logging
 import typing as t
 import uuid
-import punycode
 
 from db.schemas import RestrictedAlphabetStr
 from cache.cache import cache
