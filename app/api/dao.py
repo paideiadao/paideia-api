@@ -79,10 +79,10 @@ def dao_list(
                                     ]
                                     if "im.paideia.dao.desc" in dao_config
                                     else "",
-                                    dao_url=pyunycode.convert(dao_config["im.paideia.dao.url"][
+                                    dao_url=dao_config["im.paideia.dao.url"][
                                         "value"
-                                    ])
-                                    if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-" for c in punycode.convert(dao_config["im.paideia.dao.url"]["value"]))
+                                    ].encode("idna").decode()
+                                    if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-." for c in dao_config["im.paideia.dao.url"]["value"].encode("idna").decode())
                                     else dbd.dao_url,
                                     dao_key=d,
                                     governance=CreateOrUpdateGovernance(
@@ -132,10 +132,10 @@ def dao_list(
                         ]
                         if "im.paideia.dao.desc" in dao_config
                         else "",
-                        dao_url=pyunycode.convert(dao_config["im.paideia.dao.url"][
+                        dao_url=dao_config["im.paideia.dao.url"][
                                     "value"
-                                ])
-                                if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-" for c in punycode.convert(dao_config["im.paideia.dao.url"]["value"]))
+                                ].encode("idna").decode()
+                                if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-." for c in dao_config["im.paideia.dao.url"]["value"].encode("idna").decode())
                                 else state_daos[d][0],
                         governance=CreateOrUpdateGovernance(
                             quorum=int(dao_config["im.paideia.dao.quorum"]["value"]),
