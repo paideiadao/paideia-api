@@ -590,7 +590,7 @@ def get_dao(db: Session, id: uuid.UUID):
 
 def dao_url_match(x, name):
     print("Matching with: {}", x.dao_url.split("/")[-1])
-    (len(x.dao_url.split("/")) != 0) and (x.dao_url.split("/")[-1] == name)
+    return (len(x.dao_url.split("/")) != 0) and (x.dao_url.split("/")[-1] == name)
 
 def get_dao_by_url(db: Session, name: str):
     # preliminary filter
