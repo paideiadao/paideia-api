@@ -156,10 +156,27 @@ def get_user_proposals(user_details_id: uuid.UUID, db=Depends(get_db)):
 )
 def get_proposal(proposal_slug: str, db=Depends(get_db)):
     try:
+        db_proposal = None
         if is_uuid(proposal_slug):
-            return get_proposal_by_id(db, uuid.UUID(proposal_slug))
+            db_proposal = get_proposal_by_id(db, uuid.UUID(proposal_slug))
         else:
-            return get_proposal_by_slug(db, proposal_slug)
+            db_proposal = get_proposal_by_slug(db, proposal_slug)
+        if db_proposal.on_chain_id >= 0:
+            db_dao = get_dao(db, db_proposal.dao_id)
+            proposal = proposals.get_proposal(
+                    db_dao.dao_key, db_proposal.on_chain_id)
+            edit_proposal_basic_by_id(db=db, user_details_id=db_proposal.user_details_id, id=db_proposal.id, proposal=UpdateProposalBasic(
+                    box_height=proposal["proposal"]["box_height"],
+                    dao_id=db_proposal.dao_id,
+                    user_details_id=db_proposal.user_details_id,
+                    name=db_proposal.name,
+                    votes=proposal["proposal"]["votes"],
+                    attachments=db_proposal.attachments,
+                    status=proposal_status(proposal["proposal"]["passed"]),
+                    end_date=datetime.datetime.fromtimestamp(proposal["proposal"]["endTime"] // 1000)
+                ))
+            db_proposal = get_proposal_by_id(db, db_proposal.id)
+        return db_proposal
     except Exception as e:
         logging.error(traceback.format_exc())
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content=str(e))
