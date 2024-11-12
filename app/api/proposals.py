@@ -161,7 +161,7 @@ def get_proposal(proposal_slug: str, db=Depends(get_db)):
             db_proposal = get_proposal_by_id(db, uuid.UUID(proposal_slug))
         else:
             db_proposal = get_proposal_by_slug(db, proposal_slug)
-        if db_proposal.on_chain_id >= 0:
+        if db_proposal.on_chain_id and db_proposal.on_chain_id >= 0:
             db_dao = get_dao(db, db_proposal.dao_id)
             proposal = proposals.get_proposal(
                     db_dao.dao_key, db_proposal.on_chain_id)
