@@ -245,12 +245,13 @@ def get_treasury_transactions(
                             amounts[asset["tokenId"]] = -1 * asset["amount"]
                 else:
                     contract_sig = util.get_contract_sig(input_box["address"])
-                    if "Profit" in contract_sig["className"]:
-                        label = "Profit Sharing"
-                    elif "Snapshot" in contract_sig["className"]:
-                        label = "Stake Snapshot"
-                    elif "Compound" in contract_sig["className"]:
-                        label = "Stake Compound"
+                    if contract_sig:
+                        if "Profit" in contract_sig["className"]:
+                            label = "Profit Sharing"
+                        elif "Snapshot" in contract_sig["className"]:
+                            label = "Stake Snapshot"
+                        elif "Compound" in contract_sig["className"]:
+                            label = "Stake Compound"
             for output in transaction["outputs"]:
                 if output["address"] == treasury_address:
                     if "Erg" in amounts:
