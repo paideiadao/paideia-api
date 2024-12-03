@@ -108,7 +108,7 @@ def token_check_node(req: AddressTokenList):
                 balance = {}
                 tokens = ret.json()["confirmed"]["tokens"]
                 for token in tokens:
-                    if req.tokens.contains(token["tokenId"]):
+                    if token["tokenId"] in req.tokens:
                         balance[token["tokenId"]] = token["amount"]
                 result[addr] = balance
         cache.set(cache_key, result, 30)
