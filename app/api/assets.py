@@ -66,33 +66,33 @@ def token_check_deprecated(req: AddressTokenList):
     """
     return token_check(req)
 
+# @r.post("/token_check", name="assets:check-token-exists")
+# def token_check(req: AddressTokenList):
+#     try:
+#         cache_key = "token_check_" + hash_string_list(req.tokens) +  "_" + hash_string_list(req.addresses)
+#         cached = cache.get(cache_key)
+#         if cached:
+#             return cached
+#         # call to danaides service
+#         ret = requests.post(
+#             f"{CFG.danaides_api}/token/exists",
+#             json={
+#                 "addresses": req.addresses,
+#                 "tokens": req.tokens,
+#             },
+#         )
+#         if ret.ok:
+#             cache.set(cache_key, ret.json(), 300)
+#         return ret.json()
+#     except Exception as e:
+#         logging.error(traceback.format_exc())
+#         return JSONResponse(
+#             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+#         )
+
+
 @r.post("/token_check", name="assets:check-token-exists")
 def token_check(req: AddressTokenList):
-    try:
-        cache_key = "token_check_" + hash_string_list(req.tokens) +  "_" + hash_string_list(req.addresses)
-        cached = cache.get(cache_key)
-        if cached:
-            return cached
-        # call to danaides service
-        ret = requests.post(
-            f"{CFG.danaides_api}/token/exists",
-            json={
-                "addresses": req.addresses,
-                "tokens": req.tokens,
-            },
-        )
-        if ret.ok:
-            cache.set(cache_key, ret.json(), 300)
-        return ret.json()
-    except Exception as e:
-        logging.error(traceback.format_exc())
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
-        )
-
-
-@r.post("/token_check_node", name="assets:check-token-exists-node")
-def token_check_node(req: AddressTokenList):
     try:
         cache_key = "token_check_" + hash_string_list(req.tokens) +  "_" + hash_string_list(req.addresses)
         cached = cache.get(cache_key)
