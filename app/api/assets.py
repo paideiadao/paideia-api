@@ -105,11 +105,11 @@ def token_check_node(req: AddressTokenList):
                 data=addr,
             )
             if ret.ok:
-                balance = {}
+                balance = []
                 tokens = ret.json()["confirmed"]["tokens"]
                 for token in tokens:
                     if token["tokenId"] in req.tokens:
-                        balance[token["tokenId"]] = token["amount"]
+                        balance.append({token["tokenId"]: token["amount"]}/(10**tokens["decimals"]))
                 result[addr] = balance
         cache.set(cache_key, result, 30)
         return result
