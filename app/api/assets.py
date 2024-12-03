@@ -102,7 +102,7 @@ def token_check_node(req: AddressTokenList):
         for addr in req.addresses:
             ret = requests.post(
                 f"{CFG.node}/blockchain/balance",
-                text=addr,
+                data=addr,
             )
             if ret.ok:
                 balance = {}
