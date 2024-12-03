@@ -26,37 +26,37 @@ TOKEN_CONFIG = {
 }
 
 
-@r.post("/locked/{token}", name="assets:deprecated")
-def locked_tokens(token: str, req: AddressList):
-    try:
-        token = token.lower()
-        address_list = req.addresses
-        if token not in TOKEN_CONFIG:
-            return JSONResponse(
-                status_code=status.HTTP_404_NOT_FOUND, content="token config not found"
-            )
-        # call to danaides service
-        ret = requests.post(
-            f"{CFG.danaides_api}/token/locked",
-            json={
-                "addresses": address_list,
-                "tokens": [
-                    {
-                        "token_id": TOKEN_CONFIG[token]["token_id"],
-                        "stake_tree": TOKEN_CONFIG[token]["stake_tree"],
-                        "vest_tree": TOKEN_CONFIG[token]["vest_tree"],
-                        "proxy_address": TOKEN_CONFIG[token]["proxy_address"],
-                    }
-                ]
-            },
-        )
-        # return as json
-        return ret.json()
-    except Exception as e:
-        logging.error(traceback.format_exc())
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
-        )
+# @r.post("/locked/{token}", name="assets:deprecated")
+# def locked_tokens(token: str, req: AddressList):
+#     try:
+#         token = token.lower()
+#         address_list = req.addresses
+#         if token not in TOKEN_CONFIG:
+#             return JSONResponse(
+#                 status_code=status.HTTP_404_NOT_FOUND, content="token config not found"
+#             )
+#         # call to danaides service
+#         ret = requests.post(
+#             f"{CFG.danaides_api}/token/locked",
+#             json={
+#                 "addresses": address_list,
+#                 "tokens": [
+#                     {
+#                         "token_id": TOKEN_CONFIG[token]["token_id"],
+#                         "stake_tree": TOKEN_CONFIG[token]["stake_tree"],
+#                         "vest_tree": TOKEN_CONFIG[token]["vest_tree"],
+#                         "proxy_address": TOKEN_CONFIG[token]["proxy_address"],
+#                     }
+#                 ]
+#             },
+#         )
+#         # return as json
+#         return ret.json()
+#     except Exception as e:
+#         logging.error(traceback.format_exc())
+#         return JSONResponse(
+#             status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+#         )
 
 
 @r.post("/token-exists", name="assets:deprecated")
@@ -65,7 +65,6 @@ def token_check_deprecated(req: AddressTokenList):
     DEPRECATED
     """
     return token_check(req)
-
 
 @r.post("/token_check", name="assets:check-token-exists")
 def token_check(req: AddressTokenList):
@@ -85,6 +84,35 @@ def token_check(req: AddressTokenList):
         if ret.ok:
             cache.set(cache_key, ret.json(), 300)
         return ret.json()
+    except Exception as e:
+        logging.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content=f"{str(e)}"
+        )
+
+
+@r.post("/token_check_node", name="assets:check-token-exists-node")
+def token_check_node(req: AddressTokenList):
+    try:
+        cache_key = "token_check_" + hash_string_list(req.tokens) +  "_" + hash_string_list(req.addresses)
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+        result = {}
+        for addr in req.addresses:
+            ret = requests.post(
+                f"{CFG.node}/blockchain/balance",
+                text=addr,
+            )
+            if ret.ok:
+                balance = {}
+                tokens = ret.json()["confirmed"]["tokens"]
+                for token in tokens:
+                    if req.tokens.contains(token["tokenId"]):
+                        balance[token["tokenId"]] = token["amount"]
+                result[addr] = balance
+        cache.set(cache_key, result, 30)
+        return result
     except Exception as e:
         logging.error(traceback.format_exc())
         return JSONResponse(
