@@ -4,8 +4,6 @@ from config import Config, Network
 import typing as t
 
 def stake(daoKey: str, amount: int, mainAddress: str, allAddresses: t.List[str]):
-    if daoKey == "1b4b8b789fdd4a34c5f1cf73b4d99a5cacb8ccba75265f6edf4950893b162f07":
-        raise Exception("Staking has been disabled until an exploit in the contract has been fixed.")
     res = requests.post(Config[Network].paideia_state+'/stake', json={
         "daoKey": daoKey,
         "stakeAmount": amount,
@@ -32,8 +30,6 @@ def get_stake(daoKey: str, stakeKeys: t.Set[str]):
         return None
     
 def add_stake(daoKey: str, stakeKey: str, amount: int, mainAddress: str, allAddresses: t.List[str]):
-    if daoKey == "1b4b8b789fdd4a34c5f1cf73b4d99a5cacb8ccba75265f6edf4950893b162f07":
-        raise Exception("Staking has been disabled until an exploit in the contract has been fixed.")
     res = requests.post(Config[Network].paideia_state+'/stake/add', json={
         "daoKey": daoKey,
         "stakeKey": stakeKey,
@@ -47,8 +43,6 @@ def add_stake(daoKey: str, stakeKey: str, amount: int, mainAddress: str, allAddr
         raise Exception(res.text)
     
 def unstake(daoKey: str, stakeKey: str, newStakeRecord: NewStakeRecord, mainAddress: str, allAddresses: t.List[str]):
-    if daoKey == "1b4b8b789fdd4a34c5f1cf73b4d99a5cacb8ccba75265f6edf4950893b162f07":
-        raise Exception("Staking has been disabled until an exploit in the contract has been fixed.")
     res = requests.post(Config[Network].paideia_state+'/stake/remove', json={
         "daoKey": daoKey,
         "stakeKey": stakeKey,

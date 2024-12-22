@@ -35,7 +35,6 @@ def get_proposals(daoKey: str):
         raise Exception(res.text)
 
 def create_dao(dao: CreateOnChainDao):
-    raise Exception("DAO Creation disabled until stake contract has been fixed.")
     res = requests.post(Config[Network].paideia_state+'/dao/', json={
         "name": dao.name,
         "url": dao.url,
