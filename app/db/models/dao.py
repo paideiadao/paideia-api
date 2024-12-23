@@ -38,6 +38,7 @@ class vw_daos(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     dao_key = Column(String)
     config_height = Column(Integer)
+    config_box_id = Column(String)
     dao_name = Column(String)
     dao_url = Column(String)
     dao_short_description = Column(String)
