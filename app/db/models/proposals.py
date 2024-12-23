@@ -28,6 +28,7 @@ class Proposal(Base):
     is_proposal = Column(Boolean)
     box_height = Column(Integer)
     votes = Column(JSON)
+    box_id = Column(String)
 
 
 class Addendum(Base):

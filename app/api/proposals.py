@@ -108,18 +108,20 @@ def get_proposals(dao_id: uuid.UUID, db=Depends(get_db)):
                     voting_system=proposal["proposalType"],
                     actions=proposal["proposal"]["actions"],
                     is_proposal=True,
-                    box_height=0,
+                    box_height=proposal["proposal"]["box_height"],
+                    box_id=proposal["proposal"]["box_id"],
                     on_chain_id=p["proposalIndex"],
                     votes=proposal["proposal"]["votes"],
                     attachments=[],
                     status=proposal_status(proposal["proposal"]["passed"]),
                     end_date=datetime.datetime.fromtimestamp(proposal["proposal"]["endTime"] // 1000)
                 ))
-            elif db_proposal.box_height < p["proposalHeight"]:
+            elif not db_proposal.box_id or db_proposal.box_id != p["proposalBoxId"]:
                 proposal = proposals.get_proposal(
                     db_dao.dao_key, p["proposalIndex"])
                 edit_proposal_basic_by_id(db=db, user_details_id=db_proposal.user_details_id, id=db_proposal.id, proposal=UpdateProposalBasic(
                     box_height=p["proposalHeight"],
+                    box_id=proposal["proposal"]["box_id"],
                     dao_id=db_proposal.dao_id,
                     user_details_id=db_proposal.user_details_id,
                     name=db_proposal.name,
@@ -167,6 +169,7 @@ def get_proposal(proposal_slug: str, db=Depends(get_db)):
                     db_dao.dao_key, db_proposal.on_chain_id)
             edit_proposal_basic_by_id(db=db, user_details_id=db_proposal.user_details_id, id=db_proposal.id, proposal=UpdateProposalBasic(
                     box_height=proposal["proposal"]["box_height"],
+                    box_id=proposal["proposal"]["box_id"],
                     dao_id=db_proposal.dao_id,
                     user_details_id=db_proposal.user_details_id,
                     name=db_proposal.name,

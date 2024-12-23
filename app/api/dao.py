@@ -66,7 +66,7 @@ def dao_list(
             for dbd in db_daos:
                 if dbd.dao_key == d:
                     daoExistsInDB = True
-                    if dbd.config_height < state_daos[d][1]:
+                    if not dbd.config_box_id or dbd.config_box_id != state_daos[d][2]:
                         dao_config = dao.get_dao_config(d)
                         try:
                             edit_dao(
@@ -105,6 +105,7 @@ def dao_list(
                                         ]
                                     ),
                                     config_height=state_daos[d][1],
+                                    config_box_id=state_daos[d][2],
                                     design=CreateOrUpdateDaoDesign(
                                         logo_url=dao_config["im.paideia.dao.logo"]["value"] if "im.paideia.dao.logo" in dao_config else None,
                                         show_banner=dao_config["im.paideia.dao.banner.enabled"]["value"] if "im.paideia.dao.banner.enabled" in dao_config else False,

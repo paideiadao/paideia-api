@@ -22,6 +22,7 @@ class Dao(Base):
     is_review = Column(Boolean)
     category = Column(String)
     created_dtz = Column(DateTime(timezone=True), server_default=func.now())
+    config_box_id = Column(String)
 
 
 class HighlightedDaos(Base):

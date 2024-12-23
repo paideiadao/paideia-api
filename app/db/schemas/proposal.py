@@ -65,6 +65,7 @@ class CreateProposal(BaseModel):
     status: t.Optional[str] = "discussion"
     is_proposal: bool = False
     box_height: t.Optional[int]
+    box_id: t.Optional[str]
     votes: t.Optional[t.List[int]]
     end_date: t.Optional[datetime.datetime]
 

@@ -151,6 +151,7 @@ class Tokenomics(CreateOrUpdateTokenomics):
 class CreateOrUpdateDao(BaseModel):
     dao_key: t.Optional[str]
     config_height: t.Optional[int]
+    config_box_id: t.Optional[str]
     dao_name: str
     dao_short_description: t.Optional[str]
     dao_url: RestrictedAlphabetStr = Field(alphabet="QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-.%+")
