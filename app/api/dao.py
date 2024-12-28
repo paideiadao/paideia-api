@@ -292,7 +292,7 @@ def get_treasury_transactions(
                         amount=amounts_labeled,
                         time=transaction["timestamp"],
                     )
-                cache.set(cache_key, labeled_transaction)
+                cache.set(cache_key, labeled_transaction.dict())
             labeled_transactions.append(
                 labeled_transaction
             )
