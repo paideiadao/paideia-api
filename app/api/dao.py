@@ -230,66 +230,71 @@ def get_treasury_transactions(
         )
         labeled_transactions = []
         for transaction in treasury_transactions["items"]:
-            amounts = dict()
-            label = "default"
-            for input in transaction["inputs"]:
-                input_box = indexed_node_client.get_box_by_id(input["boxId"])
-                if input_box["address"] == treasury_address:
-                    if "Erg" in amounts:
-                        amounts["Erg"] -= input_box["value"]
-                    else:
-                        amounts["Erg"] = -1 * input_box["value"]
-                    for asset in input_box["assets"]:
-                        if asset["tokenId"] in amounts:
-                            amounts[asset["tokenId"]] -= asset["amount"]
+            cache_key = "labeled_transaction_" + str(transaction["id"])
+            labeled_transaction = cache.get(cache_key)
+            if not labeled_transaction:
+                amounts = dict()
+                label = "default"
+                for input in transaction["inputs"]:
+                    input_box = indexed_node_client.get_box_by_id(input["boxId"])
+                    if input_box["address"] == treasury_address:
+                        if "Erg" in amounts:
+                            amounts["Erg"] -= input_box["value"]
                         else:
-                            amounts[asset["tokenId"]] = -1 * asset["amount"]
-                else:
-                    contract_sig = util.get_contract_sig(input_box["address"])
-                    if contract_sig:
-                        if "Profit" in contract_sig["className"]:
-                            label = "Profit Sharing"
-                        elif "Snapshot" in contract_sig["className"]:
-                            label = "Stake Snapshot"
-                        elif "Compound" in contract_sig["className"]:
-                            label = "Stake Compound"
-            for output in transaction["outputs"]:
-                if output["address"] == treasury_address:
-                    if "Erg" in amounts:
-                        amounts["Erg"] += output["value"]
+                            amounts["Erg"] = -1 * input_box["value"]
+                        for asset in input_box["assets"]:
+                            if asset["tokenId"] in amounts:
+                                amounts[asset["tokenId"]] -= asset["amount"]
+                            else:
+                                amounts[asset["tokenId"]] = -1 * asset["amount"]
                     else:
-                        amounts["Erg"] = output["value"]
-                    for asset in output["assets"]:
-                        if asset["tokenId"] in amounts:
-                            amounts[asset["tokenId"]] += asset["amount"]
+                        contract_sig = util.get_contract_sig(input_box["address"])
+                        if contract_sig:
+                            if "Profit" in contract_sig["className"]:
+                                label = "Profit Sharing"
+                            elif "Snapshot" in contract_sig["className"]:
+                                label = "Stake Snapshot"
+                            elif "Compound" in contract_sig["className"]:
+                                label = "Stake Compound"
+                for output in transaction["outputs"]:
+                    if output["address"] == treasury_address:
+                        if "Erg" in amounts:
+                            amounts["Erg"] += output["value"]
                         else:
-                            amounts[asset["tokenId"]] = asset["amount"]
-            amounts_labeled = []
-            for amount_key in amounts.keys():
-                if amount_key == "Erg" and amounts[amount_key] != 0:
-                    amounts_labeled.append(
-                        TokenAmount(
-                            token_name="Erg", amount=amounts[amount_key] / 10**9
+                            amounts["Erg"] = output["value"]
+                        for asset in output["assets"]:
+                            if asset["tokenId"] in amounts:
+                                amounts[asset["tokenId"]] += asset["amount"]
+                            else:
+                                amounts[asset["tokenId"]] = asset["amount"]
+                amounts_labeled = []
+                for amount_key in amounts.keys():
+                    if amount_key == "Erg" and amounts[amount_key] != 0:
+                        amounts_labeled.append(
+                            TokenAmount(
+                                token_name="Erg", amount=amounts[amount_key] / 10**9
+                            )
                         )
-                    )
-                elif amounts[amount_key] != 0:
-                    token_info = indexed_node_client.get_token_info(amount_key)
-                    amounts_labeled.append(
-                        TokenAmount(
-                            token_name=token_info["name"],
-                            amount=amounts[amount_key]
-                            / 10 ** (int(token_info["decimals"])),
+                    elif amounts[amount_key] != 0:
+                        token_info = indexed_node_client.get_token_info(amount_key)
+                        amounts_labeled.append(
+                            TokenAmount(
+                                token_name=token_info["name"],
+                                amount=amounts[amount_key]
+                                / 10 ** (int(token_info["decimals"])),
+                            )
                         )
+                if label == "default":
+                    label = "Deposit" if amounts["Erg"] > 0 else "Withdrawal"
+                labeled_transaction = Transaction(
+                        transaction_id=transaction["id"],
+                        label=label,
+                        amount=amounts_labeled,
+                        time=transaction["timestamp"],
                     )
-            if label == "default":
-                label = "Deposit" if amounts["Erg"] > 0 else "Withdrawal"
+                cache.set(cache_key, labeled_transaction)
             labeled_transactions.append(
-                Transaction(
-                    transaction_id=transaction["id"],
-                    label=label,
-                    amount=amounts_labeled,
-                    time=transaction["timestamp"],
-                )
+                labeled_transaction
             )
         res = TransactionHistory(transactions=labeled_transactions).dict()
         cache.set("get_treasury_transactions_" + str(dao_id), res)

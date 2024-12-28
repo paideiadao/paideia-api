@@ -5,6 +5,8 @@ import typing as t
 
 
 def get_contract_sig(address: str):
+    if len(address) == 52 and address[0] == "9":
+        return None
     cached = cache.get("get_contract_sig_" + str(address))
     if cached:
         return cached
