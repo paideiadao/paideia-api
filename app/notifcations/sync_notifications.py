@@ -39,7 +39,7 @@ def sync_notifications_for_plugin(plugin_name: str):
             dao_url = event["body"]["dao"]
             dao_details = get_dao_by_url(db, dao_url)
             if not dao_details:
-                logging.error("dao_details not found for dao: " + dao_url)
+                # logging.error("dao_details not found for dao: " + dao_url)
                 # this should never happen
                 continue
             dao_id = dao_details.id
