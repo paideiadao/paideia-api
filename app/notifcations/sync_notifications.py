@@ -44,11 +44,11 @@ def sync_notifications_for_plugin(plugin_name: str):
                 continue
             dao_id = dao_details.id
             if filter_additional_text_exists(db, get_additional_text(event)):
-                logging.info("Ignoring duplicate event: " + event["id"])
+                #logging.info("Ignoring duplicate event: " + event["id"])
                 continue
             user_details_id = get_user_details_id(address, dao_id, db)
             if not user_details_id:
-                logging.info("Event does not have a coresponding user profile: " + event["id"])
+                #logging.info("Event does not have a coresponding user profile: " + event["id"])
                 continue
             notification = CreateAndUpdateNotification(
                     user_details_id=user_details_id,
