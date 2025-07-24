@@ -360,6 +360,7 @@ def get_proposal_by_id(db: Session, id: uuid.UUID):
         id=db_proposal.id,
         on_chain_id=db_proposal.on_chain_id,
         box_height=db_proposal.box_height,
+        box_id=db_proposal.box_id,
         votes=votes,
         dao_id=db_proposal.dao_id,
         user_details_id=db_proposal.user_details_id,
