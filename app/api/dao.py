@@ -1,31 +1,28 @@
-from dataclasses import Field
-import traceback
 import logging
+import traceback
 import typing as t
-import uuid
 import urllib
+import uuid
+from dataclasses import Field
 
-from db.schemas import RestrictedAlphabetStr
 from cache.cache import cache
-from fastapi import APIRouter, Depends, status
-from starlette.responses import JSONResponse
-from paideia_state_client import util
-from db.schemas.util import SigningRequest, TokenAmount, Transaction, TransactionHistory
+from config import Config, Network
 from core.auth import get_current_active_superuser
 from db.crud.dao import (
+    add_to_highlighted_projects,
     create_dao,
+    delete_dao,
     edit_dao,
     get_all_daos,
     get_dao,
     get_dao_by_url,
-    delete_dao,
     get_highlighted_projects,
-    add_to_highlighted_projects,
     remove_from_highlighted_projects,
 )
 from db.crud.users import create_user_dao_profile
-from db.session import get_db
+from db.schemas import RestrictedAlphabetStr
 from db.schemas.dao import (
+    CreateOnChainDao,
     CreateOrUpdateDao,
     CreateOrUpdateDaoDesign,
     CreateOrUpdateGovernance,
@@ -34,14 +31,22 @@ from db.schemas.dao import (
     DaoConfigEntry,
     DaoTreasury,
     VwDao,
-    CreateOnChainDao,
 )
-from paideia_state_client import dao
+from db.schemas.util import (
+    Price,
+    SigningRequest,
+    TokenAmount,
+    Transaction,
+    TransactionHistory,
+)
+from db.session import get_db
 from ergo import indexed_node_client
+from fastapi import APIRouter, Depends, status
+from paideia_state_client import dao, util
+from starlette.responses import JSONResponse
 from util.util import is_uuid
 
-from config import Config, Network
-
+from app.ergo import crux_client
 
 dao_router = r = APIRouter()
 
@@ -74,15 +79,22 @@ def dao_list(
                                 dbd.id,
                                 CreateOrUpdateDao(
                                     dao_name=state_daos[d][0],
-                                    dao_short_description=dao_config["im.paideia.dao.desc"][
-                                        "value"
-                                    ]
+                                    dao_short_description=dao_config[
+                                        "im.paideia.dao.desc"
+                                    ]["value"]
                                     if "im.paideia.dao.desc" in dao_config
                                     else "",
-                                    dao_url=urllib.parse.quote(dao_config["im.paideia.dao.url"][
-                                        "value"
-                                    ])
-                                    if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-.%+" for c in urllib.parse.quote(dao_config["im.paideia.dao.url"]["value"]))
+                                    dao_url=urllib.parse.quote(
+                                        dao_config["im.paideia.dao.url"]["value"]
+                                    )
+                                    if "im.paideia.dao.url" in dao_config
+                                    and not any(
+                                        c
+                                        not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-.%+"
+                                        for c in urllib.parse.quote(
+                                            dao_config["im.paideia.dao.url"]["value"]
+                                        )
+                                    )
                                     else dbd.dao_url,
                                     dao_key=d,
                                     governance=CreateOrUpdateGovernance(
@@ -90,13 +102,15 @@ def dao_list(
                                             dao_config["im.paideia.dao.quorum"]["value"]
                                         ),
                                         vote_duration__sec=int(
-                                            dao_config["im.paideia.dao.min.proposal.time"][
-                                                "value"
-                                            ]
+                                            dao_config[
+                                                "im.paideia.dao.min.proposal.time"
+                                            ]["value"]
                                         )
                                         / 1000,
                                         support_needed=int(
-                                            dao_config["im.paideia.dao.threshold"]["value"]
+                                            dao_config["im.paideia.dao.threshold"][
+                                                "value"
+                                            ]
                                         ),
                                     ),
                                     tokenomics=CreateOrUpdateTokenomics(
@@ -107,11 +121,31 @@ def dao_list(
                                     config_height=state_daos[d][1],
                                     config_box_id=state_daos[d][2],
                                     design=CreateOrUpdateDaoDesign(
-                                        logo_url=dao_config["im.paideia.dao.logo"]["value"] if "im.paideia.dao.logo" in dao_config else None,
-                                        show_banner=dao_config["im.paideia.dao.banner.enabled"]["value"] if "im.paideia.dao.banner.enabled" in dao_config else False,
-                                        banner_url=dao_config["im.paideia.dao.banner"]["value"] if "im.paideia.dao.banner" in dao_config else None,
-                                        show_footer=dao_config["im.paideia.dao.footer.enabled"]["value"] if "im.paideia.dao.footer.enabled" in dao_config else False,
-                                        footer_text=dao_config["im.paideia.dao.footer"]["value"] if "im.paideia.dao.footer" in dao_config else None
+                                        logo_url=dao_config["im.paideia.dao.logo"][
+                                            "value"
+                                        ]
+                                        if "im.paideia.dao.logo" in dao_config
+                                        else None,
+                                        show_banner=dao_config[
+                                            "im.paideia.dao.banner.enabled"
+                                        ]["value"]
+                                        if "im.paideia.dao.banner.enabled" in dao_config
+                                        else False,
+                                        banner_url=dao_config["im.paideia.dao.banner"][
+                                            "value"
+                                        ]
+                                        if "im.paideia.dao.banner" in dao_config
+                                        else None,
+                                        show_footer=dao_config[
+                                            "im.paideia.dao.footer.enabled"
+                                        ]["value"]
+                                        if "im.paideia.dao.footer.enabled" in dao_config
+                                        else False,
+                                        footer_text=dao_config["im.paideia.dao.footer"][
+                                            "value"
+                                        ]
+                                        if "im.paideia.dao.footer" in dao_config
+                                        else None,
                                     ),
                                     is_draft=False,
                                     is_published=True,
@@ -128,16 +162,21 @@ def dao_list(
                         dao_key=d,
                         config_height=state_daos[d][1],
                         dao_name=state_daos[d][0],
-                        dao_short_description=dao_config["im.paideia.dao.desc"][
-                            "value"
-                        ]
+                        dao_short_description=dao_config["im.paideia.dao.desc"]["value"]
                         if "im.paideia.dao.desc" in dao_config
                         else "",
-                        dao_url=urllib.parse.quote(dao_config["im.paideia.dao.url"][
-                                    "value"
-                                ])
-                                if "im.paideia.dao.url" in dao_config and not any(c not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-.%+" for c in urllib.parse.quote(dao_config["im.paideia.dao.url"]["value"]))
-                                else state_daos[d][0],
+                        dao_url=urllib.parse.quote(
+                            dao_config["im.paideia.dao.url"]["value"]
+                        )
+                        if "im.paideia.dao.url" in dao_config
+                        and not any(
+                            c
+                            not in "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-.%+"
+                            for c in urllib.parse.quote(
+                                dao_config["im.paideia.dao.url"]["value"]
+                            )
+                        )
+                        else state_daos[d][0],
                         governance=CreateOrUpdateGovernance(
                             quorum=int(dao_config["im.paideia.dao.quorum"]["value"]),
                             vote_duration__sec=int(
@@ -152,11 +191,25 @@ def dao_list(
                             token_id=dao_config["im.paideia.dao.tokenid"]["value"]
                         ),
                         design=CreateOrUpdateDaoDesign(
-                            logo_url=dao_config["im.paideia.dao.logo"]["value"] if "im.paideia.dao.logo" in dao_config else None,
-                            show_banner=dao_config["im.paideia.dao.banner.enabled"]["value"] if "im.paideia.dao.banner.enabled" in dao_config else False,
-                            banner_url=dao_config["im.paideia.dao.banner"]["value"] if "im.paideia.dao.banner" in dao_config else None,
-                            show_footer=dao_config["im.paideia.dao.footer.enabled"]["value"] if "im.paideia.dao.footer.enabled" in dao_config else False,
-                            footer_text=dao_config["im.paideia.dao.footer"]["value"] if "im.paideia.dao.footer" in dao_config else None
+                            logo_url=dao_config["im.paideia.dao.logo"]["value"]
+                            if "im.paideia.dao.logo" in dao_config
+                            else None,
+                            show_banner=dao_config["im.paideia.dao.banner.enabled"][
+                                "value"
+                            ]
+                            if "im.paideia.dao.banner.enabled" in dao_config
+                            else False,
+                            banner_url=dao_config["im.paideia.dao.banner"]["value"]
+                            if "im.paideia.dao.banner" in dao_config
+                            else None,
+                            show_footer=dao_config["im.paideia.dao.footer.enabled"][
+                                "value"
+                            ]
+                            if "im.paideia.dao.footer.enabled" in dao_config
+                            else False,
+                            footer_text=dao_config["im.paideia.dao.footer"]["value"]
+                            if "im.paideia.dao.footer" in dao_config
+                            else None,
                         ),
                         is_draft=False,
                         is_published=True,
@@ -200,9 +253,29 @@ def dao_list_highlights(
 def get_treasury(dao_id: uuid.UUID, db=Depends(get_db)):
     try:
         db_dao = get_dao(db, dao_id)
+        if not db_dao:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND, content="dao not found"
+            )
+        if not db_dao.dao_key:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content="dao on-chain key not found",
+            )
         treasury_address = dao.get_dao_treasury(db_dao.dao_key)
         treasury_balance = indexed_node_client.get_balance(treasury_address)
-        return DaoTreasury(address=treasury_address, balance=treasury_balance)
+        if not treasury_balance:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content="treasury address balance not found",
+            )
+        erg_price = crux_client.get_erg_price()
+        if not erg_price:
+            logging.warning("ERG price not found from Crux")
+            erg_price = Price(t=0, price=0.0)
+        return DaoTreasury(
+            address=treasury_address, balance=treasury_balance, erg_price=erg_price
+        )
     except Exception as e:
         logging.error(traceback.format_exc())
         return JSONResponse(
@@ -287,15 +360,13 @@ def get_treasury_transactions(
                 if label == "default":
                     label = "Deposit" if amounts["Erg"] > 0 else "Withdrawal"
                 labeled_transaction = Transaction(
-                        transaction_id=transaction["id"],
-                        label=label,
-                        amount=amounts_labeled,
-                        time=transaction["timestamp"],
-                    )
+                    transaction_id=transaction["id"],
+                    label=label,
+                    amount=amounts_labeled,
+                    time=transaction["timestamp"],
+                )
                 cache.set(cache_key, labeled_transaction.dict())
-            labeled_transactions.append(
-                labeled_transaction
-            )
+            labeled_transactions.append(labeled_transaction)
         res = TransactionHistory(transactions=labeled_transactions).dict()
         cache.set("get_treasury_transactions_" + str(dao_id), res)
         return res
@@ -383,7 +454,12 @@ def dao_create(
         )
 
 
-@r.post("/on_chain_dao", response_model=SigningRequest, response_model_exclude_none=True, name="dao:create")
+@r.post(
+    "/on_chain_dao",
+    response_model=SigningRequest,
+    response_model_exclude_none=True,
+    name="dao:create",
+)
 def dao_create_on_chain(
     create_dao_request: CreateOnChainDao,
     db=Depends(get_db),
@@ -395,17 +471,18 @@ def dao_create_on_chain(
         dao_url = create_dao_request.url
         if dao_url == "creation":
             return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST, content=f"Invalid DAO url: {dao_url}"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content=f"Invalid DAO url: {dao_url}",
             )
         dao_exists = get_dao_by_url(db, dao_url)
         if dao_exists != None:
             return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST, content=f"DAO url must be unique: {dao_url}"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content=f"DAO url must be unique: {dao_url}",
             )
         unsigned_tx = dao.create_dao(create_dao_request)
         return SigningRequest(
-            message="Create DAO transaction",
-            unsigned_transaction=unsigned_tx
+            message="Create DAO transaction", unsigned_transaction=unsigned_tx
         )
     except Exception as e:
         logging.error(traceback.format_exc())

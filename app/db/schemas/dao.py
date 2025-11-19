@@ -1,10 +1,12 @@
-import uuid
-from pydantic import BaseModel, Field
-
 import datetime
 import typing as t
+import uuid
 
 from db.schemas import RestrictedAlphabetStr
+from pydantic import BaseModel, Field
+
+from app.db.schemas.util import Price
+
 
 class DaoBasic(BaseModel):
     id: uuid.UUID
@@ -22,9 +24,11 @@ class DaoBasic(BaseModel):
     class Config:
         orm_mode = True
 
+
 class DaoTreasury(BaseModel):
     address: str
     balance: dict
+    erg_price: Price
 
 
 class VwDao(BaseModel):
@@ -154,7 +158,9 @@ class CreateOrUpdateDao(BaseModel):
     config_box_id: t.Optional[str]
     dao_name: str
     dao_short_description: t.Optional[str]
-    dao_url: RestrictedAlphabetStr = Field(alphabet="QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-.%+")
+    dao_url: RestrictedAlphabetStr = Field(
+        alphabet="QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm1234567890-.%+"
+    )
     governance: CreateOrUpdateGovernance
     tokenomics: CreateOrUpdateTokenomics
     design: CreateOrUpdateDaoDesign

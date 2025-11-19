@@ -1,16 +1,16 @@
 import typing as t
-import uuid
 import urllib
-from sqlalchemy.orm import Session
+import uuid
+
+from db.models.dao import Dao, HighlightedDaos, vw_daos
+from db.models.dao_design import DaoDesign, DaoTheme, FooterSocialLinks
+from db.models.governance import Governance, GovernanceWhitelist
 from db.models.tokenomics import (
     Distribution,
     TokenHolder,
     Tokenomics,
     TokenomicsTokenHolder,
 )
-from db.models.dao import Dao, HighlightedDaos, vw_daos
-from db.models.dao_design import DaoDesign, FooterSocialLinks, DaoTheme
-from db.models.governance import Governance, GovernanceWhitelist
 from db.schemas.dao import (
     CreateOrUpdateDao,
     CreateOrUpdateDaoDesign,
@@ -19,14 +19,27 @@ from db.schemas.dao import (
     CreateOrUpdateGovernance,
     CreateOrUpdateTokenHolder,
     CreateOrUpdateTokenomics,
-    DaoDesign as DaoDesignSchema,
-    Governance as GovernanceSchema,
+)
+from db.schemas.dao import (
     Dao as DaoSchema,
-    Tokenomics as TokenomicsSchema,
-    TokenHolder as TokenHolderSchema,
+)
+from db.schemas.dao import (
+    DaoDesign as DaoDesignSchema,
+)
+from db.schemas.dao import (
     Distribution as DistributionSchema,
 )
+from db.schemas.dao import (
+    Governance as GovernanceSchema,
+)
+from db.schemas.dao import (
+    TokenHolder as TokenHolderSchema,
+)
+from db.schemas.dao import (
+    Tokenomics as TokenomicsSchema,
+)
 from ergo import crux_client
+from sqlalchemy.orm import Session
 
 ################################
 ### CRUD OPERATIONS FOR DAOS ###
@@ -191,7 +204,9 @@ def get_dao_tokenomics_tokenholders(db: Session, dao_tokenomics_id: uuid.UUID):
 
 
 def set_dao_tokenomics_tokenholders(
-    db: Session, dao_tokenomics_id: uuid.UUID, tokenholders: t.List[CreateOrUpdateTokenHolder]
+    db: Session,
+    dao_tokenomics_id: uuid.UUID,
+    tokenholders: t.List[CreateOrUpdateTokenHolder],
 ):
     # delete old entires
     old_tokenholders = (
@@ -292,17 +307,19 @@ def set_dao_tokenomics_distributions(
         )
     )
 
+
 # allow overrides
 TOKEN_TICKER_OVERRIDES = {
-    "RosenGuard": "RSG", # example override
+    "RosenGuard": "RSG",  # example override
 }
+
 
 # return token ticker if overriden or generate from token name
 def get_token_ticker(token_name: str):
     if token_name in TOKEN_TICKER_OVERRIDES:
         return TOKEN_TICKER_OVERRIDES[token_name]
     token_name = token_name.upper()
-    if token_name[:3] == "ERG": # let's not confuse with erg
+    if token_name[:3] == "ERG":  # let's not confuse with erg
         return token_name.split()[0]
     return token_name[:3]
 
@@ -318,16 +335,18 @@ def get_dao_tokenomics(db: Session, dao_id: uuid.UUID):
     if db_tokenomics.token_name == None:
         token_info = crux_client.get_token_info(db_tokenomics.token_id)
         if token_info:
-            return edit_dao_tokenomics(db, dao_id,
-                                CreateOrUpdateTokenomics(
-                                    token_id=db_tokenomics.token_id,
-                                    token_name=token_info["token_name"],
-                                    token_ticker=get_token_ticker(token_info["token_name"]),
-                                    token_decimals=token_info["decimals"],
-                                    token_holders=token_holders,
-                                    distributions=distributions
-                                )
-                            )
+            return edit_dao_tokenomics(
+                db,
+                dao_id,
+                CreateOrUpdateTokenomics(
+                    token_id=db_tokenomics.token_id,
+                    token_name=token_info["token_name"],
+                    token_ticker=get_token_ticker(token_info["token_name"]),
+                    token_decimals=token_info["decimals"],
+                    token_holders=token_holders,
+                    distributions=distributions,
+                ),
+            )
 
     return TokenomicsSchema(
         id=db_tokenomics.id,
@@ -388,7 +407,9 @@ def create_dao_tokenomics(
     )
 
 
-def edit_dao_tokenomics(db: Session, dao_id: uuid.UUID, tokenomics: CreateOrUpdateTokenomics):
+def edit_dao_tokenomics(
+    db: Session, dao_id: uuid.UUID, tokenomics: CreateOrUpdateTokenomics
+):
     db_tokenomics = db.query(Tokenomics).filter(Tokenomics.dao_id == dao_id).first()
     if not db_tokenomics:
         return create_dao_tokenomics(db, dao_id, tokenomics)
@@ -491,8 +512,8 @@ def get_dao_design(db: Session, dao_id: uuid.UUID):
         theme_name=theme.theme_name,
         primary_color=theme.primary_color,
         secondary_color=theme.secondary_color,
-        dark_primary_color = theme.dark_primary_color,
-        dark_secondary_color = theme.dark_secondary_color,
+        dark_primary_color=theme.dark_primary_color,
+        dark_secondary_color=theme.dark_secondary_color,
         logo_url=db_dao_design.logo_url,
         show_banner=db_dao_design.show_banner,
         banner_url=db_dao_design.banner_url,
@@ -502,7 +523,9 @@ def get_dao_design(db: Session, dao_id: uuid.UUID):
     )
 
 
-def create_dao_design(db: Session, dao_id: uuid.UUID, dao_design: CreateOrUpdateDaoDesign):
+def create_dao_design(
+    db: Session, dao_id: uuid.UUID, dao_design: CreateOrUpdateDaoDesign
+):
     db_dao_design = DaoDesign(
         dao_id=dao_id,
         theme_id=dao_design.theme_id,
@@ -516,14 +539,14 @@ def create_dao_design(db: Session, dao_id: uuid.UUID, dao_design: CreateOrUpdate
     db.commit()
     db.refresh(db_dao_design)
 
-    set_dao_design_footer_links(
-        db, db_dao_design.id, dao_design.footer_social_links
-    )
+    set_dao_design_footer_links(db, db_dao_design.id, dao_design.footer_social_links)
 
     return get_dao_design(db, db_dao_design.dao_id)
 
 
-def edit_dao_design(db: Session, dao_id: uuid.UUID, dao_design: CreateOrUpdateDaoDesign):
+def edit_dao_design(
+    db: Session, dao_id: uuid.UUID, dao_design: CreateOrUpdateDaoDesign
+):
     db_dao_design = db.query(DaoDesign).filter(DaoDesign.dao_id == dao_id).first()
     if not db_dao_design:
         return create_dao_design(db, dao_id, dao_design)
@@ -538,9 +561,7 @@ def edit_dao_design(db: Session, dao_id: uuid.UUID, dao_design: CreateOrUpdateDa
     db.commit()
     db.refresh(db_dao_design)
 
-    set_dao_design_footer_links(
-        db, db_dao_design.id, dao_design.footer_social_links
-    )
+    set_dao_design_footer_links(db, db_dao_design.id, dao_design.footer_social_links)
 
     return get_dao_design(db, dao_id)
 
@@ -586,10 +607,14 @@ def get_dao(db: Session, id: uuid.UUID):
         is_review=db_dao.is_review,
         category=db_dao.category,
         created_dtz=db_dao.created_dtz,
+        config_height=db_dao.config_height,
+        config_box_id=db_dao.config_box_id,
     )
+
 
 def dao_url_match(x, name):
     return (len(x.dao_url.split("/")) != 0) and (x.dao_url.split("/")[-1] == name)
+
 
 def get_dao_by_url(db: Session, name: str):
     # preliminary filter
@@ -715,7 +740,11 @@ def delete_dao(db: Session, id: uuid.UUID):
 
 
 def get_highlighted_projects(db: Session):
-    q = db.query(vw_daos, HighlightedDaos).filter(vw_daos.id == HighlightedDaos.dao_id).all()
+    q = (
+        db.query(vw_daos, HighlightedDaos)
+        .filter(vw_daos.id == HighlightedDaos.dao_id)
+        .all()
+    )
     return list(map(lambda x: x[0], q))
 
 
@@ -728,7 +757,9 @@ def add_to_highlighted_projects(db: Session, dao_id: uuid.UUID):
 
 
 def remove_from_highlighted_projects(db: Session, dao_id: uuid.UUID):
-    db_highlighted_project = db.query(HighlightedDaos).filter(HighlightedDaos.dao_id == dao_id).first()
+    db_highlighted_project = (
+        db.query(HighlightedDaos).filter(HighlightedDaos.dao_id == dao_id).first()
+    )
     if db_highlighted_project == None:
         return db_highlighted_project
     db.delete(db_highlighted_project)
