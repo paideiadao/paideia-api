@@ -2,8 +2,7 @@ import logging
 
 import requests
 from config import Config, Network
-
-from app.db.schemas.util import Price
+from db.schemas.util import Price
 
 
 def get_token_info(token_id: str):
