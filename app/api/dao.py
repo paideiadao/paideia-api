@@ -40,13 +40,11 @@ from db.schemas.util import (
     TransactionHistory,
 )
 from db.session import get_db
-from ergo import indexed_node_client
+from ergo import crux_client, indexed_node_client
 from fastapi import APIRouter, Depends, status
 from paideia_state_client import dao, util
 from starlette.responses import JSONResponse
 from util.util import is_uuid
-
-from app.ergo import crux_client
 
 dao_router = r = APIRouter()
 
