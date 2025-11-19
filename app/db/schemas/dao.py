@@ -3,9 +3,8 @@ import typing as t
 import uuid
 
 from db.schemas import RestrictedAlphabetStr
+from db.schemas.util import Price
 from pydantic import BaseModel, Field
-
-from app.db.schemas.util import Price
 
 
 class DaoBasic(BaseModel):
