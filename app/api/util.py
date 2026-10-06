@@ -1,4 +1,5 @@
 import datetime
+import mimetypes
 import os
 import logging
 import traceback
@@ -23,13 +24,25 @@ util_router = r = APIRouter()
 def upload_file_s3(key, bytes):
     try:
         bytes.seek(0)
-        S3.upload_fileobj(
-            bytes, CFG.s3_bucket, key,
-            ExtraArgs={'ACL': 'public-read'},
-        )
+        extra_args = {}
+        content_type = mimetypes.guess_type(key)[0]
+        if content_type:
+            extra_args["ContentType"] = content_type
+        # With S3_PUBLIC_URL set, objects are served from a separate public
+        # endpoint (e.g. an R2 custom domain) and the bucket has no ACLs.
+        if not CFG.s3_public_url:
+            extra_args["ACL"] = "public-read"
+        S3.upload_fileobj(bytes, CFG.s3_bucket, key, ExtraArgs=extra_args)
         return True
     except:
+        logging.error(traceback.format_exc())
         return False
+
+
+def object_url(key):
+    if CFG.s3_public_url:
+        return f"{CFG.s3_public_url.rstrip('/')}/{key}"
+    return f"https://{CFG.s3_bucket}.s3.{CFG.aws_region}.amazonaws.com/{key}"
 
 
 @r.post("/upload_file", name="util:upload-file-to-S3")
@@ -57,7 +70,7 @@ def upload(
         filename_mod = CFG.s3_key + "." + file_name_unique + file_extension
         uploads3 = upload_file_s3(filename_mod, data)
         if uploads3:
-            s3_url = f"https://{CFG.s3_bucket}.s3.{CFG.aws_region}.amazonaws.com/{filename_mod}"
+            s3_url = object_url(filename_mod)
             return {"status": "success", "image_url": s3_url}  # response added
         else:
             return JSONResponse(status_code=400, content="failed to upload to S3")
@@ -113,7 +126,7 @@ def upload_image(
         filename_mod = CFG.s3_key + "." + file_name_unique + file_extension
         uploads3 = upload_file_s3(filename_mod, data)
         if uploads3:
-            s3_url = f"https://{CFG.s3_bucket}.s3.{CFG.aws_region}.amazonaws.com/{filename_mod}"
+            s3_url = object_url(filename_mod)
             return {"status": "success", "image_url": s3_url}
         else:
             return JSONResponse(status_code=400, content="failed to upload to S3")
